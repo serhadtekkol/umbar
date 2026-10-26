@@ -18,7 +18,7 @@ class ServiceDelegate: NSObject, NSXPCListenerDelegate {
         // Only the host app may talk to this helper (card #46). Fail closed if
         // the requirement could not be built.
         guard let callerRequirement else {
-            NSLog("BoringNotchXPCHelper: rejecting connection, caller requirement unavailable")
+            NSLog("umbarHelper: rejecting connection, caller requirement unavailable")
             return false
         }
         newConnection.setCodeSigningRequirement(callerRequirement)
