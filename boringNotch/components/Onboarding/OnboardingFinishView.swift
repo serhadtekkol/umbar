@@ -51,8 +51,6 @@ struct OnboardingFinishView: View {
                 )
             }
 
-            Spacer(minLength: 24)
-
             Label {
                 Text("No permissions are requested now. When a feature needs your calendar, reminders or Accessibility, umbar tells you why and asks you then.")
                     .fixedSize(horizontal: false, vertical: true)
@@ -62,6 +60,9 @@ struct OnboardingFinishView: View {
             }
             .font(.subheadline)
             .foregroundStyle(permissionMutedText)
+            .padding(.top, 28)
+
+            Spacer(minLength: 20)
 
             HStack(spacing: 12) {
                 Button("Customize in Settings", action: onOpenSettings)

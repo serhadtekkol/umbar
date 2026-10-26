@@ -177,38 +177,42 @@ struct NotchPermissionBanner: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: 6) {
-            Image(systemName: state == .denied ? "exclamationmark.circle" : systemImage)
-                .font(.caption)
-                .foregroundStyle(.white)
-                .accessibilityHidden(true)
+        // Two rows so the reason is never truncated in the 215 pt widget,
+        // in either language.
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: state == .denied ? "exclamationmark.circle" : systemImage)
+                    .font(.caption)
+                    .foregroundStyle(.white)
+                    .accessibilityHidden(true)
 
-            Text(state == .denied ? deniedMessage : reason)
-                .font(.caption2)
-                .foregroundStyle(Color(white: 0.65))
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+                Text(state == .denied ? deniedMessage : reason)
+                    .font(.caption2)
+                    .foregroundStyle(Color(white: 0.65))
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Color(white: 0.65))
+                        .frame(width: 16, height: 16)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Dismiss"))
+            }
 
             Group {
                 if state == .denied {
-                    Button("Settings") { pane.open() }
+                    Button("Open System Settings") { pane.open() }
                 } else {
-                    Button("Allow", action: onAllow)
+                    Button("Allow Access", action: onAllow)
                 }
             }
             .buttonStyle(NotchCapsuleButtonStyle())
-
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color(white: 0.65))
-                    .frame(width: 16, height: 16)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Dismiss"))
+            .padding(.leading, 18)
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .contain)
