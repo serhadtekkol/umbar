@@ -106,7 +106,13 @@ class MusicManager: ObservableObject {
         switch type {
         case .nowPlaying:
             // Failable: returns nil when the private MediaRemote symbols are gone.
-            newController = NowPlayingController()
+            let nowPlaying = NowPlayingController()
+            do {
+                try nowPlaying?.startAdapter()
+            } catch {
+                NSLog("[NowPlaying] adapter not started: \(error)")
+            }
+            newController = nowPlaying
         case .automatic:
             newController = AutomaticMediaController()
         case .appleMusic:

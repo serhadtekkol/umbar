@@ -23,6 +23,14 @@ What is intentionally left out
   executable). The app never runs the adapter's "test" function, so no test
   client is built or shipped.
 
+umbar additions (not upstream, upstream files above stay unmodified)
+  Sources/umbar/UmbarParentWatchdog.m
+    Constructor that runs when perl loads the framework. If
+    UMBAR_ADAPTER_PARENT_PID is set, it watches that pid (kqueue NOTE_EXIT
+    via a dispatch source) and _exits when the app is gone, so the stream
+    child cannot be orphaned by quit, SIGTERM, SIGKILL or a crash (card #57).
+    Without the variable it does nothing.
+
 Runtime contract
   The framework is embedded in Contents/Frameworks but NOT linked into the app,
   so it never loads into the app process. It is loaded only by /usr/bin/perl

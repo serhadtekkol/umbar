@@ -65,11 +65,35 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     private let MRMediaRemoteSetShuffleModeFunction: @convention(c) (Int) -> Void
     private let MRMediaRemoteSetRepeatModeFunction: @convention(c) (Int) -> Void
 
-    private var process: Process?
-    private var pipeHandler: JSONLinesPipeHandler?
-    private var streamTask: Task<Void, Never>?
+    private let adapter = NowPlayingAdapterProcess()
+    private let decoder = JSONDecoder()
+    /// Log the first data and the first artwork of each adapter run once, so
+    /// the log shows the pipeline works without logging every update.
+    /// (MediaRemote usually delivers artwork in a later update than the
+    /// title.)
+    private var hasLoggedFirstData = false
+    private var hasLoggedFirstArtwork = false
+
+    /// Adapter health signals for `NowPlayingWithFallbackController`.
+    /// `onAdapterData` fires (on the main thread) for every update that
+    /// carried at least one now-playing field; `onAdapterExit` when the child
+    /// ended without `stopAdapter()`.
+    var onAdapterData: (() -> Void)?
+    var onAdapterExit: ((Int32, String) -> Void)?
 
     // MARK: - Initialization
+
+    /// Resolves the MediaRemote command symbols used for play/pause, next,
+    /// previous, seek, shuffle and repeat. Returns nil when they are gone
+    /// (a future macOS); the caller then falls back to AppleScript.
+    ///
+    /// Commands are sent in-process: verified on macOS 27.0.1 that an
+    /// unentitled process can still send MRMediaRemoteSendCommand /
+    /// MRMediaRemoteSetElapsedTime to a browser (Chrome) session. Only
+    /// *reading* now-playing info needs the entitled `/usr/bin/perl`
+    /// adapter, which keeps us at exactly one helper process.
+    ///
+    /// Does not start the adapter; call `startAdapter()`.
     init?() {
         guard
             let bundle = CFBundleCreate(
@@ -96,27 +120,37 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         MRMediaRemoteSetRepeatModeFunction = unsafeBitCast(
             MRMediaRemoteSetRepeatModePointer, to: (@convention(c) (Int) -> Void).self)
 
-        Task { await setupNowPlayingObserver() }
+        adapter.onLine = { [weak self] line in self?.handleAdapterLine(line) }
+        adapter.onUnexpectedExit = { [weak self] status, stderrTail in
+            self?.onAdapterExit?(status, stderrTail)
+        }
     }
 
     deinit {
-        streamTask?.cancel()
-        
-        if let pipeHandler = self.pipeHandler {
-            Task { await pipeHandler.close()
-            }
-        }
-        
-        if let process = self.process {
-            if process.isRunning {
-                process.terminate()
-                process.waitUntilExit()
-            }
-        }
-
-        self.process = nil
-        self.pipeHandler = nil
+        // Blocks briefly so a replacement controller (source switch) never
+        // overlaps with a still-running old stream.
+        adapter.stop(waitForExit: 0.5)
     }
+
+    /// Starts the stream child. Throws when the adapter is not bundled or
+    /// perl cannot be launched. No-op while it is already running.
+    func startAdapter() throws {
+        guard MediaRemoteAdapterBundle.isAvailable,
+              let scriptURL = MediaRemoteAdapterBundle.scriptURL,
+              let frameworkPath = MediaRemoteAdapterBundle.frameworkPath
+        else {
+            throw NowPlayingAdapterError.resourcesMissing
+        }
+        try adapter.start(scriptURL: scriptURL, frameworkPath: frameworkPath)
+        hasLoggedFirstData = false
+        hasLoggedFirstArtwork = false
+    }
+
+    func stopAdapter() {
+        adapter.stop()
+    }
+
+    var adapterProcessIdentifier: Int32? { adapter.processIdentifier }
 
     // MARK: - Protocol Implementation
     func play() async {
@@ -186,49 +220,32 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         playbackState.volume = clampedLevel
     }
     
-    // MARK: - Setup Methods
-    private func setupNowPlayingObserver() async {
-        let process = Process()
-        // Missing resources are an expected state (adapter not bundled), not a
-        // programmer error, so fail soft instead of asserting.
-        guard MediaRemoteAdapterBundle.isAvailable,
-              let scriptURL = MediaRemoteAdapterBundle.scriptURL,
-              let frameworkPath = MediaRemoteAdapterBundle.frameworkPath
-        else {
-            NSLog("MediaRemote adapter resources missing; Now Playing stream not started")
-            return
-        }
-        
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
-        process.arguments = [scriptURL.path, frameworkPath, "stream"]
-        
-        let pipeHandler = JSONLinesPipeHandler()
-        process.standardOutput = await pipeHandler.getPipe()
-        
-        self.process = process
-        self.pipeHandler = pipeHandler
+    // MARK: - Stream Processing
 
-        do {
-            try process.run()
-            streamTask = Task { [weak self] in
-                await self?.processJSONStream()
+    /// Runs on the adapter's I/O queue.
+    private func handleAdapterLine(_ line: Data) {
+        // Non-data lines (none today) and malformed JSON are skipped, as before.
+        guard let update = try? decoder.decode(NowPlayingUpdate.self, from: line) else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.handleAdapterUpdate(update)
+            if update.payload.carriesNowPlayingData {
+                if !self.hasLoggedFirstData {
+                    self.hasLoggedFirstData = true
+                    // Bundle id and state only: titles are the user's listening history.
+                    NSLog("[NowPlaying] first adapter data: app \(self.playbackState.bundleIdentifier), playing \(self.playbackState.isPlaying), artwork \(self.playbackState.artwork != nil)")
+                }
+                if !self.hasLoggedFirstArtwork, let artwork = self.playbackState.artwork {
+                    self.hasLoggedFirstArtwork = true
+                    NSLog("[NowPlaying] first adapter artwork: \(artwork.count) bytes, decodes as image \(NSImage(data: artwork) != nil)")
+                }
+                self.onAdapterData?()
             }
-        } catch {
-            NSLog("Failed to launch mediaremote-adapter.pl: \(error)")
-        }
-    }
-
-    // MARK: - Async Stream Processing
-    private func processJSONStream() async {
-        guard let pipeHandler = self.pipeHandler else { return }
-        
-        await pipeHandler.readJSONLines(as: NowPlayingUpdate.self) { [weak self] update in
-            await self?.handleAdapterUpdate(update)
         }
     }
 
     // MARK: - Update Methods
-    private func handleAdapterUpdate(_ update: NowPlayingUpdate) async {
+    private func handleAdapterUpdate(_ update: NowPlayingUpdate) {
         let payload = update.payload
         let diff = update.diff ?? false
 
@@ -349,80 +366,22 @@ struct NowPlayingPayload: Codable {
     let volume: Double?
 }
 
-actor JSONLinesPipeHandler {
-    private let pipe: Pipe
-    private let fileHandle: FileHandle
-    private var buffer = ""
-    
-    init() {
-        self.pipe = Pipe()
-        self.fileHandle = pipe.fileHandleForReading
+extension NowPlayingPayload {
+    /// True when the update says anything about what is playing. An empty
+    /// payload (`{}`), which MediaRemote yields when it denies access, does not
+    /// count as the adapter working.
+    var carriesNowPlayingData: Bool {
+        title != nil || artist != nil || playing != nil || bundleIdentifier != nil
+            || parentApplicationBundleIdentifier != nil || elapsedTime != nil
     }
-    
-    func getPipe() -> Pipe {
-        return pipe
-    }
-    
-    func readJSONLines<T: Decodable>(as type: T.Type, onLine: @escaping (T) async -> Void) async {
-        do {
-            try await self.processLines(as: type) { decodedObject in
-                await onLine(decodedObject)
-            }
-        } catch {
-            print("Error processing JSON stream: \(error)")
-        }
-    }
-    
-    private func processLines<T: Decodable>(as type: T.Type, onLine: @escaping (T) async -> Void) async throws {
-        while true {
-            let data = try await readData()
-            guard !data.isEmpty else { break }
-            
-            if let chunk = String(data: data, encoding: .utf8) {
-                buffer.append(chunk)
-                
-                while let range = buffer.range(of: "\n") {
-                    let line = String(buffer[..<range.lowerBound])
-                    buffer = String(buffer[range.upperBound...])
-                    
-                    if !line.isEmpty {
-                        await processJSONLine(line, as: type, onLine: onLine)
-                    }
-                }
-            }
-        }
-    }
-    
-    private func processJSONLine<T: Decodable>(_ line: String, as type: T.Type, onLine: @escaping (T) async -> Void) async {
-        guard let data = line.data(using: .utf8) else {
-            return
-        }
-        do {
-            let decodedObject = try JSONDecoder().decode(T.self, from: data)
-            await onLine(decodedObject)
-        } catch {
-            // Ignore lines that can't be decoded
-        }
-    }
-    
-    private func readData() async throws -> Data {
-        return try await withCheckedThrowingContinuation { continuation in
-            
-            fileHandle.readabilityHandler = { handle in
-                let data = handle.availableData
-                handle.readabilityHandler = nil
-                continuation.resume(returning: data)
-            }
-        }
-    }
-    
-    func close() async {
-        do {
-            fileHandle.readabilityHandler = nil
-            try fileHandle.close()
-            try pipe.fileHandleForWriting.close()
-        } catch {
-            print("Error closing pipe handler: \(error)")
+}
+
+enum NowPlayingAdapterError: Error, CustomStringConvertible {
+    case resourcesMissing
+
+    var description: String {
+        switch self {
+        case .resourcesMissing: return "adapter script or framework not bundled"
         }
     }
 }
