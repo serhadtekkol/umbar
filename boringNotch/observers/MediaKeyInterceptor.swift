@@ -70,10 +70,10 @@ final class MediaKeyInterceptor {
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: mask,
-            callback: { _, _, cgEvent, userInfo in
+            callback: { _, type, cgEvent, userInfo in
                 guard let userInfo else { return MediaKeyInterceptor.passThrough(cgEvent) }
                 let interceptor = Unmanaged<MediaKeyInterceptor>.fromOpaque(userInfo).takeUnretainedValue()
-                return interceptor.handleEvent(cgEvent)
+                return interceptor.handleTapCallback(type: type, event: cgEvent)
             },
             userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         )
@@ -108,6 +108,43 @@ final class MediaKeyInterceptor {
     /// passed-through system-defined event (card #45).
     static func passThrough(_ cgEvent: CGEvent) -> Unmanaged<CGEvent> {
         Unmanaged.passUnretained(cgEvent)
+    }
+
+    /// Maximum re-enable attempts after the system disables the tap.
+    static let maxReenableAttempts = 5
+
+    /// Tap callback body, split from the C closure so tests can drive it.
+    ///
+    /// The system disables a tap that stalls past its timeout
+    /// (`tapDisabledByTimeout`) or when secure input intervenes
+    /// (`tapDisabledByUserInput`) and tells us only through these pseudo-events.
+    /// Without re-enabling, HUD replacement silently stops until relaunch
+    /// (card #62). The event is still returned unretained (see `passThrough`).
+    func handleTapCallback(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            reenableTap(attempt: 1, reason: type == .tapDisabledByTimeout ? "timeout" : "user input")
+            return Self.passThrough(event)
+        }
+        return handleEvent(event)
+    }
+
+    /// Re-enables the tap, verifying with `tapIsEnabled` because `tapEnable`
+    /// reports nothing. Retries are bounded and spaced out so a persistent
+    /// refusal (e.g. Accessibility revoked) cannot spin the main run loop.
+    private func reenableTap(attempt: Int, reason: String) {
+        guard let eventTap else { return }
+        CGEvent.tapEnable(tap: eventTap, enable: true)
+        if CGEvent.tapIsEnabled(tap: eventTap) {
+            NSLog("MediaKeyInterceptor: event tap re-enabled after %@ (attempt %d)", reason, attempt)
+            return
+        }
+        guard attempt < Self.maxReenableAttempts else {
+            NSLog("MediaKeyInterceptor: event tap still disabled after %d attempts (%@); giving up until restart", attempt, reason)
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(200 * attempt)) { [weak self] in
+            self?.reenableTap(attempt: attempt + 1, reason: reason)
+        }
     }
 
     private func handleEvent(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
