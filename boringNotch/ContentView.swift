@@ -115,6 +115,9 @@ struct ContentView: View {
                         .bottom,
                         vm.effectiveClosedNotchHeight == 0 ? 10 : 0
                     )
+                    .overlay(alignment: .topTrailing) {
+                        CaffeinateClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
+                    }
                 
                 mainLayout
                     .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
