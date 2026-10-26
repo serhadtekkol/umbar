@@ -31,7 +31,7 @@ Türkçe: [README.tr.md](README.tr.md)
   another disk, so the original is no longer at its old place. Hold ⌥ to copy instead. When you drop
   into an app that accepts only a copy, such as a Mail message, umbar copies the file. With
   **Remove from shelf after dragging** on in **Settings > Shelf** (on by default on a new
-  installation), the item leaves the shelf only
+  installation; an existing installation keeps its setting), the item leaves the shelf only
   after the move is confirmed; if you cancel the drop or it fails, the item stays. Files that cannot
   be removed from where they are, such as files on a read-only disk image, are copied.
 - **Caffeinate.** The cup button in the open notch's header keeps the Mac awake. Click it, then
@@ -44,13 +44,14 @@ Türkçe: [README.tr.md](README.tr.md)
   again in 5 minutes, or **Skip** to restart the 20 minutes. Time with no keyboard or mouse input
   (5 minutes by default), a locked screen and sleep all count as a break and restart the count.
   The reminder waits while a full-screen video or presentation is on; full-screen video detection
-  may not work with every player. It never plays a sound. It is
-  on by default on a new installation; change the timings or turn it off in
+  may not work with every player. It never plays a sound. It is on by default on a new
+  installation (an existing installation keeps its setting); change the timings or turn it off in
   **Settings > Eye break**.
 - **System HUD replacement.** Replaces the macOS volume, display brightness and keyboard
   brightness indicators with ones drawn in the notch. On by default on a new installation (an
   existing installation keeps its setting); it needs Accessibility access, which the notch asks for
-  from a card the first time you change the volume or open the notch.
+  from a card, once: the first time you change the volume or open the notch after setup. If you
+  close the card without allowing, turn the access on in **Settings > HUDs**.
 - **Battery.** Shows battery level and charging state, and a short notice when the power source
   changes.
 - **Keyboard shortcuts.** Toggle the notch open with ⌘⇧I and toggle the track preview with ⌘⇧H.

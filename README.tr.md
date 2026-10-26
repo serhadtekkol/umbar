@@ -33,7 +33,7 @@ arayüzdeki halleriyle verilmiştir. İki doküman çelişirse İngilizce olan g
   Orijinal eski yerinde kalmaz. Kopyalamak için ⌥ tuşunu basılı tutun. Yalnızca kopya kabul eden
   bir uygulamaya (örneğin bir Mail iletisi) bıraktığınızda umbar dosyayı kopyalar.
   **Settings > Shelf** içindeki **Remove from shelf after dragging** açıkken (yeni kurulumda
-  varsayılan olarak açıktır) öğe, taşıma
+  varsayılan olarak açıktır; mevcut bir kurulum kendi ayarını korur) öğe, taşıma
   doğrulandıktan sonra raftan kalkar; bırakmayı iptal ederseniz ya da başarısız olursa öğe rafta
   kalır. Bulunduğu yerden silinemeyen dosyalar (örneğin salt okunur bir disk görüntüsündekiler)
   kopyalanır.
@@ -47,12 +47,14 @@ arayüzdeki halleriyle verilmiştir. İki doküman çelişirse İngilizce olan g
   ile 5 dakika sonra yeniden sorulmasını, **Skip** ile 20 dakikalık sayacın baştan başlamasını
   seçersiniz. Klavye ya da fare girdisi olmayan süre (varsayılan 5 dakika), kilitli ekran ve uyku
   mola sayılır ve sayacı sıfırlar. Tam ekran video ya da sunum açıkken hatırlatıcı bekler; tam ekran
-  video algılama her oynatıcıda çalışmayabilir. Hiç ses çalmaz. Yeni kurulumda varsayılan olarak açıktır; süreleri değiştirmek ya da kapatmak için
-  **Settings > Eye break**'i kullanın.
+  video algılama her oynatıcıda çalışmayabilir. Hiç ses çalmaz. Yeni kurulumda varsayılan olarak açıktır (mevcut bir kurulum kendi ayarını
+  korur); süreleri değiştirmek ya da kapatmak için **Settings > Eye break**'i kullanın.
 - **Sistem HUD'unun yerine geçme.** macOS'un ses, ekran parlaklığı ve klavye aydınlatması
   göstergelerinin yerine notch'ta çizilen göstergeler koyar. Yeni kurulumda varsayılan olarak
   açıktır (mevcut bir kurulum kendi ayarını korur); Erişilebilirlik (Accessibility) izni gerekir.
-  Bu izni notch, sesi ilk değiştirdiğinizde ya da notch'u ilk açtığınızda bir kartla ister.
+  Bu izni notch bir kez, kurulumdan sonra sesi ilk değiştirdiğinizde ya da notch'u ilk
+  açtığınızda bir kartla ister. Kartı izin vermeden kapatırsanız erişimi **Settings > HUDs**'tan
+  açın.
 - **Pil.** Pil seviyesini ve şarj durumunu gösterir; güç kaynağı değiştiğinde kısa bir bildirim
   verir.
 - **Klavye kısayolları.** Notch'u ⌘⇧I ile açıp kapatın, parça önizlemesini ⌘⇧H ile açıp kapatın.
