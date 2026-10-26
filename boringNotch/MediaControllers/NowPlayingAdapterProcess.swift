@@ -6,8 +6,11 @@
 import AppKit
 import Foundation
 
-/// Owns the one `/usr/bin/perl mediaremote-adapter.pl <framework> stream`
+/// Owns the one `/usr/bin/perl -T mediaremote-adapter.pl <framework> stream`
 /// child process that feeds system Now Playing data to the app.
+///
+/// The child gets an allowlisted environment, never the app's
+/// (`AdapterChildEnvironment`, card #67).
 ///
 /// Lifetime guarantees (cards #38, #57):
 /// - At most one child at a time: `start` is a no-op while one is running,
@@ -23,9 +26,6 @@ import Foundation
 /// several hundred KB of base64 artwork, so decoding stays off the main
 /// thread); `onUnexpectedExit` is invoked on the main thread.
 final class NowPlayingAdapterProcess {
-    /// Name of the environment variable the adapter's watchdog reads.
-    static let parentPIDEnvironmentKey = "UMBAR_ADAPTER_PARENT_PID"
-
     /// One complete stdout line, without the trailing newline.
     var onLine: ((Data) -> Void)?
     /// The child exited without `stop` having been called. Receives the exit
@@ -73,10 +73,12 @@ final class NowPlayingAdapterProcess {
 
         let child = Process()
         child.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
-        child.arguments = [scriptURL.path, frameworkPath, "stream"]
-        var environment = ProcessInfo.processInfo.environment
-        environment[Self.parentPIDEnvironmentKey] = String(getpid())
-        child.environment = environment
+        // -T (taint mode) is a second layer under the environment allowlist:
+        // perl then ignores PERL5LIB/PERL5OPT outright. Verified on macOS
+        // 27.0.1 that the adapter still loads its framework and runs `get`
+        // and `stream` under -T.
+        child.arguments = ["-T", scriptURL.path, frameworkPath, "stream"]
+        child.environment = AdapterChildEnvironment.current()
         child.standardInput = FileHandle.nullDevice
 
         let stdoutPipe = Pipe()
@@ -178,4 +180,81 @@ final class NowPlayingAdapterProcess {
             stderrTail = stderrTail.suffix(Self.stderrTailLimit)
         }
     }
+}
+
+/// The complete environment of the `/usr/bin/perl` adapter child (card #67).
+///
+/// The child is built from an explicit allowlist instead of inheriting the
+/// app's environment. `/usr/bin/perl` has neither hardened runtime nor library
+/// validation, and it honours `PERL5OPT` / `PERL5LIB` (load arbitrary
+/// modules), `VERSIONER_PERL_*` (pick another interpreter) and `DYLD_*`; the
+/// adapter itself reads `MEDIAREMOTEADAPTER_OPTION_*` and `ADAPTER_TEST_MODE`.
+/// Any of those set by a same-user process (`launchctl setenv` before umbar
+/// launches at login) would otherwise run code in a child that macOS
+/// attributes to umbar. Nothing outside the allowlist below reaches the child,
+/// so new variables perl or the adapter start honouring later are excluded
+/// without anyone having to remember to add them to a denylist.
+///
+/// The child is additionally started with `perl -T`: taint mode makes perl
+/// ignore `PERL5LIB` and `PERL5OPT` even if they were somehow present.
+enum AdapterChildEnvironment {
+    /// Name of the environment variable the adapter's watchdog reads
+    /// (mediaremote-adapter/Sources/umbar/UmbarParentWatchdog.m).
+    static let parentPIDKey = "UMBAR_ADAPTER_PARENT_PID"
+
+    /// Fixed search path: the adapter execs nothing, but perl modules that
+    /// shell out must never find a binary from a user-writable directory.
+    static let path = "/usr/bin:/bin"
+
+    /// Used when the inherited `LANG` is missing or not a plain locale name.
+    static let fallbackLanguage = "en_US.UTF-8"
+
+    /// Builds the child's environment. Pure: everything comes in as arguments.
+    ///
+    /// - Parameters:
+    ///   - parentPID: The app's pid, for the adapter's exit-with-parent watchdog.
+    ///   - homeDirectory: The user's home (`NSHomeDirectory()`).
+    ///   - temporaryDirectory: The per-user temp dir (`NSTemporaryDirectory()`);
+    ///     a trailing slash is kept as Foundation returns it.
+    ///   - inheritedLanguage: The app's `LANG`, if any. Only passed on when it
+    ///     looks like a locale name (`[A-Za-z0-9_.@-]`, at most 64 characters);
+    ///     otherwise `fallbackLanguage` is used. Perl only uses it for locale
+    ///     warnings, but nothing free-form from the parent reaches the child.
+    /// - Returns: Exactly `UMBAR_ADAPTER_PARENT_PID`, `PATH`, `HOME`, `TMPDIR`
+    ///   and `LANG`.
+    static func make(
+        parentPID: Int32,
+        homeDirectory: String,
+        temporaryDirectory: String,
+        inheritedLanguage: String?
+    ) -> [String: String] {
+        [
+            parentPIDKey: String(parentPID),
+            "PATH": path,
+            "HOME": homeDirectory,
+            "TMPDIR": temporaryDirectory,
+            "LANG": sanitizedLanguage(inheritedLanguage),
+        ]
+    }
+
+    /// The environment for the current process.
+    static func current() -> [String: String] {
+        make(
+            parentPID: getpid(),
+            homeDirectory: NSHomeDirectory(),
+            temporaryDirectory: NSTemporaryDirectory(),
+            inheritedLanguage: ProcessInfo.processInfo.environment["LANG"]
+        )
+    }
+
+    static func sanitizedLanguage(_ value: String?) -> String {
+        guard let value, !value.isEmpty, value.count <= 64,
+              value.unicodeScalars.allSatisfy({ allowedLanguageScalars.contains($0) })
+        else { return fallbackLanguage }
+        return value
+    }
+
+    private static let allowedLanguageScalars = CharacterSet(
+        charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.@-"
+    )
 }
