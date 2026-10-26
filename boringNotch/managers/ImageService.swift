@@ -56,20 +56,6 @@ public final class ImageService: ImageServiceProtocol {
     }
 }
 
-/// Which artwork URLs the app may download.
-enum ArtworkHostPolicy {
-    /// Spotify serves `artwork url` from its image CDN (`i.scdn.co` today).
-    /// Apple Music artwork arrives as bytes over AppleScript and needs no host.
-    static let allowedHostSuffixes = ["scdn.co", "spotifycdn.com"]
-
-    static func allows(_ url: URL) -> Bool {
-        guard url.scheme?.lowercased() == "https", let host = url.host?.lowercased() else {
-            return false
-        }
-        return allowedHostSuffixes.contains { host == $0 || host.hasSuffix("." + $0) }
-    }
-}
-
 /// Cancels redirects that would leave `ArtworkHostPolicy`.
 private final class RedirectGuard: NSObject, URLSessionTaskDelegate, Sendable {
     static let shared = RedirectGuard()

@@ -132,6 +132,8 @@
 		9DC26FF093CC7DD430F37B69 /* MediaRemoteAdapterBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A260557462DB4C6C7630FA7A /* MediaRemoteAdapterBundle.swift */; };
 		4913AAF906A749808695B13E /* MediaRemoteAdapter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 918B494336D8A086F1188FC8 /* MediaRemoteAdapter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		64C28BD882D6B7B8C3E2C45F /* DefaultVisualizer.json in Resources */ = {isa = PBXBuildFile; fileRef = 52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */; };
+		E69875F39B0EBDD76DC86ABB /* ArtworkHostPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FF5B25C31EE71C706689070 /* ArtworkHostPolicy.swift */; };
+		28BAA4F868EBF3BCEA88C492 /* AppIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317E0FA54B61F48FD7EE3342 /* AppIdentity.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -297,6 +299,8 @@
 		A260557462DB4C6C7630FA7A /* MediaRemoteAdapterBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteAdapterBundle.swift; sourceTree = "<group>"; };
 		918B494336D8A086F1188FC8 /* MediaRemoteAdapter.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MediaRemoteAdapter.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultVisualizer.json; sourceTree = "<group>"; };
+		7FF5B25C31EE71C706689070 /* ArtworkHostPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkHostPolicy.swift; sourceTree = "<group>"; };
+		317E0FA54B61F48FD7EE3342 /* AppIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -491,6 +495,7 @@
 			isa = PBXGroup;
 			children = (
 				11D58EA12E760AE100FA8377 /* ImageService.swift */,
+				7FF5B25C31EE71C706689070 /* ArtworkHostPolicy.swift */,
 				F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */,
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
 				147163992C5D35FF0068B555 /* MusicManager.swift */,
@@ -604,6 +609,7 @@
 				1163988E2DF5CC870052E6AF /* CalendarModel.swift */,
 				1163988C2DF5CAB40052E6AF /* EventModel.swift */,
 				B19016232CC15B4D00E3F12E /* Constants.swift */,
+				317E0FA54B61F48FD7EE3342 /* AppIdentity.swift */,
 				14D570C82C5F38890011E668 /* BoringViewModel.swift */,
 				14D570CA2C5F4B2C0011E668 /* BatteryStatusViewModel.swift */,
 				1153BD902D986DB300979FB0 /* PlaybackState.swift */,
@@ -996,11 +1002,13 @@
 				11CFC6612E097F6800748C80 /* PermissionsRequestView.swift in Sources */,
 				14D570D22C5F6C6A0011E668 /* BoringExtrasMenu.swift in Sources */,
 				11D58EA22E760AE100FA8377 /* ImageService.swift in Sources */,
+				E69875F39B0EBDD76DC86ABB /* ArtworkHostPolicy.swift in Sources */,
 				11F748822ECB07A400F841DB /* MusicControlButton.swift in Sources */,
 				14288DDC2C6E015000B9F80C /* AudioPlayer.swift in Sources */,
 				14288E0C2C6F8EC000B9F80C /* AppIcons.swift in Sources */,
 				B1C448982C972CC4001F0858 /* ListItemPopover.swift in Sources */,
 				B19016242CC15B5000E3F12E /* Constants.swift in Sources */,
+				28BAA4F868EBF3BCEA88C492 /* AppIdentity.swift in Sources */,
 				1100290C2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift in Sources */,
 				11CFC6632E09918400748C80 /* MusicControllerSelectionView.swift in Sources */,
 				B1F0A0022E60000100000001 /* BrightnessManager.swift in Sources */,
