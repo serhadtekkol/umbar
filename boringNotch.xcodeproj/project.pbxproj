@@ -145,6 +145,7 @@
 		383A52007D2BD4929E076DE1 /* TemporaryFileStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */; };
 		D586A4A4937170E9DF3C953F /* NSItemProvider+LoadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */; };
 		9BF13C723E0F2491868ACD0A /* EventTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE194F420E86CD8921282C8C /* EventTap.swift */; };
+		735706B77AF7649EDC9860C9 /* EventTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE194F420E86CD8921282C8C /* EventTap.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1095,6 +1096,7 @@
 				A95DA7C10EFAFD30D56DA27B /* PlayerArbiter.swift in Sources */,
 				E3B83440A15F60DF1DCAD914 /* ArtworkHostPolicy.swift in Sources */,
 				D5D72CB62D8A2A6F6628A84B /* AppIdentity.swift in Sources */,
+				735706B77AF7649EDC9860C9 /* EventTap.swift in Sources */,
 				7C7C4053654D312B345E897B /* ShelfDropService.swift in Sources */,
 				3657BA3A536D113429F2226C /* ShelfItem.swift in Sources */,
 				9C293F4CA34270289CBF4177 /* Bookmark.swift in Sources */,
