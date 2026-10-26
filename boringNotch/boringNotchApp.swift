@@ -5,7 +5,6 @@
 //  Created by Harsh Vardhan  Goswami  on 02/08/24.
 //
 
-import AVFoundation
 import Combine
 import Defaults
 import KeyboardShortcuts
@@ -361,19 +360,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupDragDetectors()
 
+        // No launch ever plays a sound, onboarding included (card #76).
         if coordinator.firstLaunch {
             DispatchQueue.main.async {
                 self.showOnboardingWindow()
             }
-            playWelcomeSound()
         }
 
         previousScreens = NSScreen.screens
-    }
-
-    func playWelcomeSound() {
-        let audioPlayer = AudioPlayer()
-        audioPlayer.play(fileName: "boring", fileExtension: "m4a")
     }
 
     func deviceHasNotch() -> Bool {
