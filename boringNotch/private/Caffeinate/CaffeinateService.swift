@@ -199,6 +199,9 @@ final class CaffeinateService: ObservableObject {
     /// Never prompts: if the user has not already granted notifications, the
     /// in-panel notice is the only signal.
     private func postSystemNotificationIfAuthorized(_ body: String) {
+        // UNUserNotificationCenter raises an NSException in a process without
+        // an app bundle (command-line harnesses); the shipped app always has one.
+        guard Bundle.main.bundleIdentifier != nil else { return }
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
             guard settings.authorizationStatus == .authorized else { return }
