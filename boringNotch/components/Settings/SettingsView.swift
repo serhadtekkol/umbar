@@ -35,6 +35,12 @@ struct SettingsView: View {
                 NavigationLink(value: "HUD") {
                     Label("HUDs", systemImage: "dial.medium.fill")
                 }
+                NavigationLink(value: "Caffeinate") {
+                    Label("Caffeinate", systemImage: "cup.and.saucer")
+                }
+                NavigationLink(value: "EyeBreak") {
+                    Label("Eye break", systemImage: "eye")
+                }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
@@ -71,6 +77,10 @@ struct SettingsView: View {
                     CalendarSettings()
                 case "HUD":
                     HUD()
+                case "Caffeinate":
+                    CaffeinateSettings()
+                case "EyeBreak":
+                    EyeBreakSettings()
                 case "Battery":
                     Charge()
                 case "Shelf":
@@ -372,27 +382,6 @@ struct HUD: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.accessibilityPromptShown) var accessibilityPromptShown
     @State private var accessibilityAuthorized = false
-    /// The user switched the HUD on but Accessibility is not granted yet; the
-    /// switch stays off and the pre-prompt below explains why (card #59).
-    @State private var wantsHUD = false
-
-    /// The HUD only turns on once Accessibility is granted, so no event tap
-    /// is ever attempted without it (AC-1.12, #45).
-    private var hudToggle: Binding<Bool> {
-        Binding(
-            get: { hudReplacement },
-            set: { isOn in
-                if !isOn {
-                    wantsHUD = false
-                    hudReplacement = false
-                } else if accessibilityAuthorized {
-                    hudReplacement = true
-                } else {
-                    wantsHUD = true
-                }
-            }
-        )
-    }
 
     var body: some View {
         Form {
@@ -407,27 +396,30 @@ struct HUD: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 40)
-                    Toggle("Replace system HUD", isOn: hudToggle)
+                    Toggle("Replace system HUD", isOn: $hudReplacement)
                         .labelsHidden()
                         .toggleStyle(.switch)
                         .controlSize(.large)
                 }
 
-                if wantsHUD && !accessibilityAuthorized {
+                // K13: the switch can be on without Accessibility. Until it
+                // is granted macOS keeps its own HUD; this row says so and
+                // is the place to grant it (AC-15.9).
+                if hudReplacement && !accessibilityAuthorized {
                     PermissionPrompt(
                         state: accessibilityPromptShown ? .denied : .notDetermined,
                         systemImage: "hand.raised",
-                        title: "Accessibility access",
-                        reason: "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type.",
+                        title: "Accessibility access needed",
+                        reason: "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type. Until then, macOS shows its own HUD.",
                         deniedMessage: "Accessibility access is not on yet. Turn on umbar in System Settings; the HUD switches on as soon as access is granted.",
                         pane: .accessibility,
-                        onNotNow: { wantsHUD = false },
                         onAllow: {
                             accessibilityPromptShown = true
                             Task {
-                                let granted = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
-                                accessibilityAuthorized = granted
-                                enableHUDIfWanted()
+                                accessibilityAuthorized = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
+                                if accessibilityAuthorized {
+                                    await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
+                                }
                             }
                         }
                     )
@@ -512,15 +504,8 @@ struct HUD: View {
         .onReceive(NotificationCenter.default.publisher(for: .accessibilityAuthorizationChanged)) { notification in
             if let granted = notification.userInfo?["granted"] as? Bool {
                 accessibilityAuthorized = granted
-                enableHUDIfWanted()
             }
         }
-    }
-
-    private func enableHUDIfWanted() {
-        guard wantsHUD, accessibilityAuthorized else { return }
-        wantsHUD = false
-        hudReplacement = true
     }
 }
 
@@ -611,7 +596,7 @@ struct Media: View {
 struct CalendarSettings: View {
     @ObservedObject private var calendarManager = CalendarManager.shared
     @Default(.showCalendar) var showCalendar: Bool
-    @Default(.hideCompletedReminders) var hideCompletedReminders
+    @Default(.showReminders) var showReminders
     @Default(.hideAllDayEvents) var hideAllDayEvents
     @Default(.autoScrollToNextEvent) var autoScrollToNextEvent
 
@@ -619,9 +604,6 @@ struct CalendarSettings: View {
         Form {
             Defaults.Toggle(key: .showCalendar) {
                 Text("Show calendar")
-            }
-            Defaults.Toggle(key: .hideCompletedReminders) {
-                Text("Hide completed reminders")
             }
             Defaults.Toggle(key: .hideAllDayEvents) {
                 Text("Hide all-day events")
@@ -667,39 +649,62 @@ struct CalendarSettings: View {
                     }
                 }
             }
-            Section(header: Text("Reminders")) {
-                if calendarManager.reminderPermission != .granted {
-                    PermissionPrompt(
-                        state: calendarManager.reminderPermission,
-                        systemImage: "checklist",
-                        title: "Reminders access",
-                        reason: "umbar needs access to Reminders to list your reminders next to your events. Your reminders never leave your Mac.",
-                        deniedMessage: "Reminders access is off. Turn it on for umbar in System Settings.",
-                        pane: .reminders,
-                        onAllow: {
-                            Task { await calendarManager.requestReminderAccess() }
-                        }
-                    )
-                } else {
-                    List {
-                        ForEach(calendarManager.reminderLists, id: \.id) { calendar in
-                            Toggle(
-                                isOn: Binding(
-                                    get: { calendarManager.getCalendarSelected(calendar) },
-                                    set: { isSelected in
-                                        Task {
-                                            await calendarManager.setCalendarSelected(
-                                                calendar, isSelected: isSelected)
-                                        }
-                                    }
-                                )
-                            ) {
-                                Text(calendar.title)
+            Section {
+                Defaults.Toggle(key: .showReminders) {
+                    Text("Show reminders")
+                }
+                .disabled(!showCalendar)
+                Defaults.Toggle(key: .hideCompletedReminders) {
+                    Text("Hide completed reminders")
+                }
+                .disabled(!showCalendar || !showReminders)
+            } header: {
+                Text("Reminders")
+            } footer: {
+                // AC-6R.13: reminders have no surface of their own in v1.
+                if !showCalendar {
+                    Text("Reminders appear in the calendar. Turn on Show calendar to see them.")
+                        .font(.caption)
+                        .foregroundStyle(permissionMutedText)
+                }
+            }
+            if showReminders {
+                Section {
+                    if calendarManager.reminderPermission != .granted {
+                        PermissionPrompt(
+                            state: calendarManager.reminderPermission,
+                            systemImage: "checklist",
+                            title: "Reminders access",
+                            reason: "umbar needs access to Reminders to list your reminders next to your events. Your reminders never leave your Mac.",
+                            deniedMessage: "Reminders access is off. Turn it on for umbar in System Settings.",
+                            pane: .reminders,
+                            onAllow: {
+                                Task { await calendarManager.requestReminderAccess() }
                             }
-                            .accentColor(lighterColor(from: calendar.color))
-                            .disabled(!showCalendar)
+                        )
+                    } else {
+                        List {
+                            ForEach(calendarManager.reminderLists, id: \.id) { calendar in
+                                Toggle(
+                                    isOn: Binding(
+                                        get: { calendarManager.getCalendarSelected(calendar) },
+                                        set: { isSelected in
+                                            Task {
+                                                await calendarManager.setCalendarSelected(
+                                                    calendar, isSelected: isSelected)
+                                            }
+                                        }
+                                    )
+                                ) {
+                                    Text(calendar.title)
+                                }
+                                .accentColor(lighterColor(from: calendar.color))
+                                .disabled(!showCalendar)
+                            }
                         }
                     }
+                } header: {
+                    Text("Reminder lists")
                 }
             }
         }

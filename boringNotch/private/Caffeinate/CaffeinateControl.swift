@@ -42,6 +42,7 @@ struct CaffeinateControl: View {
                         .padding(.horizontal, 6)
                         .frame(height: 20)
                         .background(Capsule().fill(.white.opacity(0.18)))
+                        .accessibilityLabel(Self.accessibilityLabel(for: duration))
                     }
                 }
                 cupButton(filled: false)
@@ -73,9 +74,19 @@ struct CaffeinateControl: View {
     private static func label(for duration: CaffeinateDuration) -> String {
         switch duration {
         case .indefinite: return "∞"
-        case .minutes15: return "15m"
-        case .hour1: return "1h"
-        case .hours2: return "2h"
+        case .minutes15: return String(localized: "caffeinate.duration.15m", defaultValue: "15m")
+        case .hour1: return String(localized: "caffeinate.duration.1h", defaultValue: "1h")
+        case .hours2: return String(localized: "caffeinate.duration.2h", defaultValue: "2h")
+        }
+    }
+
+    /// What VoiceOver reads for each chip; "∞" alone says nothing.
+    private static func accessibilityLabel(for duration: CaffeinateDuration) -> String {
+        switch duration {
+        case .indefinite: return String(localized: "caffeinate.duration.indefinite.a11y", defaultValue: "Until turned off")
+        case .minutes15: return String(localized: "caffeinate.duration.15m.a11y", defaultValue: "15 minutes")
+        case .hour1: return String(localized: "caffeinate.duration.1h.a11y", defaultValue: "1 hour")
+        case .hours2: return String(localized: "caffeinate.duration.2h.a11y", defaultValue: "2 hours")
         }
     }
 }

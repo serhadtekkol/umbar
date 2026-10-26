@@ -6,6 +6,7 @@
 //
 
 import Combine
+import Defaults
 import Foundation
 import IOKit.ps
 import IOKit.pwr_mgt
@@ -41,7 +42,16 @@ final class CaffeinateService: ObservableObject {
     private var tickTimer: Timer?
     private var batterySource: CFRunLoopSource?
 
-    private init() {}
+    private var enabledCancellable: AnyCancellable?
+
+    private init() {
+        // Switching the feature off in Settings ends a running session (AC-1.13).
+        enabledCancellable = Defaults.publisher(.caffeinateEnabled, options: [])
+            .sink { [weak self] change in
+                guard !change.newValue else { return }
+                Task { @MainActor in self?.stop() }
+            }
+    }
 
     /// Starts (or restarts with a new duration) a session.
     /// Refuses when already below the battery threshold on battery power,

@@ -61,7 +61,9 @@ struct BoringHeader: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
-                        CaffeinateControl()
+                        if Defaults[.caffeinateEnabled] {
+                            CaffeinateControl()
+                        }
                         if Defaults[.showBatteryIndicator] {
                             BoringBatteryView(
                                 batteryWidth: 30,

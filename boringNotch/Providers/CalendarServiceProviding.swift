@@ -7,6 +7,7 @@
 //  Modified by Alexander on 08/06/25
 //
 
+import Defaults
 import Foundation
 @preconcurrency import EventKit
 
@@ -44,10 +45,16 @@ class CalendarService: CalendarServiceProviding {
         }
     }
     
+    /// Reminders are read only while the Settings switch is on (AC-6R.1).
+    private func reads(_ entityType: EKEntityType) -> Bool {
+        guard hasAccess(to: entityType) else { return false }
+        return entityType != .reminder || Defaults[.showReminders]
+    }
+
     func calendars() async -> [CalendarModel] {
         var calendars: [EKCalendar] = []
         
-        for type in [EKEntityType.event, .reminder] where hasAccess(to: type) {
+        for type in [EKEntityType.event, .reminder] where reads(type) {
             calendars.append(contentsOf: store.calendars(for: type))
         }
         
@@ -73,7 +80,7 @@ class CalendarService: CalendarServiceProviding {
         }
         
         // Fetch reminders
-        if hasAccess(to: .reminder) {
+        if reads(.reminder) {
             let reminderCalendars = ekCalendars.filter { store.calendars(for: .reminder).contains($0) }
             events.append(contentsOf: await fetchReminders(from: start, to: end, calendars: reminderCalendars))
         }

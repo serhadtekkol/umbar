@@ -78,12 +78,18 @@ enum CaffeinatePolicy {
         return percent < lowBatteryThresholdPercent
     }
 
-    /// Compact label for the remaining time: "42m", "1h 05m", "59s".
+    /// Compact label for the remaining time: "42m", "1h 05m", "59s" in
+    /// English, "42 dk", "1 sa 05 dk", "59 sn" in Turkish.
     static func remainingLabel(_ seconds: TimeInterval) -> String {
         let total = Int(seconds.rounded(.up))
-        if total < 60 { return "\(total)s" }
+        if total < 60 {
+            return String(localized: "caffeinate.remaining.seconds", defaultValue: "\(total)s")
+        }
         let minutes = (total + 59) / 60
-        if minutes < 60 { return "\(minutes)m" }
-        return String(format: "%dh %02dm", minutes / 60, minutes % 60)
+        if minutes < 60 {
+            return String(localized: "caffeinate.remaining.minutes", defaultValue: "\(minutes)m")
+        }
+        let paddedMinutes = String(format: "%02d", minutes % 60)
+        return String(localized: "caffeinate.remaining.hoursMinutes", defaultValue: "\(minutes / 60)h \(paddedMinutes)m")
     }
 }

@@ -5,7 +5,6 @@
 //  Created by Harsh Vardhan  Goswami  on 02/08/24.
 //
 
-import AVFoundation
 import Combine
 import Defaults
 import KeyboardShortcuts
@@ -16,6 +15,12 @@ struct DynamicNotchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Default(.menubarIcon) var showMenuBarIcon
     @Environment(\.openWindow) var openWindow
+
+    init() {
+        // Before any other code reads or writes a default: tells a fresh
+        // install from an existing one (K13, #93).
+        DefaultsMigration.apply()
+    }
 
     var body: some Scene {
         MenuBarExtra("umbar", image: "MenuBarIcon", isInserted: $showMenuBarIcon) {
@@ -217,6 +222,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         EyeBreakManager.shared.start()
+        HUDAccessCard.shared.start()
         // Spike A2 prototype; inert unless clipboardMonitorEnabled is set.
         ClipboardMonitorController.shared.activate()
 
@@ -361,19 +367,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupDragDetectors()
 
+        // No launch ever plays a sound, onboarding included (card #76).
         if coordinator.firstLaunch {
             DispatchQueue.main.async {
                 self.showOnboardingWindow()
             }
-            playWelcomeSound()
         }
 
         previousScreens = NSScreen.screens
-    }
-
-    func playWelcomeSound() {
-        let audioPlayer = AudioPlayer()
-        audioPlayer.play(fileName: "boring", fileExtension: "m4a")
     }
 
     func deviceHasNotch() -> Bool {

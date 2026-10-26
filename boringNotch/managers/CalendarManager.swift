@@ -5,6 +5,7 @@
 //  Created by Harsh Vardhan  Goswami  on 08/09/24.
 //
 
+import Combine
 import Defaults
 import EventKit
 import SwiftUI
@@ -27,10 +28,18 @@ class CalendarManager: ObservableObject {
     private let calendarService = CalendarService()
 
     private var eventStoreChangedObserver: NSObjectProtocol?
+    private var showRemindersCancellable: AnyCancellable?
 
     private init() {
         self.currentWeekStartDate = CalendarManager.startOfDay(Date())
         setupEventStoreChangedObserver()
+        showRemindersCancellable = Defaults.publisher(.showReminders, options: [])
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.reloadCalendarAndReminderLists()
+                    await self?.updateEvents()
+                }
+            }
         refreshAuthorizationStatus()
         Task {
             await reloadCalendarAndReminderLists()

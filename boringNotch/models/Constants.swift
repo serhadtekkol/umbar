@@ -134,6 +134,11 @@ extension Defaults.Keys {
     static let showNotHumanFace = Key<Bool>("showNotHumanFace", default: false)
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
     static let showCalendar = Key<Bool>("showCalendar", default: false)
+    /// F6R: reminders next to the calendar's events, independent of it (AC-6R.1). On for fresh installs (K14).
+    /// Off means no reminder is read from EventKit and the Reminders permission is never asked.
+    /// Before K14 there was no switch and reminders showed whenever access was granted, which is
+    /// what `true` does, so existing installs need no migration.
+    static let showReminders = Key<Bool>("showReminders", default: true)
     static let hideCompletedReminders = Key<Bool>("hideCompletedReminders", default: true)
     /// The user closed the Reminders prompt in the notch calendar; Settings › Calendar still offers it.
     static let remindersPromptDismissed = Key<Bool>("remindersPromptDismissed", default: false)
@@ -173,9 +178,13 @@ extension Defaults.Keys {
     static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
     
     // MARK: HUD
-    static let hudReplacement = Key<Bool>("hudReplacement", default: false)
-    /// The Accessibility system prompt was shown once from the HUD setting; afterwards umbar sends the user to System Settings instead (card #59).
+    /// The user's choice. On by default for fresh installs (K13); existing installs keep theirs (DefaultsMigration).
+    /// It only takes effect once Accessibility is granted; until then macOS shows its own HUD (AC-15.4).
+    static let hudReplacement = Key<Bool>("hudReplacement", default: true)
+    /// The Accessibility system prompt was shown once; afterwards umbar sends the user to System Settings instead (card #59).
     static let accessibilityPromptShown = Key<Bool>("accessibilityPromptShown", default: false)
+    /// The notch's Accessibility explanation card appeared once; it never appears on its own again (AC-15.9).
+    static let hudAccessCardShown = Key<Bool>("hudAccessCardShown", default: false)
     static let inlineHUD = Key<Bool>("inlineHUD", default: false)
     static let enableGradient = Key<Bool>("enableGradient", default: false)
     static let systemEventIndicatorShadow = Key<Bool>("systemEventIndicatorShadow", default: false)
@@ -191,7 +200,8 @@ extension Defaults.Keys {
     static let openShelfByDefault = Key<Bool>("openShelfByDefault", default: true)
     static let shelfTapToOpen = Key<Bool>("shelfTapToOpen", default: true)
     static let copyOnDrag = Key<Bool>("copyOnDrag", default: false)
-    static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)
+    /// On for fresh installs (#93, user decision 2026-10-26); existing installs keep theirs (DefaultsMigration).
+    static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: true)
     static let expandedDragDetection = Key<Bool>("expandedDragDetection", default: true)
     
     // MARK: Calendar
