@@ -1,0 +1,36 @@
+Vendored: ungive/mediaremote-adapter
+Source:   https://github.com/ungive/mediaremote-adapter
+Tag:      v0.7.7
+Commit:   e3ff5021eb0875858bd05f48d2e9ba2e962d1cf6 (2026-09-03)
+License:  BSD-3-Clause (see LICENSE in this directory)
+
+Why it is vendored
+  Upstream boring.notch shipped a prebuilt, ad-hoc signed
+  MediaRemoteAdapter.framework and an unsigned MediaRemoteAdapterTestClient
+  with no source or build step (security card #38). This copy is the exact
+  upstream source at the commit above, built by the "MediaRemoteAdapter"
+  framework target in boringNotch.xcodeproj and signed with the app.
+
+What is included (unmodified)
+  bin/mediaremote-adapter.pl    -> mediaremote-adapter.pl
+  include/MediaRemoteAdapter.h  -> Sources/include/
+  src/adapter, src/private,
+  src/utility                   -> Sources/src/
+  src/test/NowPlayingTest.h     -> Sources/src/test/ (imported by adapter/test.m)
+
+What is intentionally left out
+  src/test/main.m, src/test/NowPlayingTest.m (the MediaRemoteAdapterTestClient
+  executable). The app never runs the adapter's "test" function, so no test
+  client is built or shipped.
+
+Runtime contract
+  The framework is embedded in Contents/Frameworks but NOT linked into the app,
+  so it never loads into the app process. It is loaded only by /usr/bin/perl
+  running mediaremote-adapter.pl, and only when the user enables
+  "Use system Now Playing" in Settings > Media (off by default).
+
+Updating
+  1. git -C <clone> checkout <new tag>; diff against this directory.
+  2. Re-copy the files listed above; update Tag/Commit here.
+  3. Check CMakeLists.txt upstream for new sources/frameworks and mirror them in
+     the MediaRemoteAdapter target build settings.
