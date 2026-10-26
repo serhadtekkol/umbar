@@ -102,8 +102,6 @@ final class ShelfStateViewModel: ObservableObject {
                     } else {
                         item.cleanupStoredData()
                     }
-                default:
-                    keep.append(item)
                 }
             }
             await MainActor.run { self.items = keep }

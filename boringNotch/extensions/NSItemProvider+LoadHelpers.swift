@@ -87,18 +87,6 @@ extension NSItemProvider {
         return nil
     }
 
-    func extractText() async -> String? {
-        let textTypes = [UTType.utf8PlainText.identifier, UTType.plainText.identifier]
-
-        for typeIdentifier in textTypes where self.hasItemConformingToTypeIdentifier(typeIdentifier) {
-            if let text = await loadText(typeIdentifier: typeIdentifier) {
-                return text
-            }
-        }
-
-        return nil
-    }
-
     /// Loads a file URL from the provider for the given type identifier.
     func loadFileURL(typeIdentifier: String) async -> URL? {
         await withCheckedContinuation { (cont: CheckedContinuation<URL?, Never>) in
@@ -176,24 +164,5 @@ extension NSItemProvider {
         }
     }
 
-    /// Loads text from the provider for the given type identifier.
-    func loadText(typeIdentifier: String) async -> String? {
-        await withCheckedContinuation { (cont: CheckedContinuation<String?, Never>) in
-            self.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { item, error in
-                if error != nil {
-                    cont.resume(returning: nil)
-                    return
-                }
 
-                if let string = item as? String {
-                    cont.resume(returning: string)
-                } else if let data = item as? Data,
-                          let string = String(data: data, encoding: .utf8) {
-                    cont.resume(returning: string)
-                } else {
-                    cont.resume(returning: nil)
-                }
-            }
-        }
-    }
 }

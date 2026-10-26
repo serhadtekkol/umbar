@@ -35,14 +35,15 @@ struct ShelfDropService {
                 if let bookmark = createBookmark(for: url) {
                     return await ShelfItem(kind: .file(bookmark: bookmark), isTemporary: false)
                 }
-            } else {
-                return await ShelfItem(kind: .link(url: url), isTemporary: false)
             }
+            // Web links are not shelf items (AC-3.11).
             return nil
         }
-        
-        if let text = await provider.extractText() {
-            return await ShelfItem(kind: .text(string: text), isTemporary: false)
+
+        // Dragged text also conforms to public.data; check it before the data
+        // fallback so a text selection is rejected instead of becoming a file.
+        if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+            return nil
         }
         
         if let data = await provider.loadData() {

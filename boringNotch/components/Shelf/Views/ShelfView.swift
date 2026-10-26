@@ -18,7 +18,7 @@ struct ShelfView: View {
     var body: some View {
         HStack(spacing: 12) {
             panel
-                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
+                .onDrop(of: [.fileURL, .url, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
                     handleDrop(providers: providers)
                 }
         }
@@ -41,13 +41,7 @@ struct ShelfView: View {
         
         let selectedItems = selection.selectedItems(in: tvm.items)
         let urls: [URL] = selectedItems.compactMap { item in
-            if let fileURL = item.fileURL {
-                return fileURL
-            }
-            if case .link(let url) = item.kind {
-                return url
-            }
-            return nil
+            item.fileURL
         }
         
         if !urls.isEmpty {
@@ -100,7 +94,7 @@ struct ShelfView: View {
                 }
                 .padding(-spacing)
                 .scrollIndicators(.never)
-                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
+                .onDrop(of: [.fileURL, .url, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
                     handleDrop(providers: providers)
                 }
             }

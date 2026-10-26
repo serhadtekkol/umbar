@@ -59,10 +59,6 @@ final class ShelfItemViewModel: ObservableObject {
                 provider.registerObject(item.displayName as NSString, visibility: .all)
             }
             return provider
-        case .text(let string):
-            return NSItemProvider(object: string as NSString)
-        case .link(let url):
-            return NSItemProvider(object: url as NSURL)
         }
     }
 
@@ -78,10 +74,6 @@ final class ShelfItemViewModel: ObservableObject {
                 } else {
                     textItems.append(item.displayName)
                 }
-            case .text(let string):
-                textItems.append(string)
-            case .link:
-                break
             }
         }
         if !urls.isEmpty {
@@ -124,22 +116,11 @@ final class ShelfItemViewModel: ObservableObject {
         Task {
             var itemsToShare: [Any] = []
             var fileURLs: [URL] = []
-            if case .text(let text) = item.kind {
-                itemsToShare.append(text)
-            } else {
-                for item in ShelfSelectionModel.shared.selectedItems(in: ShelfStateViewModel.shared.items) {
-                    switch item.kind {
-                    case .file:
-                        // Use immediate update for user-initiated share action
-                        if let url = ShelfStateViewModel.shared.resolveAndUpdateBookmark(for: item) {
-                            itemsToShare.append(url)
-                            fileURLs.append(url)
-                        }
-                    case .text(let string):
-                        itemsToShare.append(string)
-                    case .link(let url):
-                        itemsToShare.append(url)
-                    }
+            for item in ShelfSelectionModel.shared.selectedItems(in: ShelfStateViewModel.shared.items) {
+                // Use immediate update for user-initiated share action
+                if let url = ShelfStateViewModel.shared.resolveAndUpdateBookmark(for: item) {
+                    itemsToShare.append(url)
+                    fileURLs.append(url)
                 }
             }
             
@@ -177,21 +158,10 @@ final class ShelfItemViewModel: ObservableObject {
 
     // MARK: - Context Menu helpers (extracted from view)
     func loadOpenWithApps() -> [URL] {
-        // Support both files and link items. For link items we ask NSWorkspace for apps that can open the URL (browsers).
         if let fileURL = item.fileURL {
             var results: [URL] = NSWorkspace.shared.urlsForApplications(toOpen: fileURL)
             if results.isEmpty {
                 if let uti = try? fileURL.resourceValues(forKeys: [.contentTypeKey]).contentType {
-                    results = NSWorkspace.shared.urlsForApplications(toOpen: uti)
-                }
-            }
-            let unique = Array(Set(results))
-            let sorted = unique.sorted { appDisplayName(for: $0) < appDisplayName(for: $1) }
-            return sorted
-        } else if case .link(let url) = item.kind {
-            var results: [URL] = NSWorkspace.shared.urlsForApplications(toOpen: url)
-            if results.isEmpty {
-                if let uti = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType {
                     results = NSWorkspace.shared.urlsForApplications(toOpen: uti)
                 }
             }
@@ -217,15 +187,10 @@ final class ShelfItemViewModel: ObservableObject {
 
         let selectedItems = ShelfSelectionModel.shared.selectedItems(in: ShelfStateViewModel.shared.items)
         let selectedFileURLs = selectedItems.compactMap { $0.fileURL }
-        let selectedLinkURLs: [URL] = selectedItems.compactMap { itm in
-            if case .link(let url) = itm.kind { return url }
-            return nil
-        }
         let selectedFolderURLs = selectedFileURLs.filter { isDirectory($0) }
         // URLs valid for Open/Open With (exclude folders)
         let selectedOpenableURLs = selectedItems.compactMap { itm -> URL? in
             if let u = itm.fileURL { return isDirectory(u) ? nil : u }
-            if case .link(let url) = itm.kind { return url }
             return nil
         }
 
@@ -240,7 +205,6 @@ final class ShelfItemViewModel: ObservableObject {
             // Choose a representative URL to compute apps (prefer current item if not a folder)
             let baseURLForApps: URL? = {
                 if let u = item.fileURL, !isDirectory(u) { return u }
-                if case .link(let u) = item.kind { return u }
                 return selectedOpenableURLs.first
             }()
 
@@ -304,7 +268,7 @@ final class ShelfItemViewModel: ObservableObject {
 
         if !selectedFileURLs.isEmpty { addMenuItem(title: "Show in Finder") }
         // Allow Quick Look for files and link URLs
-        if !selectedFileURLs.isEmpty || !selectedLinkURLs.isEmpty {
+        if !selectedFileURLs.isEmpty {
             // Add Quick Look menu item
             let quickLookItem = NSMenuItem(title: "Quick Look", action: nil, keyEquivalent: "")
             menu.addItem(quickLookItem)
@@ -428,8 +392,6 @@ final class ShelfItemViewModel: ObservableObject {
                         for itm in selected {
                             if let fileURL = itm.fileURL {
                                 allSelectedURLs.append(fileURL)
-                            } else if case .link(let url) = itm.kind {
-                                allSelectedURLs.append(url)
                             }
                         }
 
@@ -458,13 +420,7 @@ final class ShelfItemViewModel: ObservableObject {
                 // Handle all selected items for Quick Look, not just the clicked item
                 let selected = ShelfSelectionModel.shared.selectedItems(in: ShelfStateViewModel.shared.items)
                 let urls: [URL] = selected.compactMap { item in
-                    if let fileURL = item.fileURL {
-                        return fileURL
-                    }
-                    if case .link(let url) = item.kind {
-                        return url
-                    }
-                    return nil
+                    item.fileURL
                 }
                 if !urls.isEmpty {
                     viewModel.onQuickLookRequest?(urls)
@@ -590,9 +546,6 @@ final class ShelfItemViewModel: ObservableObject {
             if let fileURL = item.fileURL {
                 targetURL = fileURL
                 needsSecurityScope = true
-            } else if case .link(let url) = item.kind {
-                targetURL = url
-                needsSecurityScope = false
             } else {
                 targetURL = nil
                 needsSecurityScope = false
@@ -1091,8 +1044,6 @@ final class ShelfItemViewModel: ObservableObject {
     private func defaultAppURL() -> URL? {
         if let fileURL = item.fileURL {
             return NSWorkspace.shared.urlForApplication(toOpen: fileURL)
-        } else if case .link(let url) = item.kind {
-            return NSWorkspace.shared.urlForApplication(toOpen: url)
         }
         return nil
     }

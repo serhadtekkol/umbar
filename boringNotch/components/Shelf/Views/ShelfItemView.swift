@@ -310,15 +310,6 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
                 pasteboardItem.setString(url.absoluteString, forType: .fileURL)
                 pasteboardItem.setString(url.path, forType: .string)
                 return pasteboardItem
-
-            case .text(let string):
-                pasteboardItem.setString(string, forType: .string)
-                return pasteboardItem
-
-            case .link(let url):
-                pasteboardItem.setString(url.absoluteString, forType: .URL)
-                pasteboardItem.setString(url.absoluteString, forType: .string)
-                return pasteboardItem
             }
         }
         

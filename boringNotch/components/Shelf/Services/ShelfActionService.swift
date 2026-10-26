@@ -18,11 +18,6 @@ enum ShelfActionService {
             handleBookmarkedFile(bookmark) { url in
                 NSWorkspace.shared.open(url)
             }
-        case .link(let url):
-            NSWorkspace.shared.open(url)
-        case .text(let string):
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(string, forType: .string)
         }
     }
 
