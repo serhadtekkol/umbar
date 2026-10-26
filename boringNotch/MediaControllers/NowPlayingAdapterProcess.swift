@@ -21,6 +21,10 @@ import Foundation
 ///     itself (`UMBAR_ADAPTER_PARENT_PID`, see
 ///     mediaremote-adapter/Sources/umbar/UmbarParentWatchdog.m) and exits.
 ///
+/// A child that writes more than `AdapterLineBuffer.defaultLimit` bytes
+/// without a newline is terminated and reported through `onUnexpectedExit`
+/// like any other failure (card #70), so app memory stays bounded.
+///
 /// Threading: `start`, `stop` and the callbacks' registration happen on the
 /// main thread. `onLine` is invoked on a private serial queue (lines can be
 /// several hundred KB of base64 artwork, so decoding stays off the main
@@ -39,7 +43,7 @@ final class NowPlayingAdapterProcess {
     private var terminationObserver: NSObjectProtocol?
 
     // Touched on `ioQueue` only.
-    private var stdoutBuffer = Data()
+    private var stdoutLines = AdapterLineBuffer()
     private var stderrTail = Data()
     private static let stderrTailLimit = 2048
 
@@ -87,7 +91,7 @@ final class NowPlayingAdapterProcess {
         child.standardError = stderrPipe
 
         ioQueue.sync {
-            stdoutBuffer.removeAll(keepingCapacity: false)
+            stdoutLines = AdapterLineBuffer()
             stderrTail.removeAll(keepingCapacity: false)
         }
 
@@ -97,7 +101,10 @@ final class NowPlayingAdapterProcess {
                 handle.readabilityHandler = nil
                 return
             }
-            self?.ioQueue.async { self?.consumeStdout(data) }
+            // sync, not async: the next read waits until this chunk is
+            // consumed, so a fast writer cannot pile chunks up in the queue
+            // behind the line buffer's cap (card #70).
+            self?.ioQueue.sync { self?.consumeStdout(data, generation: myGeneration) }
         }
         // Must be drained: a full stderr pipe (64 KB) would block the child.
         stderrPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
@@ -106,7 +113,7 @@ final class NowPlayingAdapterProcess {
                 handle.readabilityHandler = nil
                 return
             }
-            self?.ioQueue.async { self?.consumeStderr(data) }
+            self?.ioQueue.sync { self?.consumeStderr(data) }
         }
 
         child.terminationHandler = { [weak self] finished in
@@ -163,14 +170,28 @@ final class NowPlayingAdapterProcess {
 
     // MARK: - I/O (ioQueue)
 
-    private func consumeStdout(_ data: Data) {
-        stdoutBuffer.append(data)
-        while let newline = stdoutBuffer.firstIndex(of: UInt8(ascii: "\n")) {
-            let line = stdoutBuffer[stdoutBuffer.startIndex..<newline]
-            stdoutBuffer.removeSubrange(stdoutBuffer.startIndex...newline)
-            if !line.isEmpty {
-                onLine?(Data(line))
+    private func consumeStdout(_ data: Data, generation childGeneration: Int) {
+        let wasOverflowed = stdoutLines.hasOverflowed
+        for line in stdoutLines.append(data) {
+            onLine?(line)
+        }
+        if stdoutLines.hasOverflowed && !wasOverflowed {
+            DispatchQueue.main.async { [weak self] in
+                self?.terminateForOverflow(generation: childGeneration)
             }
+        }
+    }
+
+    /// Main thread. Ends the child *without* bumping `generation`, so its
+    /// exit reaches `onUnexpectedExit` and the supervisor treats it as a
+    /// failure (backoff restart, fallback) rather than as a requested stop.
+    private func terminateForOverflow(generation childGeneration: Int) {
+        guard generation == childGeneration, let child = process, child.isRunning else { return }
+        NSLog("[NowPlaying] adapter wrote a line over \(AdapterLineBuffer.defaultLimit) bytes; buffer dropped, terminating child")
+        let pid = child.processIdentifier
+        child.terminate()
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 1) {
+            if child.isRunning { kill(pid, SIGKILL) }
         }
     }
 
@@ -179,6 +200,70 @@ final class NowPlayingAdapterProcess {
         if stderrTail.count > Self.stderrTailLimit {
             stderrTail = stderrTail.suffix(Self.stderrTailLimit)
         }
+    }
+}
+
+/// Splits the adapter's stdout into lines while bounding memory (card #70).
+///
+/// Without a bound, a child that never writes `\n` grows the app's memory
+/// until it dies. When the unterminated tail exceeds `limit`, the buffer is
+/// dropped and the buffer *latches*: every later byte is discarded, because
+/// the stream is no longer line-aligned and the owner is expected to end the
+/// child. `limit` is far above the largest legitimate line (a few MB of
+/// base64 artwork).
+///
+/// Pure value type; no I/O.
+struct AdapterLineBuffer {
+    static let defaultLimit = 8 * 1024 * 1024
+
+    let limit: Int
+    private(set) var hasOverflowed = false
+    private var pending = Data()
+    /// Bytes of `pending` already known to contain no newline, so each byte
+    /// is scanned once even for a multi-megabyte line.
+    private var scannedCount = 0
+
+    init(limit: Int = AdapterLineBuffer.defaultLimit) {
+        self.limit = limit
+    }
+
+    /// Number of buffered bytes without a newline yet.
+    var pendingCount: Int { pending.count }
+
+    /// Appends a chunk and returns the complete, non-empty lines it finished,
+    /// without their trailing newline. Returns `[]` once overflowed.
+    mutating func append(_ chunk: Data) -> [Data] {
+        guard !hasOverflowed else { return [] }
+        // A chunk that cannot finish the pending line and would push it past
+        // the limit is refused before it is copied, so the buffer itself
+        // never holds more than `limit` bytes.
+        if pending.count + chunk.count > limit, !chunk.contains(UInt8(ascii: "\n")) {
+            overflow()
+            return []
+        }
+        pending.append(chunk)
+        var lines: [Data] = []
+        var lineStart = pending.startIndex
+        var cursor = pending.startIndex + scannedCount
+        while let newline = pending[cursor...].firstIndex(of: UInt8(ascii: "\n")) {
+            if newline > lineStart {
+                lines.append(Data(pending[lineStart..<newline]))
+            }
+            lineStart = newline + 1
+            cursor = lineStart
+        }
+        pending.removeSubrange(pending.startIndex..<lineStart)
+        scannedCount = pending.count
+        if pending.count > limit {
+            overflow()
+        }
+        return lines
+    }
+
+    private mutating func overflow() {
+        hasOverflowed = true
+        pending = Data()
+        scannedCount = 0
     }
 }
 
