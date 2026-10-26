@@ -42,7 +42,7 @@ struct ShelfDropService {
 
         // Dragged text also conforms to public.data; check it before the data
         // fallback so a text selection is rejected instead of becoming a file.
-        if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+        if isTextOnlyDrop(registeredTypeIdentifiers: provider.registeredTypeIdentifiers) {
             return nil
         }
         
@@ -63,6 +63,21 @@ struct ShelfDropService {
         return nil
     }
     
+    /// Decides whether a drag that carries no file URL is a text drag (AC-3.11).
+    ///
+    /// Checks conformance to `public.text` rather than only `public.plain-text`:
+    /// apps that drag rich text or HTML without a plain-text flavor (RTF,
+    /// HTML, ...) would otherwise fall through to the raw-data fallback and be
+    /// saved as a temp file (card #60). Callers must try file-URL extraction
+    /// first; a Finder text file also advertises text types but is a file.
+    ///
+    /// Pure on purpose so it can be tested without constructing providers.
+    static func isTextOnlyDrop(registeredTypeIdentifiers: [String]) -> Bool {
+        registeredTypeIdentifiers.contains { identifier in
+            UTType(identifier)?.conforms(to: .text) ?? false
+        }
+    }
+
     private static func createBookmark(for url: URL) -> Data? {
         return (try? Bookmark(url: url))?.data
     }
