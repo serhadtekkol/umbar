@@ -135,6 +135,8 @@ extension Defaults.Keys {
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
     static let showCalendar = Key<Bool>("showCalendar", default: false)
     static let hideCompletedReminders = Key<Bool>("hideCompletedReminders", default: true)
+    /// The user closed the Reminders prompt in the notch calendar; Settings › Calendar still offers it.
+    static let remindersPromptDismissed = Key<Bool>("remindersPromptDismissed", default: false)
     static let sliderColor = Key<SliderColorEnum>(
         "sliderUseAlbumArtColor",
         default: SliderColorEnum.white
@@ -172,6 +174,8 @@ extension Defaults.Keys {
     
     // MARK: HUD
     static let hudReplacement = Key<Bool>("hudReplacement", default: false)
+    /// The Accessibility system prompt was shown once from the HUD setting; afterwards umbar sends the user to System Settings instead (card #59).
+    static let accessibilityPromptShown = Key<Bool>("accessibilityPromptShown", default: false)
     static let inlineHUD = Key<Bool>("inlineHUD", default: false)
     static let enableGradient = Key<Bool>("enableGradient", default: false)
     static let systemEventIndicatorShadow = Key<Bool>("systemEventIndicatorShadow", default: false)

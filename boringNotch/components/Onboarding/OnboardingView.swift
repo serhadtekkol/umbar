@@ -7,128 +7,47 @@
 
 import SwiftUI
 
+/// Onboarding is welcome + one overview screen. It never asks for a system
+/// permission (AC-1.12, card #59): Calendar and Reminders are requested from
+/// the calendar widget, Accessibility from the HUD setting, each on first use.
+/// The music source defaults to system Now Playing and is changed in Settings.
 enum OnboardingStep {
     case welcome
-    case calendarPermission
-    case remindersPermission
-    case accessibilityPermission
-    case musicPermission
-    case finished
+    case overview
 }
-
-private let calendarService = CalendarService()
 
 struct OnboardingView: View {
     @State var step: OnboardingStep = .welcome
     let onFinish: () -> Void
     let onOpenSettings: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         ZStack {
             switch step {
             case .welcome:
                 WelcomeView {
-                    withAnimation(.easeInOut(duration: 0.6)) {
-                        step = .calendarPermission
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+                        step = .overview
                     }
                 }
                 .transition(.opacity)
 
-            case .calendarPermission:
-                PermissionRequestView(
-                    icon: Image(systemName: "calendar"),
-                    title: "Enable Calendar Access",
-                    description: "umbar can show all your upcoming events in one place. Access to your calendar is needed to display your schedule.",
-                    privacyNote: "Your calendar data is only used to show your events and is never shared.",
-                    onAllow: {
-                        Task {
-                                await requestCalendarPermission()
-                                withAnimation(.easeInOut(duration: 0.6)) {
-                                    step = .remindersPermission
-                                }
-                        }
+            case .overview:
+                OnboardingFinishView(
+                    onFinish: {
+                        BoringViewCoordinator.shared.firstLaunch = false
+                        onFinish()
                     },
-                    onSkip: {
-                            withAnimation(.easeInOut(duration: 0.6)) {
-                                step = .remindersPermission
-                            }
+                    onOpenSettings: {
+                        BoringViewCoordinator.shared.firstLaunch = false
+                        onOpenSettings()
                     }
                 )
                 .transition(.opacity)
-
-                case .remindersPermission:
-                    PermissionRequestView(
-                        icon: Image(systemName: "checklist"),
-                        title: "Enable Reminders Access",
-                        description: "umbar can show your scheduled reminders alongside your calendar events. Access to Reminders is needed to display your reminders.",
-                        privacyNote: "Your reminders data is only used to show your reminders and is never shared.",
-                        onAllow: {
-                            Task {
-                                await requestRemindersPermission()
-                                withAnimation(.easeInOut(duration: 0.6)) {
-                                    step = .accessibilityPermission
-                                }
-                            }
-                        },
-                        onSkip: {
-                            withAnimation(.easeInOut(duration: 0.6)) {
-                                step = .accessibilityPermission
-                            }
-                        }
-                    )
-                    .transition(.opacity)
-                
-            case .accessibilityPermission:
-                PermissionRequestView(
-                    icon: Image(systemName: "hand.raised.fill"),
-                    title: "Enable Accessibility Access",
-                    description: "Accessibility access is required to replace system notifications with the umbar HUD. This allows the app to intercept media and brightness events to display custom HUD overlays.",
-                    privacyNote: "Accessibility access is used only to improve media and brightness notifications. No data is collected or shared.",
-                    onAllow: {
-                        Task {
-                            await requestAccessibilityPermission()
-                            withAnimation(.easeInOut(duration: 0.6)) {
-                                step = .musicPermission
-                            }
-                        }
-                    },
-                    onSkip: {
-                        withAnimation(.easeInOut(duration: 0.6)) {
-                            step = .musicPermission
-                        }
-                    }
-                )
-                .transition(.opacity)
-                
-            case .musicPermission:
-                MusicControllerSelectionView(
-                    onContinue: {
-                        withAnimation(.easeInOut(duration: 0.6)) {
-                            BoringViewCoordinator.shared.firstLaunch = false
-                            step = .finished
-                        }
-                    }
-                )
-                .transition(.opacity)
-
-            case .finished:
-                OnboardingFinishView(onFinish: onFinish, onOpenSettings: onOpenSettings)
             }
         }
         .frame(width: 400, height: 600)
-    }
-
-    // MARK: - Permission Request Logic
-
-    func requestCalendarPermission() async {
-        _ = try? await calendarService.requestAccess(to: .event)
-    }
-
-    func requestRemindersPermission() async {
-        _ = try? await calendarService.requestAccess(to: .reminder)
-    }
-    
-    func requestAccessibilityPermission() async {
-        await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
     }
 }

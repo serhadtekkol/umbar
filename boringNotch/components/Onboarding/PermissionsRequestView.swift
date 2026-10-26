@@ -4,59 +4,213 @@
 //
 //  Created by Alexander on 2025-06-23.
 //
+//  In-context permission prompts (AC-1.12, card #59). Nothing here asks the
+//  system for a permission on its own: every system dialog starts from an
+//  explicit "Allow Access" click, after a one-sentence reason. The file keeps
+//  its upstream name so the Xcode project needs no change; it is shared by
+//  Settings and the notch, not only by onboarding.
+//
 
+import AppKit
+import EventKit
 import SwiftUI
 
-struct PermissionRequestView: View {
-    let icon: Image
-    let title: String
-    let description: String
-    let privacyNote: String?
+/// The three states a permission prompt distinguishes.
+enum PermissionState: Equatable {
+    case notDetermined
+    case granted
+    case denied
+
+    init(_ status: EKAuthorizationStatus) {
+        switch status {
+        case .fullAccess:
+            self = .granted
+        case .notDetermined:
+            self = .notDetermined
+        default:
+            // .writeOnly cannot read events, so for umbar it is as good as
+            // .denied; .restricted can only be changed in System Settings.
+            self = .denied
+        }
+    }
+}
+
+/// The System Settings › Privacy & Security pane behind each permission.
+enum PrivacyPane: String {
+    case calendars = "Privacy_Calendars"
+    case reminders = "Privacy_Reminders"
+    case accessibility = "Privacy_Accessibility"
+
+    func open() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(rawValue)") else {
+            return
+        }
+        NSWorkspace.shared.open(url)
+    }
+}
+
+/// Secondary text on Settings and onboarding surfaces. `.secondary`
+/// (secondaryLabelColor) measures under 4.5:1 on the light materials at
+/// subheadline size, so muted copy uses the primary label at reduced opacity.
+var permissionMutedText: some ShapeStyle { HierarchicalShapeStyle.primary.opacity(0.7) }
+
+// MARK: - Settings form
+
+/// Inline pre-prompt for a Settings form section. Renders nothing once the
+/// permission is granted.
+struct PermissionPrompt: View {
+    let state: PermissionState
+    let systemImage: String
+    let title: LocalizedStringKey
+    let reason: LocalizedStringKey
+    let deniedMessage: LocalizedStringKey
+    let pane: PrivacyPane
+    var onNotNow: (() -> Void)? = nil
     let onAllow: () -> Void
-    let onSkip: () -> Void
 
     var body: some View {
-        VStack(spacing: 28) {
-            icon
-                .resizable()
-                .scaledToFit()
-                .frame(width: 70, height: 56)
-                .foregroundColor(.effectiveAccent)
-                .padding(.top, 32)
+        if state != .granted {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: state == .denied ? "exclamationmark.circle" : systemImage)
+                    .foregroundStyle(state == .denied ? AnyShapeStyle(.primary) : AnyShapeStyle(Color.effectiveAccent))
+                    .accessibilityHidden(true)
 
-            Text(title)
-                .font(.title)
-                .fontWeight(.semibold)
-
-            Text(description)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-
-            if let privacyNote = privacyNote {
-                HStack(spacing: 8) {
-                    Image(systemName: "lock.shield")
-                        .foregroundColor(.secondary)
-                    Text(privacyNote)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.headline)
+                    Text(state == .denied ? deniedMessage : reason)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.leading)
-                }
-                .padding(.bottom, 8)
-                .padding(.horizontal)
-            }
+                        .foregroundStyle(permissionMutedText)
+                        .fixedSize(horizontal: false, vertical: true)
 
-            HStack {
-                Button("Not Now") { onSkip() }
-                    .buttonStyle(.bordered)
-                Button("Allow Access") { onAllow() }
-                    .buttonStyle(.borderedProminent)
+                    HStack(spacing: 8) {
+                        if state == .denied {
+                            Button("Open System Settings") { pane.open() }
+                        } else {
+                            Button("Allow Access", action: onAllow)
+                        }
+                        if let onNotNow {
+                            Button("Not Now", action: onNotNow)
+                        }
+                    }
+                    .controlSize(.regular)
+                    .padding(.top, 2)
+                }
+                Spacer(minLength: 0)
             }
-            .padding(.top, 10)
+            .padding(.vertical, 4)
+            .accessibilityElement(children: .contain)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .background(
-            VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
-                .ignoresSafeArea()
-        )
+    }
+}
+
+// MARK: - Notch
+
+/// White capsule on the always-black notch: 21:1 label contrast, independent
+/// of the user's accent colour.
+struct NotchCapsuleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.black)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(.white))
+            .opacity(configuration.isPressed ? 0.75 : 1)
+            .contentShape(Capsule())
+    }
+}
+
+/// Full-size pre-prompt that stands in for a notch widget until the
+/// permission it needs is granted.
+struct NotchPermissionPrompt: View {
+    let state: PermissionState
+    let systemImage: String
+    let title: LocalizedStringKey
+    let reason: LocalizedStringKey
+    let deniedMessage: LocalizedStringKey
+    let pane: PrivacyPane
+    let onAllow: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: state == .denied ? "exclamationmark.circle" : systemImage)
+                    .accessibilityHidden(true)
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+
+            Text(state == .denied ? deniedMessage : reason)
+                .font(.caption)
+                .foregroundStyle(Color(white: 0.65))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+
+            Group {
+                if state == .denied {
+                    Button("Open System Settings") { pane.open() }
+                } else {
+                    Button("Allow Access", action: onAllow)
+                }
+            }
+            .buttonStyle(NotchCapsuleButtonStyle())
+        }
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// One-row prompt for a secondary permission inside a notch widget that
+/// already works without it (Reminders inside the calendar).
+struct NotchPermissionBanner: View {
+    let state: PermissionState
+    let systemImage: String
+    let reason: LocalizedStringKey
+    let deniedMessage: LocalizedStringKey
+    let pane: PrivacyPane
+    let onAllow: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 6) {
+            Image(systemName: state == .denied ? "exclamationmark.circle" : systemImage)
+                .font(.caption)
+                .foregroundStyle(.white)
+                .accessibilityHidden(true)
+
+            Text(state == .denied ? deniedMessage : reason)
+                .font(.caption2)
+                .foregroundStyle(Color(white: 0.65))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+
+            Group {
+                if state == .denied {
+                    Button("Settings") { pane.open() }
+                } else {
+                    Button("Allow", action: onAllow)
+                }
+            }
+            .buttonStyle(NotchCapsuleButtonStyle())
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color(white: 0.65))
+                    .frame(width: 16, height: 16)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Dismiss"))
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
     }
 }

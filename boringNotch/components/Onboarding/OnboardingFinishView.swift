@@ -4,7 +4,9 @@
 //
 //  Created by Alexander on 2025-06-23.
 //
-
+//  The last onboarding screen: what umbar does, and the promise that
+//  permissions are asked for in context, not now (AC-1.12, card #59).
+//
 
 import SwiftUI
 
@@ -13,42 +15,68 @@ struct OnboardingFinishView: View {
     let onOpenSettings: () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("What umbar can do")
+                    .font(.title)
+                    .fontWeight(.semibold)
+                Text("Everything lives in the notch. Move the pointer over it or click it to open.")
+                    .font(.body)
+                    .foregroundStyle(permissionMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 44)
+            .padding(.bottom, 28)
 
-            Image(systemName: "sparkles")
-                .font(.system(size: 60))
-                .foregroundColor(.effectiveAccent)
-                .padding()
+            VStack(alignment: .leading, spacing: 18) {
+                FeatureRow(
+                    systemImage: "music.note",
+                    title: "Now Playing",
+                    detail: "Controls for whatever is playing on your Mac."
+                )
+                FeatureRow(
+                    systemImage: "calendar",
+                    title: "Calendar and reminders",
+                    detail: "Today's events and reminders at a glance. Turn it on in Settings."
+                )
+                FeatureRow(
+                    systemImage: "tray",
+                    title: "File shelf",
+                    detail: "Drop files on the notch to keep them close at hand."
+                )
+                FeatureRow(
+                    systemImage: "speaker.wave.2",
+                    title: "Volume and brightness indicator",
+                    detail: "A notch-style replacement for the system indicators. Turn it on in Settings."
+                )
+            }
 
-            Text("You're All Set!")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+            Spacer(minLength: 24)
 
-            Text("You can now enjoy the app. If you want to tweak things further, you can always visit the settings.")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            
-            Spacer()
-            Spacer()
+            Label {
+                Text("No permissions are requested now. When a feature needs your calendar, reminders or Accessibility, umbar tells you why and asks you then.")
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "lock.shield")
+                    .accessibilityHidden(true)
+            }
+            .font(.subheadline)
+            .foregroundStyle(permissionMutedText)
 
-            VStack(spacing: 12) {
-                Button(action: onOpenSettings) {
-                    Label("Customize in Settings", systemImage: "gear")
-                        .controlSize(.large)
-                }
-                .controlSize(.large)
-
+            HStack(spacing: 12) {
+                Button("Customize in Settings", action: onOpenSettings)
+                    .controlSize(.large)
+                Spacer(minLength: 0)
                 Button("Finish", action: onFinish)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .keyboardShortcut(.defaultAction)
             }
-            .padding(24)
+            .padding(.top, 20)
+            .padding(.bottom, 28)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
             VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
                 .ignoresSafeArea()
@@ -56,6 +84,32 @@ struct OnboardingFinishView: View {
     }
 }
 
+private struct FeatureRow: View {
+    let systemImage: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.title3)
+                .foregroundStyle(Color.effectiveAccent)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.headline)
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(permissionMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 #Preview {
     OnboardingFinishView(onFinish: { }, onOpenSettings: { })
+        .frame(width: 400, height: 600)
 }
