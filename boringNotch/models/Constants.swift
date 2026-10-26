@@ -133,7 +133,10 @@ extension Defaults.Keys {
 
     static let showNotHumanFace = Key<Bool>("showNotHumanFace", default: false)
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
-    static let showCalendar = Key<Bool>("showCalendar", default: false)
+    /// The calendar widget in the open notch. On for fresh installs (#125); existing installs keep
+    /// the `false` they ran with (DefaultsMigration v2). Turning it on never prompts: Calendar
+    /// access is asked from the widget's own "Allow" card the first time it shows (AC-1.12).
+    static let showCalendar = Key<Bool>("showCalendar", default: true)
     /// F6R: reminders next to the calendar's events, independent of it (AC-6R.1). On for fresh installs (K14).
     /// Off means no reminder is read from EventKit and the Reminders permission is never asked.
     /// Before K14 there was no switch and reminders showed whenever access was granted, which is

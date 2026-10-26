@@ -2,7 +2,7 @@
 //  DefaultsMigrationTests.swift
 //  umbarTests
 //
-//  Fresh installs get the new defaults (K13, #93); an existing install keeps
+//  Fresh installs get the new defaults (K13, #93, #125); an existing install keeps
 //  what it was running with, explicit choices included.
 //
 
@@ -57,6 +57,23 @@ struct DefaultsMigrationTests {
         for change in DefaultsMigration.changes where change.version > 1 {
             #expect(writes[change.key] as? Bool == change.previousDefault)
         }
+    }
+
+    // #125: the calendar is on for fresh installs only. An install at
+    // version 1 ran with showCalendar=false and must keep it.
+    @Test func calendarDefaultOnlyChangesForFreshInstalls() {
+        #expect(DefaultsMigration.writes(for: [:])["showCalendar"] == nil)
+        #expect(DefaultsMigration.writes(for: ["firstLaunch": false])["showCalendar"] as? Bool == false)
+
+        let atVersion1 = DefaultsMigration.writes(for: [version: 1, "firstLaunch": false])
+        #expect(atVersion1["showCalendar"] as? Bool == false)
+        #expect(atVersion1["hudReplacement"] == nil)
+        #expect(atVersion1[version] as? Int == DefaultsMigration.currentVersion)
+    }
+
+    @Test func explicitCalendarChoiceSurvivesTheVersion2Step() {
+        let writes = DefaultsMigration.writes(for: [version: 1, "showCalendar": true])
+        #expect(writes["showCalendar"] == nil)
     }
 
     @Test func versionKeyAloneIsNotEvidenceOfAnOldInstall() {

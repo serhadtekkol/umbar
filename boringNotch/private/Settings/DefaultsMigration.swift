@@ -3,7 +3,7 @@
 //  boringNotch
 //
 //  Keeps an existing install's settings when a fresh-install default changes
-//  (K13 HUD on, #93 shelf auto-remove, K17 eye break on). Foundation only, so umbarTests can
+//  (K13 HUD on, #93 shelf auto-remove, K17 eye break on, #125 calendar on). Foundation only, so umbarTests can
 //  compile it without the Defaults package.
 //
 
@@ -23,6 +23,7 @@ enum DefaultsMigration {
         Change(version: 1, key: "hudReplacement", previousDefault: false),
         Change(version: 1, key: "autoRemoveShelfItems", previousDefault: false),
         Change(version: 1, key: "eyeBreakEnabled", previousDefault: false),
+        Change(version: 2, key: "showCalendar", previousDefault: false),
     ]
 
     static let versionKey = "defaultsVersion"
