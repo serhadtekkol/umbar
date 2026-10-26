@@ -343,6 +343,8 @@
 		9165C67A556D9C1E01F10C80 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				ArtworkCache/ArtworkCacheLocation.swift,
+				ArtworkCache/ArtworkDiskCache.swift,
 				Caffeinate/CaffeinatePolicy.swift,
 				Clipboard/ClipboardMonitor.swift,
 				EyeBreak/EyeBreakEngine.swift,
