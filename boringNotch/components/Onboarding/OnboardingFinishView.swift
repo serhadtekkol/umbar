@@ -47,7 +47,7 @@ struct OnboardingFinishView: View {
                 FeatureRow(
                     systemImage: "speaker.wave.2",
                     title: "Volume and brightness indicator",
-                    detail: "A notch-style replacement for the system indicators. Turn it on in Settings."
+                    detail: "Shows volume and brightness in the notch. umbar asks for Accessibility the first time you change them."
                 )
             }
 

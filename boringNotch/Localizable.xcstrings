@@ -193,22 +193,6 @@
         }
       }
     },
-    "A notch-style replacement for the system indicators. Turn it on in Settings." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A notch-style replacement for the system indicators. Turn it on in Settings."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sistem göstergelerinin yerine notch tarzı bir gösterge. Ayarlar'dan açın."
-          }
-        }
-      }
-    },
     "Accessibility access is not on yet. Turn on umbar in System Settings; the HUD switches on as soon as access is granted." : {
       "localizations" : {
         "en" : {
@@ -1229,6 +1213,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hatırlatmanın görüneceği yer"
+          }
+        }
+      }
+    },
+    "Shows volume and brightness in the notch. umbar asks for Accessibility the first time you change them." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows volume and brightness in the notch. umbar asks for Accessibility the first time you change them."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ses ve parlaklığı notch'ta gösterir. umbar Erişilebilirlik iznini bunları ilk kez değiştirdiğinizde ister."
           }
         }
       }
