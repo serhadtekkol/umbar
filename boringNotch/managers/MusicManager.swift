@@ -70,10 +70,11 @@ class MusicManager: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // The MediaRemote adapter used to be probed here on every launch by
-        // spawning /usr/bin/perl. It is opt-in now (card #38), so the default
-        // path starts no helper process at all.
+        // No launch-time perl probe (the old MediaChecker): the Now Playing
+        // controller's own stream is its health check and falls back to
+        // AppleScript by itself (card #38).
         Task { @MainActor in
+            Self.migrateMediaSourceIfNeeded()
             self.setActiveControllerBasedOnPreference()
         }
     }
@@ -105,14 +106,9 @@ class MusicManager: ObservableObject {
 
         switch type {
         case .nowPlaying:
-            // Failable: returns nil when the private MediaRemote symbols are gone.
-            let nowPlaying = NowPlayingController()
-            do {
-                try nowPlaying?.startAdapter()
-            } catch {
-                NSLog("[NowPlaying] adapter not started: \(error)")
-            }
-            newController = nowPlaying
+            // Never nil: falls back to Apple Music + Spotify by itself when the
+            // adapter or the MediaRemote symbols are unavailable.
+            newController = NowPlayingWithFallbackController()
         case .automatic:
             newController = AutomaticMediaController()
         case .appleMusic:
@@ -137,19 +133,27 @@ class MusicManager: ObservableObject {
     }
 
     private func setActiveControllerBasedOnPreference() {
-        let preferredType = Defaults[.mediaController]
-        let controllerType = MediaControllerType.resolved(
-            preferred: preferredType,
-            adapterEnabled: Defaults[.enableMediaRemoteAdapter],
-            adapterAvailable: MediaRemoteAdapterBundle.isAvailable
-        )
-        print("Preferred Media Controller: \(preferredType), using: \(controllerType)")
+        let controllerType = Defaults[.mediaController]
+        print("Preferred Media Controller: \(controllerType)")
 
         if let controller = createController(for: controllerType) {
             setActiveController(controller)
         } else if controllerType != .automatic, let fallbackController = createController(for: .automatic) {
             setActiveController(fallbackController)
         }
+    }
+
+    /// Applies `MediaControllerType.migratedFromOptInDefault(stored:)` once and
+    /// retires the opt-in-era `enableMediaRemoteAdapter` key.
+    private static func migrateMediaSourceIfNeeded() {
+        let currentVersion = 1
+        guard Defaults[.mediaSourceMigrationVersion] < currentVersion else { return }
+        if let migrated = MediaControllerType.migratedFromOptInDefault(stored: Defaults[.mediaController]) {
+            NSLog("[NowPlaying] migrating media source \(Defaults[.mediaController].rawValue) -> \(migrated.rawValue)")
+            Defaults[.mediaController] = migrated
+        }
+        UserDefaults.standard.removeObject(forKey: "enableMediaRemoteAdapter")
+        Defaults[.mediaSourceMigrationVersion] = currentVersion
     }
 
     private func setActiveController(_ controller: any MediaControllerProtocol) {

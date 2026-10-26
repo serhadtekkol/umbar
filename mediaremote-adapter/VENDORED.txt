@@ -34,11 +34,7 @@ umbar additions (not upstream, upstream files above stay unmodified)
 Runtime contract
   The framework is embedded in Contents/Frameworks but NOT linked into the app,
   so it never loads into the app process. It is loaded only by /usr/bin/perl
-  running mediaremote-adapter.pl, and only when the user enables
-  "Use system Now Playing" in Settings > Media (off by default).
-
-Updating
-  1. git -C <clone> checkout <new tag>; diff against this directory.
-  2. Re-copy the files listed above; update Tag/Commit here.
-  3. Check CMakeLists.txt upstream for new sources/frameworks and mirror them in
-     the MediaRemoteAdapter target build settings.
+  running mediaremote-adapter.pl. Since the card #38 decision change it backs
+  the DEFAULT media source ("Now Playing"); exactly one "stream" child runs
+  while that source is selected, owned by NowPlayingAdapterProcess. Choosing
+  another source in Settings > Media stops it.

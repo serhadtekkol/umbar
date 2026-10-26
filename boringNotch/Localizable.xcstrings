@@ -1001,6 +1001,150 @@
         }
       }
     },
+    "Apple Music" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Music"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Music"
+          }
+        }
+      }
+    },
+    "Apple Music + Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Music + Spotify"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Music + Spotify"
+          }
+        }
+      }
+    },
+    "Connects directly to the Apple Music app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connects directly to the Apple Music app."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doğrudan Apple Music uygulamasına bağlanır."
+          }
+        }
+      }
+    },
+    "Connects directly to the Spotify app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connects directly to the Spotify app."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doğrudan Spotify uygulamasına bağlanır."
+          }
+        }
+      }
+    },
+    "Follows Apple Music and Spotify and switches to whichever started playing last." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follows Apple Music and Spotify and switches to whichever started playing last."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Music ve Spotify'ı izler, en son çalmaya başlayana geçer."
+          }
+        }
+      }
+    },
+    "Now Playing (all apps)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now Playing (all apps)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu An Çalan (tüm uygulamalar)"
+          }
+        }
+      }
+    },
+    "Now Playing shows whatever macOS is playing, including YouTube Music and other browser tabs. It uses a private macOS interface through a helper process; if that stops working, umbar switches to Apple Music + Spotify on its own. Choose Apple Music + Spotify to turn Now Playing off." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now Playing shows whatever macOS is playing, including YouTube Music and other browser tabs. It uses a private macOS interface through a helper process; if that stops working, umbar switches to Apple Music + Spotify on its own. Choose Apple Music + Spotify to turn Now Playing off."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu An Çalan, macOS'ta ne çalıyorsa onu gösterir; YouTube Music ve diğer tarayıcı sekmeleri dahil. Yardımcı bir işlem üzerinden macOS'un özel bir arayüzünü kullanır; bu arayüz çalışmayı bırakırsa umbar kendiliğinden Apple Music + Spotify'a geçer. Şu An Çalan'ı kapatmak için Apple Music + Spotify'ı seçin."
+          }
+        }
+      }
+    },
+    "Shows whatever macOS is playing, including YouTube Music and other browser tabs. Falls back to Apple Music + Spotify if it stops working." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows whatever macOS is playing, including YouTube Music and other browser tabs. Falls back to Apple Music + Spotify if it stops working."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS'ta ne çalıyorsa onu gösterir; YouTube Music ve diğer tarayıcı sekmeleri dahil. Çalışmayı bırakırsa Apple Music + Spotify'a geçer."
+          }
+        }
+      }
+    },
+    "Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify"
+          }
+        }
+      }
+    },
     "• Bug fixes" : {
       "localizations" : {
         "ar" : {

@@ -43,34 +43,41 @@ extension Notification.Name {
 
 // Media controller types for selection in settings
 enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializable {
-    /// Apple Music + Spotify over AppleScript, switching per BR-2.1. Default.
-    case automatic = "Automatic"
-    /// System-wide Now Playing via the MediaRemote adapter (private API).
-    /// Opt-in only; see `Defaults.Keys.enableMediaRemoteAdapter`.
+    // Raw values are what is stored in Defaults; never change them. What the
+    // user sees comes from `displayName`.
+
+    /// System-wide Now Playing through the MediaRemote adapter (private API,
+    /// one `/usr/bin/perl` helper), with automatic fallback to `.automatic`.
+    /// Default since the card #38 decision change: browsers (YouTube Music in
+    /// Safari/Chrome) are only visible through this path.
     case nowPlaying = "Now Playing"
+    /// Apple Music + Spotify over AppleScript, switching per BR-2.1.
+    case automatic = "Automatic"
     case appleMusic = "Apple Music"
     case spotify = "Spotify"
     
     var id: String { self.rawValue }
 
-    /// Sources the user may pick right now. `.nowPlaying` is hidden unless the
-    /// adapter is both switched on and actually bundled in this build.
-    static func selectable(adapterEnabled: Bool, adapterAvailable: Bool) -> [MediaControllerType] {
-        allCases.filter { $0 != .nowPlaying || (adapterEnabled && adapterAvailable) }
+    var displayName: String {
+        switch self {
+        case .nowPlaying: return String(localized: "Now Playing (all apps)")
+        case .automatic: return String(localized: "Apple Music + Spotify")
+        case .appleMusic: return String(localized: "Apple Music")
+        case .spotify: return String(localized: "Spotify")
+        }
     }
 
-    /// The source that will actually run for a stored preference.
+    /// One-time migration of the stored source when the default flipped from
+    /// `.automatic` to `.nowPlaying` (card #38, 2026-10-26).
     ///
-    /// A stored `.nowPlaying` (e.g. from an upstream install, where it was the
-    /// default) falls back to `.automatic` while the adapter is off or missing,
-    /// so the private-API path never starts without an explicit opt-in.
-    static func resolved(
-        preferred: MediaControllerType, adapterEnabled: Bool, adapterAvailable: Bool
-    ) -> MediaControllerType {
-        if preferred == .nowPlaying && !(adapterEnabled && adapterAvailable) {
-            return .automatic
-        }
-        return preferred
+    /// `.automatic` was the default only in unreleased builds of the same day,
+    /// and onboarding's Continue button stores the preselected default, so a
+    /// stored `.automatic` cannot be told apart from "accepted the default";
+    /// it is treated as the old default and moved to `.nowPlaying`. Explicit
+    /// picks of a single player (`.appleMusic`, `.spotify`) and `.nowPlaying`
+    /// are kept. Returns nil when nothing needs to change.
+    static func migratedFromOptInDefault(stored: MediaControllerType?) -> MediaControllerType? {
+        stored == .automatic ? .nowPlaying : nil
     }
 }
 
@@ -193,10 +200,10 @@ extension Defaults.Keys {
     static let hideNotchOption = Key<HideNotchOption>("hideNotchOption", default: .nowPlayingOnly)
     
     // MARK: Media Controller
-    static let mediaController = Key<MediaControllerType>("mediaController", default: .automatic)
-    /// Opt-in for the MediaRemote adapter (spawns /usr/bin/perl, private API).
-    /// Off by default by product decision on card #38.
-    static let enableMediaRemoteAdapter = Key<Bool>("enableMediaRemoteAdapter", default: false)
+    static let mediaController = Key<MediaControllerType>("mediaController", default: .nowPlaying)
+    /// Version of the media source migration already applied; see
+    /// `MediaControllerType.migratedFromOptInDefault(stored:)`.
+    static let mediaSourceMigrationVersion = Key<Int>("mediaSourceMigrationVersion", default: 0)
     
     // MARK: Advanced Settings
     static let useCustomAccentColor = Key<Bool>("useCustomAccentColor", default: false)

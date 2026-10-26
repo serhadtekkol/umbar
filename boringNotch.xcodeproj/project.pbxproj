@@ -126,7 +126,9 @@
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
 		07427699EC146DBE64DADF78 /* PlayerArbiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC6368B7A7BF8E6E5033F42 /* PlayerArbiter.swift */; };
 		ED6B47C8BE819F40B7428B17 /* AutomaticMediaController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223A7E9047157B80F4CE2F4D /* AutomaticMediaController.swift */; };
+		6E1A0C3801D94B2F8A51C001 /* NowPlayingSupervisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1A0C3801D94B2F8A51C002 /* NowPlayingSupervisor.swift */; };
 		6E1A0C3801D94B2F8A51C003 /* NowPlayingAdapterProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1A0C3801D94B2F8A51C004 /* NowPlayingAdapterProcess.swift */; };
+		6E1A0C3801D94B2F8A51C005 /* NowPlayingWithFallbackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1A0C3801D94B2F8A51C006 /* NowPlayingWithFallbackController.swift */; };
 		9DC26FF093CC7DD430F37B69 /* MediaRemoteAdapterBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A260557462DB4C6C7630FA7A /* MediaRemoteAdapterBundle.swift */; };
 		4913AAF906A749808695B13E /* MediaRemoteAdapter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 918B494336D8A086F1188FC8 /* MediaRemoteAdapter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		64C28BD882D6B7B8C3E2C45F /* DefaultVisualizer.json in Resources */ = {isa = PBXBuildFile; fileRef = 52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */; };
@@ -289,7 +291,9 @@
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
 		EAC6368B7A7BF8E6E5033F42 /* PlayerArbiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerArbiter.swift; sourceTree = "<group>"; };
 		223A7E9047157B80F4CE2F4D /* AutomaticMediaController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomaticMediaController.swift; sourceTree = "<group>"; };
+		6E1A0C3801D94B2F8A51C002 /* NowPlayingSupervisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingSupervisor.swift; sourceTree = "<group>"; };
 		6E1A0C3801D94B2F8A51C004 /* NowPlayingAdapterProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingAdapterProcess.swift; sourceTree = "<group>"; };
+		6E1A0C3801D94B2F8A51C006 /* NowPlayingWithFallbackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingWithFallbackController.swift; sourceTree = "<group>"; };
 		A260557462DB4C6C7630FA7A /* MediaRemoteAdapterBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteAdapterBundle.swift; sourceTree = "<group>"; };
 		918B494336D8A086F1188FC8 /* MediaRemoteAdapter.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MediaRemoteAdapter.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultVisualizer.json; sourceTree = "<group>"; };
@@ -407,7 +411,9 @@
 				223A7E9047157B80F4CE2F4D /* AutomaticMediaController.swift */,
 				EAC6368B7A7BF8E6E5033F42 /* PlayerArbiter.swift */,
 				1153BD9B2D98853B00979FB0 /* NowPlayingController.swift */,
+				6E1A0C3801D94B2F8A51C006 /* NowPlayingWithFallbackController.swift */,
 				6E1A0C3801D94B2F8A51C004 /* NowPlayingAdapterProcess.swift */,
+				6E1A0C3801D94B2F8A51C002 /* NowPlayingSupervisor.swift */,
 			);
 			path = MediaControllers;
 			sourceTree = "<group>";
@@ -919,7 +925,9 @@
 				1153BD9A2D98824300979FB0 /* SpotifyController.swift in Sources */,
 				ED6B47C8BE819F40B7428B17 /* AutomaticMediaController.swift in Sources */,
 				07427699EC146DBE64DADF78 /* PlayerArbiter.swift in Sources */,
+				6E1A0C3801D94B2F8A51C005 /* NowPlayingWithFallbackController.swift in Sources */,
 				6E1A0C3801D94B2F8A51C003 /* NowPlayingAdapterProcess.swift in Sources */,
+				6E1A0C3801D94B2F8A51C001 /* NowPlayingSupervisor.swift in Sources */,
 				B19424092CD0FF01003E5DC2 /* LottieAnimationView.swift in Sources */,
 				B1F747F92EC7E94000F841DB /* LottieView.swift in Sources */,
 				B1C974342C642B6D0000E707 /* MarqueeTextView.swift in Sources */,

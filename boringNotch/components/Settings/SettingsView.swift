@@ -495,7 +495,6 @@ struct HUD: View {
 struct Media: View {
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
-    @Default(.enableMediaRemoteAdapter) var enableMediaRemoteAdapter
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableSneakPeek) private var enableSneakPeek
@@ -506,8 +505,8 @@ struct Media: View {
         Form {
             Section {
                 Picker("Music Source", selection: $mediaController) {
-                    ForEach(availableMediaControllers) { controller in
-                        Text(controller.rawValue).tag(controller)
+                    ForEach(MediaControllerType.allCases) { controller in
+                        Text(controller.displayName).tag(controller)
                     }
                 }
                 .onChange(of: mediaController) { _, _ in
@@ -516,30 +515,10 @@ struct Media: View {
                         object: nil
                     )
                 }
-                Toggle(isOn: $enableMediaRemoteAdapter) {
-                    HStack {
-                        Text("Use system Now Playing (all media apps)")
-                        customBadge(text: "Experimental")
-                    }
-                }
-                .disabled(!MediaRemoteAdapterBundle.isAvailable && !enableMediaRemoteAdapter)
-                .onChange(of: enableMediaRemoteAdapter) { _, enabled in
-                    if !enabled && mediaController == .nowPlaying {
-                        mediaController = .automatic
-                    }
-                    NotificationCenter.default.post(
-                        name: Notification.Name.mediaControllerChanged,
-                        object: nil
-                    )
-                }
             } header: {
                 Text("Media Source")
             } footer: {
-                Text(
-                    MediaRemoteAdapterBundle.isAvailable
-                        ? "Automatic follows Apple Music and Spotify and switches to whichever started playing last. System Now Playing uses a private macOS interface through a helper process and may stop working after a macOS update."
-                        : "Automatic follows Apple Music and Spotify and switches to whichever started playing last. System Now Playing is not included in this build."
-                )
+                Text("Now Playing shows whatever macOS is playing, including YouTube Music and other browser tabs. It uses a private macOS interface through a helper process; if that stops working, umbar switches to Apple Music + Spotify on its own. Choose Apple Music + Spotify to turn Now Playing off.")
                 .foregroundStyle(.secondary)
                 .font(.caption)
             }
@@ -594,13 +573,6 @@ struct Media: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Media")
-    }
-
-    private var availableMediaControllers: [MediaControllerType] {
-        MediaControllerType.selectable(
-            adapterEnabled: enableMediaRemoteAdapter,
-            adapterAvailable: MediaRemoteAdapterBundle.isAvailable
-        )
     }
 }
 

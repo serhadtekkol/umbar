@@ -9,8 +9,8 @@ import Foundation
 ///
 /// The adapter is a framework that `/usr/bin/perl` loads with DynaLoader; it is
 /// embedded in `Contents/Frameworks` but deliberately **not linked** into the
-/// app, so it never loads into the app process. It is used only when the user
-/// opts in (`Defaults.Keys.enableMediaRemoteAdapter`).
+/// app, so it never loads into the app process. It backs the default
+/// `.nowPlaying` source; see `NowPlayingAdapterProcess` for its lifetime.
 enum MediaRemoteAdapterBundle {
     /// Perl driver script, shipped as an app resource.
     static var scriptURL: URL? {

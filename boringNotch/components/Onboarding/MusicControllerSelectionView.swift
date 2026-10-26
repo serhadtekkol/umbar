@@ -15,10 +15,7 @@ struct MusicControllerSelectionView: View {
     @Default(.mediaController) var mediaController
     
     private var availableMediaControllers: [MediaControllerType] {
-        MediaControllerType.selectable(
-            adapterEnabled: Defaults[.enableMediaRemoteAdapter],
-            adapterAvailable: MediaRemoteAdapterBundle.isAvailable
-        )
+        MediaControllerType.allCases
     }
     
     @State private var selectedMediaController: MediaControllerType = Defaults[.mediaController]
@@ -87,7 +84,7 @@ struct ControllerOptionView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(controller.rawValue)
+                Text(controller.displayName)
                     .font(.headline)
                     .fontWeight(.semibold)
 
@@ -116,14 +113,14 @@ struct ControllerOptionView: View {
 extension MediaControllerType {
     var description: String {
         switch self {
-        case .automatic:
-            return "Follows Apple Music and Spotify and switches to whichever started playing last."
         case .nowPlaying:
-            return "Works with most media apps, including browsers, to detect what's playing. Note: This may be removed in a future macOS version."
+            return String(localized: "Shows whatever macOS is playing, including YouTube Music and other browser tabs. Falls back to Apple Music + Spotify if it stops working.")
+        case .automatic:
+            return String(localized: "Follows Apple Music and Spotify and switches to whichever started playing last.")
         case .spotify:
-            return "Connects directly to the Spotify app."
+            return String(localized: "Connects directly to the Spotify app.")
         case .appleMusic:
-            return "Connects directly to the Apple Music app."
+            return String(localized: "Connects directly to the Apple Music app.")
         }
     }
 }
