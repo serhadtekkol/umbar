@@ -21,7 +21,11 @@ final class ShelfPersistenceService {
     private init() {
         let fm = FileManager.default
         let support = try? fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        let dir = (support ?? fm.temporaryDirectory).appendingPathComponent("boringNotch", isDirectory: true).appendingPathComponent("Shelf", isDirectory: true)
+        // Keyed by our bundle id, not a fixed folder name: the app is
+        // unsandboxed, so a literal "boringNotch" folder would be the very
+        // same items.json (and security-scoped bookmarks) that upstream
+        // Boring Notch reads when both are installed (card #40).
+        let dir = (support ?? fm.temporaryDirectory).appendingPathComponent(bundleIdentifier, isDirectory: true).appendingPathComponent("Shelf", isDirectory: true)
         try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
         fileURL = dir.appendingPathComponent("items.json")
         encoder.outputFormatting = [.prettyPrinted]
