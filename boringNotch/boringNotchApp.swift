@@ -216,6 +216,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Spike A2 prototype; inert unless clipboardMonitorEnabled is set.
+        ClipboardMonitorController.shared.activate()
 
         NotificationCenter.default.addObserver(
             self,
