@@ -99,7 +99,9 @@ public actor FullScreenMonitor {
     }
 
     private nonisolated static func detectSpaces() -> [SpaceInfo] {
-        guard let displaySpaces = CGSCopyManagedDisplaySpaces(_CGSMainConnectionID()) as? [NSDictionary] else {
+        guard let api = PrivateCGS.api,
+              let displaySpaces = api.copyManagedDisplaySpaces(api.mainConnectionID())?
+                .takeRetainedValue() as? [NSDictionary] else {
             return []
         }
         
@@ -205,5 +207,29 @@ public actor FullScreenMonitor {
 // MARK: - Private CGS API Definitions
 
 private typealias CGSConnectionID = Int32
-@_silgen_name("CGSMainConnectionID") private func _CGSMainConnectionID() -> CGSConnectionID
-@_silgen_name("CGSCopyManagedDisplaySpaces") private func CGSCopyManagedDisplaySpaces(_ cid: CGSConnectionID) -> CFArray
+
+/// Private CGS functions resolved at runtime (local change, see VENDORED.txt).
+///
+/// Upstream used `@_silgen_name`, so a missing symbol aborted the host app in
+/// dyld before `main()`. Here a missing symbol makes `api` nil and
+/// `detectSpaces()` reports no full-screen spaces, i.e. full-screen detection
+/// is off and the notch simply stays visible.
+private struct PrivateCGS: Sendable {
+    let mainConnectionID: @convention(c) () -> CGSConnectionID
+    /// Follows the CoreFoundation Copy rule: the array is returned at +1.
+    let copyManagedDisplaySpaces: @convention(c) (CGSConnectionID) -> Unmanaged<CFArray>?
+
+    static let api: PrivateCGS? = {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["NOTCH_DISABLE_PRIVATE_CGS"] == "1" { return nil }
+        #endif
+        let handle = UnsafeMutableRawPointer(bitPattern: -2) // RTLD_DEFAULT
+        guard let main = dlsym(handle, "CGSMainConnectionID"),
+              let copy = dlsym(handle, "CGSCopyManagedDisplaySpaces") else { return nil }
+        return PrivateCGS(
+            mainConnectionID: unsafeBitCast(main, to: (@convention(c) () -> CGSConnectionID).self),
+            copyManagedDisplaySpaces: unsafeBitCast(
+                copy, to: (@convention(c) (CGSConnectionID) -> Unmanaged<CFArray>?).self)
+        )
+    }()
+}
