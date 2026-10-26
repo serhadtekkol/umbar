@@ -23,6 +23,9 @@ final class ShelfStateViewModel: ObservableObject {
     private var pendingBookmarkUpdates: [ShelfItem.ID: Data] = [:]
     private var updateTask: Task<Void, Never>?
 
+    /// Confirms moves out of the shelf before their items are removed.
+    private let moveWatcher = ShelfMoveOutcomeWatcher()
+
     private init() {
         items = ShelfPersistenceService.shared.load()
     }
@@ -44,8 +47,39 @@ final class ShelfStateViewModel: ObservableObject {
     }
 
     func remove(_ item: ShelfItem) {
+        moveWatcher.cancel(item.id)
         item.cleanupStoredData()
         items.removeAll { $0.id == item.id }
+    }
+
+    /// Takes items off the shelf after they were dropped somewhere else
+    /// (BR-3.5), according to `action`.
+    ///
+    /// Unlike `remove(_:)`, this never deletes an item's temporary file. After
+    /// a copy the destination may still be reading it: a browser upload field
+    /// reads the file when the form is sent, not when the file is dropped. The
+    /// file stays in $TMPDIR, which macOS purges of long-unused files on its
+    /// own. After a move the file is no longer ours to delete.
+    ///
+    /// - Parameter sources: the path and identity of each item's file when
+    ///   the drag started, used to confirm a move. An item without an entry
+    ///   is kept.
+    func handleDragEnd(_ action: ShelfDragEndAction, for dragged: [ShelfItem], sources: [ShelfItem.ID: (path: String, identity: ShelfFileIdentity)]) {
+        switch action {
+        case .keep:
+            return
+        case .remove:
+            let ids = Set(dragged.map(\.id))
+            ids.forEach(moveWatcher.cancel)
+            items.removeAll { ids.contains($0.id) }
+        case .removeOnceSourceLeaves:
+            for item in dragged {
+                guard let source = sources[item.id] else { continue }
+                moveWatcher.watch(id: item.id, path: source.path, original: source.identity) { [weak self] in
+                    self?.items.removeAll { $0.id == item.id }
+                }
+            }
+        }
     }
 
     func updateBookmark(for item: ShelfItem, bookmark: Data) {

@@ -117,6 +117,11 @@ class TemporaryFileStorageService {
         if urls.count == 1, let src = urls.first {
             let isDir = (try? src.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
             let baseName = src.lastPathComponent
+            // zip reads any argument starting with "-" as an option, and a
+            // dropped file may be named "-T" (card #47). "./" makes the name a
+            // path whatever the option parser does; zip strips it again from
+            // the stored entry name.
+            let pathArgument = "./" + baseName
             let archiveName: String
             if isDir {
                 // Folder: name as FolderName.zip and include the folder itself in the archive
@@ -124,7 +129,7 @@ class TemporaryFileStorageService {
                 let archiveURL = workingDir.appendingPathComponent(archiveName)
                 // Run zip from the parent directory so the folder is stored as top-level entry
                 let parent = src.deletingLastPathComponent()
-                let args = ["-r", "-q", archiveURL.path, baseName]
+                let args = ["-r", "-q", archiveURL.path, pathArgument]
                 let ok = runZip(arguments: args, currentDirectory: parent)
                 if ok {
                     return archiveURL
@@ -137,7 +142,7 @@ class TemporaryFileStorageService {
                 let archiveURL = workingDir.appendingPathComponent(archiveName)
                 let parent = src.deletingLastPathComponent()
                 // -j to junk paths and store only the file
-                let args = ["-j", "-q", archiveURL.path, baseName]
+                let args = ["-j", "-q", archiveURL.path, pathArgument]
                 let ok = runZip(arguments: args, currentDirectory: parent)
                 if ok {
                     return archiveURL
