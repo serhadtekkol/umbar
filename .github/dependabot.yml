@@ -1,22 +1,24 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
+# Dependabot version updates. Every update arrives as a pull request against
+# product/main and runs through .github/workflows/ci.yml like any other change;
+# nothing is merged automatically. A Swift update is a Package.resolved diff,
+# which is the reviewed change CI insists on (scripts/ci-build.sh).
 version: 2
 updates:
-  - package-ecosystem: "github-actions" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "product/main"
     schedule:
       interval: "weekly"
 
+  # Configuration/dmg/requirements.txt: dmgbuild for the local release DMG.
   - package-ecosystem: "pip"
     directory: "/Configuration/dmg"
+    target-branch: "product/main"
     schedule:
       interval: "weekly"
 
   - package-ecosystem: "swift"
     directory: "/"
+    target-branch: "product/main"
     schedule:
       interval: "weekly"
-    target-branch: "dev"

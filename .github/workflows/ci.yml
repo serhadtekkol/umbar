@@ -1,0 +1,73 @@
+# umbar CI: build the app and run the umbarTests unit tests.
+#
+# Deliberately small. No secrets, no signing, no publishing: releases are
+# signed, notarized and packaged on the release Mac (card #27), not here.
+# Every step is a script in scripts/, so a failure reproduces locally with
+# the same command.
+#
+# Runner: the project targets macOS 27, so it needs the macOS 27 SDK (Xcode 27)
+# to build and a macOS 27 host to run its tests. GitHub's "xcode-27" image is
+# arm64 macOS 27 with Xcode 27 (GA 2026-10-15). Override the label with the
+# repository variable UMBAR_CI_RUNNER (e.g. a self-hosted runner) without
+# editing this file. If the runner lacks the toolchain, scripts/ci-xcode-gate.sh
+# skips the build with a warning; set the repository variable UMBAR_CI_STRICT
+# to "true" to make that a failure instead.
+#
+# Actions are pinned to full commit SHAs; the comment names the tag the SHA
+# was taken from.
+name: CI
+
+on:
+  push:
+    branches: [product/main]
+  pull_request:
+    branches: [product/main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ${{ vars.UMBAR_CI_RUNNER || 'xcode-27' }}
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Test the toolchain gate
+        run: scripts/ci-xcode-gate-test.sh
+
+      - name: Check the toolchain
+        id: gate
+        env:
+          UMBAR_CI_STRICT: ${{ vars.UMBAR_CI_STRICT }}
+        run: scripts/ci-xcode-gate.sh
+
+      - name: Resolve packages and build (Debug, unsigned)
+        if: steps.gate.outputs.ready == 'true'
+        run: scripts/ci-build.sh -quiet
+
+      - name: Run unit tests
+        if: steps.gate.outputs.ready == 'true'
+        run: >-
+          scripts/test.sh -quiet
+          -onlyUsePackageVersionsFromResolvedFile
+          -resultBundlePath build/umbarTests.xcresult
+          CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: failure() && steps.gate.outputs.ready == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: umbarTests.xcresult
+          path: build/umbarTests.xcresult
+          if-no-files-found: ignore
+          retention-days: 7

@@ -59,6 +59,10 @@ changes can still be merged. Do not rename them in a feature change.
 - Build the **boringNotch** scheme and make sure it succeeds.
 - Run the unit tests with `scripts/test.sh` (target **umbarTests**, headless) and make sure they
   pass. Add tests for logic you change.
+- CI (`.github/workflows/ci.yml`) runs the same build and tests on every pull request to
+  `product/main`, using only the package versions in `Package.resolved`. To reproduce a CI
+  failure, run `scripts/ci-build.sh` and then `scripts/test.sh`. A dependency change must
+  come with its updated `Package.resolved`.
 - Run the app and check the behaviour you changed, and describe in the pull request what you
   checked and on which Mac.
 - Keep the GPL-3.0 license and the upstream copyright headers in every file you touch.
