@@ -182,8 +182,42 @@ struct CalendarView: View {
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject private var calendarManager = CalendarManager.shared
     @State private var selectedDate = Date()
+    @Default(.remindersPromptDismissed) private var remindersPromptDismissed
 
     var body: some View {
+        Group {
+            if calendarManager.calendarPermission == .granted {
+                calendarContent
+            } else {
+                // First use of the calendar widget is where Calendar access
+                // is asked for, never at launch (AC-1.12, card #59).
+                NotchPermissionPrompt(
+                    state: calendarManager.calendarPermission,
+                    systemImage: "calendar",
+                    title: "Calendar access",
+                    reason: "umbar needs access to your calendar to list today's events here.",
+                    deniedMessage: "Calendar access is off. Turn it on for umbar in System Settings.",
+                    pane: .calendars,
+                    onAllow: {
+                        Task { await calendarManager.requestCalendarAccess() }
+                    }
+                )
+            }
+        }
+        .frame(height: 120)
+        .onChange(of: vm.notchState) { _, _ in
+            calendarManager.refreshAuthorizationStatus()
+        }
+        .onAppear {
+            calendarManager.refreshAuthorizationStatus()
+        }
+    }
+
+    private var showsReminderBanner: Bool {
+        calendarManager.reminderPermission != .granted && !remindersPromptDismissed
+    }
+
+    private var calendarContent: some View {
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading) {
@@ -222,9 +256,22 @@ struct CalendarView: View {
             } else {
                 EventListView(events: calendarManager.events)
             }
+
+            if showsReminderBanner {
+                NotchPermissionBanner(
+                    state: calendarManager.reminderPermission,
+                    systemImage: "checklist",
+                    reason: "Allow Reminders access to list your reminders here.",
+                    deniedMessage: "Reminders access is off.",
+                    pane: .reminders,
+                    onAllow: {
+                        Task { await calendarManager.requestReminderAccess() }
+                    },
+                    onDismiss: { remindersPromptDismissed = true }
+                )
+            }
         }
         .listRowBackground(Color.clear)
-        .frame(height: 120)
         .onChange(of: selectedDate) {
             Task {
                 await calendarManager.updateCurrentDate(selectedDate)

@@ -601,19 +601,18 @@ struct CalendarSettings: View {
                 Text("Always show full event titles")
             }
             Section(header: Text("Calendars")) {
-                if calendarManager.calendarAuthorizationStatus != .fullAccess {
-                    Text("Calendar access is denied. Please enable it in System Settings.")
-                        .foregroundColor(.red)
-                        .multilineTextAlignment(.center)
-                        .padding()
-                    Button("Open Calendar Settings") {
-                        if let settingsURL = URL(
-                            string:
-                                "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
-                        ) {
-                            NSWorkspace.shared.open(settingsURL)
+                if calendarManager.calendarPermission != .granted {
+                    PermissionPrompt(
+                        state: calendarManager.calendarPermission,
+                        systemImage: "calendar",
+                        title: "Calendar access",
+                        reason: "umbar needs access to your calendar to list today's events in the notch. Your events never leave your Mac.",
+                        deniedMessage: "Calendar access is off. Turn it on for umbar in System Settings.",
+                        pane: .calendars,
+                        onAllow: {
+                            Task { await calendarManager.requestCalendarAccess() }
                         }
-                    }
+                    )
                 } else {
                     List {
                         ForEach(calendarManager.eventCalendars, id: \.id) { calendar in
@@ -637,19 +636,18 @@ struct CalendarSettings: View {
                 }
             }
             Section(header: Text("Reminders")) {
-                if calendarManager.reminderAuthorizationStatus != .fullAccess {
-                    Text("Reminder access is denied. Please enable it in System Settings.")
-                        .foregroundColor(.red)
-                        .multilineTextAlignment(.center)
-                        .padding()
-                    Button("Open Reminder Settings") {
-                        if let settingsURL = URL(
-                            string:
-                                "x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders"
-                        ) {
-                            NSWorkspace.shared.open(settingsURL)
+                if calendarManager.reminderPermission != .granted {
+                    PermissionPrompt(
+                        state: calendarManager.reminderPermission,
+                        systemImage: "checklist",
+                        title: "Reminders access",
+                        reason: "umbar needs access to Reminders to list your reminders next to your events. Your reminders never leave your Mac.",
+                        deniedMessage: "Reminders access is off. Turn it on for umbar in System Settings.",
+                        pane: .reminders,
+                        onAllow: {
+                            Task { await calendarManager.requestReminderAccess() }
                         }
-                    }
+                    )
                 } else {
                     List {
                         ForEach(calendarManager.reminderLists, id: \.id) { calendar in
@@ -676,10 +674,12 @@ struct CalendarSettings: View {
         .accentColor(.effectiveAccent)
         .navigationTitle("Calendar")
         .onAppear {
-            Task {
-                await calendarManager.checkCalendarAuthorization()
-                await calendarManager.checkReminderAuthorization()
-            }
+            // Status only; access is requested from the prompts above.
+            calendarManager.refreshAuthorizationStatus()
+            Task { await calendarManager.reloadCalendarAndReminderLists() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            calendarManager.refreshAuthorizationStatus()
         }
     }
 }
