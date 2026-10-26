@@ -57,8 +57,10 @@ changes can still be merged. Do not rename them in a feature change.
 ### Before you open a pull request
 
 - Build the **boringNotch** scheme and make sure it succeeds.
-- Run the app and check the behaviour you changed. `product/main` has no automated test target
-  yet, so describe in the pull request what you checked and on which Mac.
+- Run the unit tests with `scripts/test.sh` (target **umbarTests**, headless) and make sure they
+  pass. Add tests for logic you change.
+- Run the app and check the behaviour you changed, and describe in the pull request what you
+  checked and on which Mac.
 - Keep the GPL-3.0 license and the upstream copyright headers in every file you touch.
 - If your change alters what a user sees or does, update [README.md](README.md) and
   [README.tr.md](README.tr.md) in the same pull request.
