@@ -134,6 +134,11 @@ extension Defaults.Keys {
     static let showNotHumanFace = Key<Bool>("showNotHumanFace", default: false)
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
     static let showCalendar = Key<Bool>("showCalendar", default: false)
+    /// F6R: reminders next to the calendar's events, independent of it (AC-6R.1). On for fresh installs (K14).
+    /// Off means no reminder is read from EventKit and the Reminders permission is never asked.
+    /// Before K14 there was no switch and reminders showed whenever access was granted, which is
+    /// what `true` does, so existing installs need no migration.
+    static let showReminders = Key<Bool>("showReminders", default: true)
     static let hideCompletedReminders = Key<Bool>("hideCompletedReminders", default: true)
     /// The user closed the Reminders prompt in the notch calendar; Settings › Calendar still offers it.
     static let remindersPromptDismissed = Key<Bool>("remindersPromptDismissed", default: false)

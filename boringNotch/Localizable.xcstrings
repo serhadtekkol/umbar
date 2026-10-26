@@ -1369,6 +1369,22 @@
         }
       }
     },
+    "Reminder lists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder lists"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcı listeleri"
+          }
+        }
+      }
+    },
     "Reminders access" : {
       "localizations" : {
         "en" : {
@@ -1413,6 +1429,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hatırlatıcı erişimi kapalı. Sistem Ayarları'nda umbar için açın."
+          }
+        }
+      }
+    },
+    "Reminders appear in the calendar. Turn on Show calendar to see them." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders appear in the calendar. Turn on Show calendar to see them."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcılar takvimde görünür. Görmek için Takvimi göster'i açın."
+          }
+        }
+      }
+    },
+    "Show reminders" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show reminders"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcıları göster"
           }
         }
       }

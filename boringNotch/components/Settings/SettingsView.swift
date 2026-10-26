@@ -586,7 +586,7 @@ struct Media: View {
 struct CalendarSettings: View {
     @ObservedObject private var calendarManager = CalendarManager.shared
     @Default(.showCalendar) var showCalendar: Bool
-    @Default(.hideCompletedReminders) var hideCompletedReminders
+    @Default(.showReminders) var showReminders
     @Default(.hideAllDayEvents) var hideAllDayEvents
     @Default(.autoScrollToNextEvent) var autoScrollToNextEvent
 
@@ -594,9 +594,6 @@ struct CalendarSettings: View {
         Form {
             Defaults.Toggle(key: .showCalendar) {
                 Text("Show calendar")
-            }
-            Defaults.Toggle(key: .hideCompletedReminders) {
-                Text("Hide completed reminders")
             }
             Defaults.Toggle(key: .hideAllDayEvents) {
                 Text("Hide all-day events")
@@ -642,39 +639,62 @@ struct CalendarSettings: View {
                     }
                 }
             }
-            Section(header: Text("Reminders")) {
-                if calendarManager.reminderPermission != .granted {
-                    PermissionPrompt(
-                        state: calendarManager.reminderPermission,
-                        systemImage: "checklist",
-                        title: "Reminders access",
-                        reason: "umbar needs access to Reminders to list your reminders next to your events. Your reminders never leave your Mac.",
-                        deniedMessage: "Reminders access is off. Turn it on for umbar in System Settings.",
-                        pane: .reminders,
-                        onAllow: {
-                            Task { await calendarManager.requestReminderAccess() }
-                        }
-                    )
-                } else {
-                    List {
-                        ForEach(calendarManager.reminderLists, id: \.id) { calendar in
-                            Toggle(
-                                isOn: Binding(
-                                    get: { calendarManager.getCalendarSelected(calendar) },
-                                    set: { isSelected in
-                                        Task {
-                                            await calendarManager.setCalendarSelected(
-                                                calendar, isSelected: isSelected)
-                                        }
-                                    }
-                                )
-                            ) {
-                                Text(calendar.title)
+            Section {
+                Defaults.Toggle(key: .showReminders) {
+                    Text("Show reminders")
+                }
+                .disabled(!showCalendar)
+                Defaults.Toggle(key: .hideCompletedReminders) {
+                    Text("Hide completed reminders")
+                }
+                .disabled(!showCalendar || !showReminders)
+            } header: {
+                Text("Reminders")
+            } footer: {
+                // AC-6R.13: reminders have no surface of their own in v1.
+                if !showCalendar {
+                    Text("Reminders appear in the calendar. Turn on Show calendar to see them.")
+                        .font(.caption)
+                        .foregroundStyle(permissionMutedText)
+                }
+            }
+            if showReminders {
+                Section {
+                    if calendarManager.reminderPermission != .granted {
+                        PermissionPrompt(
+                            state: calendarManager.reminderPermission,
+                            systemImage: "checklist",
+                            title: "Reminders access",
+                            reason: "umbar needs access to Reminders to list your reminders next to your events. Your reminders never leave your Mac.",
+                            deniedMessage: "Reminders access is off. Turn it on for umbar in System Settings.",
+                            pane: .reminders,
+                            onAllow: {
+                                Task { await calendarManager.requestReminderAccess() }
                             }
-                            .accentColor(lighterColor(from: calendar.color))
-                            .disabled(!showCalendar)
+                        )
+                    } else {
+                        List {
+                            ForEach(calendarManager.reminderLists, id: \.id) { calendar in
+                                Toggle(
+                                    isOn: Binding(
+                                        get: { calendarManager.getCalendarSelected(calendar) },
+                                        set: { isSelected in
+                                            Task {
+                                                await calendarManager.setCalendarSelected(
+                                                    calendar, isSelected: isSelected)
+                                            }
+                                        }
+                                    )
+                                ) {
+                                    Text(calendar.title)
+                                }
+                                .accentColor(lighterColor(from: calendar.color))
+                                .disabled(!showCalendar)
+                            }
                         }
                     }
+                } header: {
+                    Text("Reminder lists")
                 }
             }
         }

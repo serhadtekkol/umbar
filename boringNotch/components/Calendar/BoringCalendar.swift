@@ -183,14 +183,44 @@ struct CalendarView: View {
     @ObservedObject private var calendarManager = CalendarManager.shared
     @State private var selectedDate = Date()
     @Default(.remindersPromptDismissed) private var remindersPromptDismissed
+    @Default(.showReminders) private var showReminders
+
+    /// The list has something to show: events, or reminders alone when
+    /// Calendar was declined but Reminders was not (AC-6R.8).
+    private var showsContent: Bool {
+        calendarManager.calendarPermission == .granted
+            || (showReminders && calendarManager.reminderPermission == .granted)
+    }
+
+    /// Calendar was answered "no" and Reminders not asked yet: Reminders
+    /// still gets its one ask, after Calendar's and never beside it.
+    private var asksForRemindersAlone: Bool {
+        calendarManager.calendarPermission == .denied
+            && showReminders
+            && calendarManager.reminderPermission == .notDetermined
+            && !remindersPromptDismissed
+    }
 
     var body: some View {
         Group {
-            if calendarManager.calendarPermission == .granted {
+            if showsContent {
                 calendarContent
+            } else if asksForRemindersAlone {
+                NotchPermissionPrompt(
+                    state: calendarManager.reminderPermission,
+                    systemImage: "checklist",
+                    title: "Reminders access",
+                    reason: "Allow Reminders access to list your reminders here.",
+                    deniedMessage: "Reminders access is off.",
+                    pane: .reminders,
+                    onAllow: {
+                        Task { await calendarManager.requestReminderAccess() }
+                    }
+                )
             } else {
                 // First use of the calendar widget is where Calendar access
-                // is asked for, never at launch (AC-1.12, card #59).
+                // is asked for, never at launch (AC-1.12, card #59). The
+                // Reminders ask waits until this one is answered (AC-6R.8).
                 NotchPermissionPrompt(
                     state: calendarManager.calendarPermission,
                     systemImage: "calendar",
@@ -214,7 +244,10 @@ struct CalendarView: View {
     }
 
     private var showsReminderBanner: Bool {
-        calendarManager.reminderPermission != .granted && !remindersPromptDismissed
+        showReminders
+            && calendarManager.calendarPermission == .granted
+            && calendarManager.reminderPermission != .granted
+            && !remindersPromptDismissed
     }
 
     private var calendarContent: some View {
