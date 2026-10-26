@@ -146,7 +146,10 @@ class BoringViewCoordinator: ObservableObject {
 
                     if change.newValue {
                         self.hudEnableTask = Task { @MainActor in
-                            let granted = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
+                            // Never prompt from here: the HUD setting asks for
+                            // Accessibility with its own pre-prompt and only
+                            // flips hudReplacement once access is granted (#59).
+                            let granted = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: false)
                             if Task.isCancelled { return }
 
                             if granted {
