@@ -26,6 +26,18 @@
 # inside APP (the app, its XPC helper, the perl child) is killed on the way
 # out. Nothing else is touched.
 #
+# Which build to point it at (card #121): a Release build signed ad hoc with
+# only CODE_SIGN_IDENTITY=- keeps the hardened runtime, and library validation
+# then refuses the embedded Lottie.framework ("different Team IDs"), so the
+# app dies at launch and this check reports exit 3. That build is evidence
+# that Release compiles, not that it runs. For a local run use Debug, or a
+# Release built with the runtime turned off on the command line only:
+#   xcodebuild -scheme boringNotch -configuration Release \
+#       CODE_SIGN_IDENTITY=- ENABLE_HARDENED_RUNTIME=NO build
+# The project's Release configuration keeps ENABLE_HARDENED_RUNTIME=YES, which
+# notarization requires; the real launch check of a Developer ID build is
+# card #71.
+#
 # Ported from Habibe's R2 quitpath.sh regression run.
 set -euo pipefail
 
