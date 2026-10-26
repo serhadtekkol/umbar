@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- The notch, expanded into umbar's island: flush with the top edge,
+       concave shoulders where it meets the bezel. Layer 1 of AppIcon.icon. -->
+  <path fill="#0B0B0C" d="M212 0A40 40 0 0 1 252 40V172A136 136 0 0 0 388 308H636A136 136 0 0 0 772 172V40A40 40 0 0 1 812 0Z"/>
+</svg>

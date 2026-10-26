@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- A live activity inside the island: status dot + progress track.
+       Layer 2 of AppIcon.icon; sits on top of umbar-island.svg. -->
+  <circle cx="370" cy="184" r="40" fill="#FFC35C"/>
+  <rect x="446" y="163" width="220" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.9"/>
+</svg>

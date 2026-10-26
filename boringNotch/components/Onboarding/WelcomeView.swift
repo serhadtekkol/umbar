@@ -6,70 +6,51 @@
 //
 
 import SwiftUI
-import SwiftUIIntrospect
 
 struct WelcomeView: View {
     var onGetStarted: (() -> Void)? = nil
     var body: some View {
-        ZStack(alignment: .top) {
-            ZStack {
-                Image("spotlight")
+        VStack(spacing: 0) {
+            Spacer()
+            VStack(spacing: 8) {
+                // "logo2" carries light and dark renditions of AppIcon.icon,
+                // exported with ictool from design/ (card #54).
+                Image("logo2")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .padding(.bottom)
-                    .blur(radius: 3)
-                    .offset(y: -5)
-                    .background(SparkleView().opacity(0.6))
-                VStack(spacing: 8) {
-                    Image("logo2")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 100, height: 100)
-                        .padding(.bottom, 8)
-                    Text("umbar")
-                        .font(.system(.largeTitle, design: .default))
-                        .fontWeight(.semibold)
-                    Text("Welcome")
-                        .font(.title)
-                        .foregroundStyle(.secondary)
-                        .padding(.bottom, 30)
-                    if false {
-                        Text("PRO")
-                            .font(.system(size: 18, design: .rounded))
-                            .fontWeight(.bold)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 3)
-                            .background(
-                                Capsule()
-                                    .fill(LinearGradient(colors: [.white.opacity(0.7), .white.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                    .strokeBorder(LinearGradient(stops: [.init(color: .white.opacity(0.7), location: 0.3), .init(color: .clear, location: 0.6)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                    .blendMode(.overlay)
-                            )
-                            .padding(.bottom, 30)
-                    }
-
-
-                    Button {
-                        onGetStarted?()
-                    } label: {
-                        Text("Get started")
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 6)
-                    }
-                    .buttonStyle(BorderedProminentButtonStyle())
+                    .frame(width: 128, height: 128)
+                    .accessibilityHidden(true)
+                    .padding(.bottom, 12)
+                Text("umbar")
+                    .font(.largeTitle)
+                    .fontWeight(.semibold)
+                Text("Welcome")
+                    .font(.title)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 32)
+                Button {
+                    onGetStarted?()
+                } label: {
+                    Text("Get started")
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 6)
                 }
-                .padding(.top)
+                .buttonStyle(BorderedProminentButtonStyle())
+                .keyboardShortcut(.defaultAction)
             }
-            
+            Spacer()
+            // GPL-3.0 attribution for the upstream project; keep it visible
+            // (card #40, see NOTICE).
+            // .primary at 65% rather than .secondary: secondaryLabelColor on the
+            // light material measures ~3.8:1, under AA for footnote-size text.
             Text("umbar is a fork of boring.notch by TheBoredTeam, GPL-3.0")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .padding()
-                .padding(.bottom, 36)
+                .foregroundStyle(.primary.opacity(0.65))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+                .padding(.bottom, 52)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
         .background {
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)

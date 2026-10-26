@@ -1,7 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "BoringNotch icon.png",
+      "filename" : "umbar-icon.png",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "umbar-icon-dark.png",
       "idiom" : "universal"
     }
   ],

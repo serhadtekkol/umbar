@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+  <!-- Menu bar template glyph: a display outline with umbar's island hanging
+       from its top edge; the island's dot and track are knocked out.
+       Black + alpha only, nonzero winding (outer cw, holes ccw). -->
+  <path fill="#000000" d="M4.25 3H13.75A3 3 0 0 1 16.75 6V12A3 3 0 0 1 13.75 15H4.25A3 3 0 0 1 1.25 12V6A3 3 0 0 1 4.25 3Z M4.25 4.5A1.5 1.5 0 0 0 2.75 6V12A1.5 1.5 0 0 0 4.25 13.5H13.75A1.5 1.5 0 0 0 15.25 12V6A1.5 1.5 0 0 0 13.75 4.5Z M4.75 4H13.25V7A2.5 2.5 0 0 1 10.75 9.5H7.25A2.5 2.5 0 0 1 4.75 7Z M8 6.75A1 1 0 0 0 6 6.75A1 1 0 0 0 8 6.75Z M9.4 6A0.75 0.75 0 0 0 9.4 7.5H11.35A0.75 0.75 0 0 0 11.35 6Z"/>
+</svg>
