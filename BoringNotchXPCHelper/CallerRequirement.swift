@@ -32,20 +32,35 @@ enum CallerRequirement {
             .deletingLastPathComponent() // XPCServices
             .deletingLastPathComponent() // Contents
             .deletingLastPathComponent() // Host.app
-        guard let hostID = Bundle(url: hostURL)?.bundleIdentifier, isSafeIdentifier(hostID) else {
-            return nil
+        guard let hostID = Bundle(url: hostURL)?.bundleIdentifier else { return nil }
+        let team = signingInfo(ofCodeAt: helperBundleURL)?[kSecCodeInfoTeamIdentifier as String] as? String
+        // The host's cdhash is only needed when there is no usable Team ID;
+        // skip the second signature read otherwise.
+        let hostCDHash = team.map(isSafeIdentifier) == true
+            ? nil
+            : signingInfo(ofCodeAt: hostURL)?[kSecCodeInfoUnique as String] as? Data
+        return requirement(hostID: hostID, teamID: team, hostCDHash: hostCDHash)
+    }
+
+    /// The requirement string for already-extracted signing facts.
+    ///
+    /// - Parameters:
+    ///   - hostID: The host app's bundle identifier.
+    ///   - teamID: The helper's own Team ID, or `nil` for an ad-hoc signature.
+    ///     An unsafe value is treated like a missing one.
+    ///   - hostCDHash: The host executable's cdhash, used only without a Team ID.
+    /// - Returns: The Team ID requirement when `teamID` is usable, otherwise
+    ///   the identifier + cdhash requirement, or `nil` (reject) when neither
+    ///   can be built or `hostID` is unsafe.
+    static func requirement(hostID: String, teamID: String?, hostCDHash: Data?) -> String? {
+        guard isSafeIdentifier(hostID) else { return nil }
+
+        if let teamID, isSafeIdentifier(teamID) {
+            return "anchor apple generic and identifier \"\(hostID)\" and certificate leaf[subject.OU] = \"\(teamID)\""
         }
 
-        if let team = signingInfo(ofCodeAt: helperBundleURL)?[kSecCodeInfoTeamIdentifier as String] as? String,
-           isSafeIdentifier(team) {
-            return "anchor apple generic and identifier \"\(hostID)\" and certificate leaf[subject.OU] = \"\(team)\""
-        }
-
-        guard let cdhash = signingInfo(ofCodeAt: hostURL)?[kSecCodeInfoUnique as String] as? Data,
-              !cdhash.isEmpty else {
-            return nil
-        }
-        let hex = cdhash.map { String(format: "%02x", $0) }.joined()
+        guard let hostCDHash, !hostCDHash.isEmpty else { return nil }
+        let hex = hostCDHash.map { String(format: "%02x", $0) }.joined()
         return "identifier \"\(hostID)\" and cdhash H\"\(hex)\""
     }
 
