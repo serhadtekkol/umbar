@@ -43,12 +43,36 @@ extension Notification.Name {
 
 // Media controller types for selection in settings
 enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializable {
+    /// Apple Music + Spotify over AppleScript, switching per BR-2.1. Default.
+    case automatic = "Automatic"
+    /// System-wide Now Playing via the MediaRemote adapter (private API).
+    /// Opt-in only; see `Defaults.Keys.enableMediaRemoteAdapter`.
     case nowPlaying = "Now Playing"
     case appleMusic = "Apple Music"
     case spotify = "Spotify"
     case youtubeMusic = "YouTube Music"
     
     var id: String { self.rawValue }
+
+    /// Sources the user may pick right now. `.nowPlaying` is hidden unless the
+    /// adapter is both switched on and actually bundled in this build.
+    static func selectable(adapterEnabled: Bool, adapterAvailable: Bool) -> [MediaControllerType] {
+        allCases.filter { $0 != .nowPlaying || (adapterEnabled && adapterAvailable) }
+    }
+
+    /// The source that will actually run for a stored preference.
+    ///
+    /// A stored `.nowPlaying` (e.g. from an upstream install, where it was the
+    /// default) falls back to `.automatic` while the adapter is off or missing,
+    /// so the private-API path never starts without an explicit opt-in.
+    static func resolved(
+        preferred: MediaControllerType, adapterEnabled: Bool, adapterAvailable: Bool
+    ) -> MediaControllerType {
+        if preferred == .nowPlaying && !(adapterEnabled && adapterAvailable) {
+            return .automatic
+        }
+        return preferred
+    }
 }
 
 // Sneak peek styles for selection in settings
@@ -181,7 +205,10 @@ extension Defaults.Keys {
     static let hideNotchOption = Key<HideNotchOption>("hideNotchOption", default: .nowPlayingOnly)
     
     // MARK: Media Controller
-    static let mediaController = Key<MediaControllerType>("mediaController", default: defaultMediaController)
+    static let mediaController = Key<MediaControllerType>("mediaController", default: .automatic)
+    /// Opt-in for the MediaRemote adapter (spawns /usr/bin/perl, private API).
+    /// Off by default by product decision on card #38.
+    static let enableMediaRemoteAdapter = Key<Bool>("enableMediaRemoteAdapter", default: false)
     
     // MARK: Advanced Settings
     static let useCustomAccentColor = Key<Bool>("useCustomAccentColor", default: false)
@@ -189,14 +216,5 @@ extension Defaults.Keys {
     // Show or hide the title bar
     static let hideTitleBar = Key<Bool>("hideTitleBar", default: true)
     
-    // Helper to determine the default media controller based on NowPlaying deprecation status
-    static var defaultMediaController: MediaControllerType {
-        if MusicManager.shared.isNowPlayingDeprecated {
-            return .appleMusic
-        } else {
-            return .nowPlaying
-        }
-    }
-
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCache_v1", default: false)
 }

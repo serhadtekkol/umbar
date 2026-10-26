@@ -15,11 +15,10 @@ struct MusicControllerSelectionView: View {
     @Default(.mediaController) var mediaController
     
     private var availableMediaControllers: [MediaControllerType] {
-        if MusicManager.shared.isNowPlayingDeprecated {
-            return MediaControllerType.allCases.filter { $0 != .nowPlaying }
-        } else {
-            return MediaControllerType.allCases
-        }
+        MediaControllerType.selectable(
+            adapterEnabled: Defaults[.enableMediaRemoteAdapter],
+            adapterAvailable: MediaRemoteAdapterBundle.isAvailable
+        )
     }
     
     @State private var selectedMediaController: MediaControllerType = Defaults[.mediaController]
@@ -122,6 +121,8 @@ struct ControllerOptionView: View {
 extension MediaControllerType {
     var description: String {
         switch self {
+        case .automatic:
+            return "Follows Apple Music and Spotify and switches to whichever started playing last."
         case .nowPlaying:
             return "Works with most media apps, including browsers, to detect what's playing. Note: This may be removed in a future macOS version."
         case .spotify:

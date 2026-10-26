@@ -189,11 +189,13 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     // MARK: - Setup Methods
     private func setupNowPlayingObserver() async {
         let process = Process()
-        guard
-            let scriptURL = Bundle.main.url(forResource: "mediaremote-adapter", withExtension: "pl"),
-            let frameworkPath = Bundle.main.privateFrameworksPath?.appending("/MediaRemoteAdapter.framework")
+        // Missing resources are an expected state (adapter not bundled), not a
+        // programmer error, so fail soft instead of asserting.
+        guard MediaRemoteAdapterBundle.isAvailable,
+              let scriptURL = MediaRemoteAdapterBundle.scriptURL,
+              let frameworkPath = MediaRemoteAdapterBundle.frameworkPath
         else {
-            assertionFailure("Could not find mediaremote-adapter.pl script or framework path")
+            NSLog("MediaRemote adapter resources missing; Now Playing stream not started")
             return
         }
         
@@ -212,7 +214,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
                 await self?.processJSONStream()
             }
         } catch {
-            assertionFailure("Failed to launch mediaremote-adapter.pl: \(error)")
+            NSLog("Failed to launch mediaremote-adapter.pl: \(error)")
         }
     }
 

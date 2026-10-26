@@ -579,6 +579,7 @@ struct HUD: View {
 struct Media: View {
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
+    @Default(.enableMediaRemoteAdapter) var enableMediaRemoteAdapter
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableSneakPeek) private var enableSneakPeek
@@ -600,28 +601,32 @@ struct Media: View {
                         object: nil
                     )
                 }
+                Toggle(isOn: $enableMediaRemoteAdapter) {
+                    HStack {
+                        Text("Use system Now Playing (all media apps)")
+                        customBadge(text: "Experimental")
+                    }
+                }
+                .disabled(!MediaRemoteAdapterBundle.isAvailable && !enableMediaRemoteAdapter)
+                .onChange(of: enableMediaRemoteAdapter) { _, enabled in
+                    if !enabled && mediaController == .nowPlaying {
+                        mediaController = .automatic
+                    }
+                    NotificationCenter.default.post(
+                        name: Notification.Name.mediaControllerChanged,
+                        object: nil
+                    )
+                }
             } header: {
                 Text("Media Source")
             } footer: {
-                if MusicManager.shared.isNowPlayingDeprecated {
-                    HStack {
-                        Text("YouTube Music requires this third-party app to be installed: ")
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                        Link(
-                            "https://github.com/pear-devs/pear-desktop",
-                            destination: URL(string: "https://github.com/pear-devs/pear-desktop")!
-                        )
-                        .font(.caption)
-                        .foregroundColor(.blue)  // Ensures it's visibly a link
-                    }
-                } else {
-                    Text(
-                        "'Now Playing' was the only option on previous versions and works with all media apps."
-                    )
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-                }
+                Text(
+                    MediaRemoteAdapterBundle.isAvailable
+                        ? "Automatic follows Apple Music and Spotify and switches to whichever started playing last. System Now Playing uses a private macOS interface through a helper process and may stop working after a macOS update."
+                        : "Automatic follows Apple Music and Spotify and switches to whichever started playing last. System Now Playing is not included in this build."
+                )
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
             
             Section {
@@ -682,13 +687,11 @@ struct Media: View {
         .navigationTitle("Media")
     }
 
-    // Only show controller options that are available on this macOS version
     private var availableMediaControllers: [MediaControllerType] {
-        if MusicManager.shared.isNowPlayingDeprecated {
-            return MediaControllerType.allCases.filter { $0 != .nowPlaying }
-        } else {
-            return MediaControllerType.allCases
-        }
+        MediaControllerType.selectable(
+            adapterEnabled: enableMediaRemoteAdapter,
+            adapterAvailable: MediaRemoteAdapterBundle.isAvailable
+        )
     }
 }
 

@@ -21,10 +21,6 @@ class MusicManager: ObservableObject {
     private var controllerCancellables = Set<AnyCancellable>()
     private var debounceIdleTask: Task<Void, Never>?
 
-    // Helper to check if macOS has removed support for NowPlayingController
-    public private(set) var isNowPlayingDeprecated: Bool = false
-    private let mediaChecker = MediaChecker()
-
     // Active controller
     private var activeController: (any MediaControllerProtocol)?
 
@@ -77,17 +73,10 @@ class MusicManager: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Initialize deprecation check asynchronously
+        // The MediaRemote adapter used to be probed here on every launch by
+        // spawning /usr/bin/perl. It is opt-in now (card #38), so the default
+        // path starts no helper process at all.
         Task { @MainActor in
-            do {
-                self.isNowPlayingDeprecated = try await self.mediaChecker.checkDeprecationStatus()
-                print("Deprecation check completed: \(self.isNowPlayingDeprecated)")
-            } catch {
-                print("Failed to check deprecation status: \(error). Defaulting to false.")
-                self.isNowPlayingDeprecated = false
-            }
-            
-            // Initialize the active controller after deprecation check
             self.setActiveControllerBasedOnPreference()
         }
     }
@@ -119,12 +108,10 @@ class MusicManager: ObservableObject {
 
         switch type {
         case .nowPlaying:
-            // Only create NowPlayingController if not deprecated on this macOS version
-            if !self.isNowPlayingDeprecated {
-                newController = NowPlayingController()
-            } else {
-                return nil
-            }
+            // Failable: returns nil when the private MediaRemote symbols are gone.
+            newController = NowPlayingController()
+        case .automatic:
+            newController = AutomaticMediaController()
         case .appleMusic:
             newController = AppleMusicController()
         case .spotify:
@@ -150,17 +137,16 @@ class MusicManager: ObservableObject {
 
     private func setActiveControllerBasedOnPreference() {
         let preferredType = Defaults[.mediaController]
-        print("Preferred Media Controller: \(preferredType)")
-
-        // If NowPlaying is deprecated but that's the preference, use Apple Music instead
-        let controllerType = (self.isNowPlayingDeprecated && preferredType == .nowPlaying)
-            ? .appleMusic
-            : preferredType
+        let controllerType = MediaControllerType.resolved(
+            preferred: preferredType,
+            adapterEnabled: Defaults[.enableMediaRemoteAdapter],
+            adapterAvailable: MediaRemoteAdapterBundle.isAvailable
+        )
+        print("Preferred Media Controller: \(preferredType), using: \(controllerType)")
 
         if let controller = createController(for: controllerType) {
             setActiveController(controller)
-        } else if controllerType != .appleMusic, let fallbackController = createController(for: .appleMusic) {
-            // Fallback to Apple Music if preferred controller couldn't be created
+        } else if controllerType != .automatic, let fallbackController = createController(for: .automatic) {
             setActiveController(fallbackController)
         }
     }
@@ -273,8 +259,10 @@ class MusicManager: ObservableObject {
 
         if state.bundleIdentifier != self.bundleIdentifier {
             self.bundleIdentifier = state.bundleIdentifier
-            // Update volume control support from active controller
+            // Capabilities follow the player, which can change under one
+            // controller (AutomaticMediaController switches Music <-> Spotify).
             self.volumeControlSupported = activeController?.supportsVolumeControl ?? false
+            self.canFavoriteTrack = activeController?.supportsFavorite ?? false
         }
 
         if repeatModeChanged {
