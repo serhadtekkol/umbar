@@ -200,7 +200,7 @@ class MusicManager: ObservableObject {
             self.triggerFlipAnimation()
 
             if artworkChanged, let artwork = state.artwork {
-                self.updateArtwork(artwork)
+                self.updateArtwork(artwork, bundleIdentifier: state.bundleIdentifier)
             } else if state.artwork == nil {
                 // Try to use app icon if no artwork but track changed
                 if let appIconImage = AppIconAsNSImage(for: state.bundleIdentifier) {
@@ -346,14 +346,24 @@ class MusicManager: ObservableObject {
         DispatchQueue.main.async(execute: workItem)
     }
 
-    private func updateArtwork(_ artworkData: Data) {
+    /// Decodes artwork off the main thread through `ArtworkImageDecoder`
+    /// (PNG/JPEG/HEIC only, bounded size; card #70). Rejected bytes show the
+    /// player's app icon, as when there is no artwork at all.
+    private func updateArtwork(_ artworkData: Data, bundleIdentifier: String) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-
-            if let artworkImage = NSImage(data: artworkData) {
-                DispatchQueue.main.async { [weak self] in
-                    self?.usingAppIconForArtwork = false
-                    self?.updateAlbumArt(newAlbumArt: artworkImage)
+            let decoded = ArtworkImageDecoder.thumbnail(from: artworkData)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                switch decoded {
+                case .success(let image):
+                    self.usingAppIconForArtwork = false
+                    self.updateAlbumArt(newAlbumArt: NSImage(cgImage: image, size: .zero))
+                case .failure(let rejection):
+                    NSLog("[Media] artwork ignored: \(rejection)")
+                    if let appIcon = AppIconAsNSImage(for: bundleIdentifier) {
+                        self.usingAppIconForArtwork = true
+                        self.updateAlbumArt(newAlbumArt: appIcon)
+                    }
                 }
             }
         }

@@ -44,9 +44,18 @@ final class NowPlayingWithFallbackController: MediaControllerProtocol {
     /// Last reported playing state per native player, for the stall rule.
     private var nativePlaying: [String: Bool] = [:]
     private let clock: () -> Date
+    private let isApplicationRunning: (String) -> Bool
 
-    init(config: NowPlayingSupervisor.Config = .init(), clock: @escaping () -> Date = Date.init) {
+    /// - Parameter isApplicationRunning: Whether an app with the bundle id is
+    ///   running; injected so the notification filter (card #69) can be
+    ///   exercised without launching Music or Spotify.
+    init(
+        config: NowPlayingSupervisor.Config = .init(),
+        clock: @escaping () -> Date = Date.init,
+        isApplicationRunning: @escaping (String) -> Bool = NativePlayerNotification.isRunning
+    ) {
         self.clock = clock
+        self.isApplicationRunning = isApplicationRunning
         self.supervisor = NowPlayingSupervisor(config: config)
         self.nowPlaying = NowPlayingController()
 
@@ -100,6 +109,10 @@ final class NowPlayingWithFallbackController: MediaControllerProtocol {
                 try nowPlaying.startAdapter()
                 NSLog("[NowPlaying] adapter started (pid \(nowPlaying.adapterProcessIdentifier.map(String.init) ?? "?"))")
                 apply { $0.adapterLaunched(now: $1) }
+            } catch let error as NowPlayingAdapterError {
+                // Missing or tampered resources do not heal by retrying.
+                NSLog("[NowPlaying] adapter unavailable (\(error)); not retrying this run")
+                apply { $0.adapterUnavailable(now: $1, reason: error.description) }
             } catch {
                 apply { $0.adapterLaunchFailed(now: $1, error: "\(error)") }
             }
@@ -157,6 +170,8 @@ final class NowPlayingWithFallbackController: MediaControllerProtocol {
     /// Apple Music and Spotify announce state changes over distributed
     /// notifications without any permission; that is the independent signal
     /// that tells a silent adapter apart from "nothing is playing".
+    /// The same lack of permission means anyone can post them, so a
+    /// "Playing" is only believed while the player is running (card #69).
     private func observeNativePlayers() {
         let center = DistributedNotificationCenter.default()
         let names = [
@@ -185,6 +200,10 @@ final class NowPlayingWithFallbackController: MediaControllerProtocol {
     }
 
     private func nativePlayerChanged(_ bundleID: String, isPlaying: Bool) {
+        // Dropped silently: logging would hand a spammer the log as well.
+        guard NativePlayerNotification.isTrusted(
+            bundleID: bundleID, isPlaying: isPlaying, isRunning: isApplicationRunning
+        ) else { return }
         nativePlaying[bundleID] = isPlaying
         if isPlaying {
             // "Playing" means a start or a track change; both make a working
@@ -210,4 +229,30 @@ final class NowPlayingWithFallbackController: MediaControllerProtocol {
     func setVolume(_ level: Double) async { await activeController?.setVolume(level) }
     func isActive() -> Bool { activeController?.isActive() ?? false }
     func updatePlaybackInfo() async { await activeController?.updatePlaybackInfo() }
+}
+
+/// Trust rule for the players' distributed notifications (card #69).
+///
+/// `com.apple.Music.playerInfo` and `com.spotify.client.PlaybackStateChanged`
+/// carry no sender authentication: any local process can post
+/// `Player State = Playing`. Believed, a forged one starts the stall clock
+/// and, with MediaRemote quiet, kills the adapter and switches to the
+/// AppleScript fallback, i.e. Apple Events and Automation prompts the user
+/// never asked for.
+///
+/// A "Playing" therefore only counts while an app with that bundle id is
+/// running. Anything that says "not playing" is always accepted: at worst it
+/// clears the stall clock, which only delays detection of a broken adapter.
+///
+/// Residual, accepted: with the player genuinely running (but not playing),
+/// a forged "Playing" is still believed. Telling those apart would need
+/// AppleScript, which is exactly the traffic this path must not create.
+enum NativePlayerNotification {
+    static func isTrusted(bundleID: String, isPlaying: Bool, isRunning: (String) -> Bool) -> Bool {
+        !isPlaying || isRunning(bundleID)
+    }
+
+    static func isRunning(_ bundleID: String) -> Bool {
+        !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty
+    }
 }

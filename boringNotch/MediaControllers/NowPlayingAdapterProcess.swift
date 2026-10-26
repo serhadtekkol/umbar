@@ -6,8 +6,11 @@
 import AppKit
 import Foundation
 
-/// Owns the one `/usr/bin/perl mediaremote-adapter.pl <framework> stream`
+/// Owns the one `/usr/bin/perl -T mediaremote-adapter.pl <framework> stream`
 /// child process that feeds system Now Playing data to the app.
+///
+/// The child gets an allowlisted environment, never the app's
+/// (`AdapterChildEnvironment`, card #67).
 ///
 /// Lifetime guarantees (cards #38, #57):
 /// - At most one child at a time: `start` is a no-op while one is running,
@@ -18,14 +21,15 @@ import Foundation
 ///     itself (`UMBAR_ADAPTER_PARENT_PID`, see
 ///     mediaremote-adapter/Sources/umbar/UmbarParentWatchdog.m) and exits.
 ///
+/// A child that writes more than `AdapterLineBuffer.defaultLimit` bytes
+/// without a newline is terminated and reported through `onUnexpectedExit`
+/// like any other failure (card #70), so app memory stays bounded.
+///
 /// Threading: `start`, `stop` and the callbacks' registration happen on the
 /// main thread. `onLine` is invoked on a private serial queue (lines can be
 /// several hundred KB of base64 artwork, so decoding stays off the main
 /// thread); `onUnexpectedExit` is invoked on the main thread.
 final class NowPlayingAdapterProcess {
-    /// Name of the environment variable the adapter's watchdog reads.
-    static let parentPIDEnvironmentKey = "UMBAR_ADAPTER_PARENT_PID"
-
     /// One complete stdout line, without the trailing newline.
     var onLine: ((Data) -> Void)?
     /// The child exited without `stop` having been called. Receives the exit
@@ -39,7 +43,7 @@ final class NowPlayingAdapterProcess {
     private var terminationObserver: NSObjectProtocol?
 
     // Touched on `ioQueue` only.
-    private var stdoutBuffer = Data()
+    private var stdoutLines = AdapterLineBuffer()
     private var stderrTail = Data()
     private static let stderrTailLimit = 2048
 
@@ -73,10 +77,12 @@ final class NowPlayingAdapterProcess {
 
         let child = Process()
         child.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
-        child.arguments = [scriptURL.path, frameworkPath, "stream"]
-        var environment = ProcessInfo.processInfo.environment
-        environment[Self.parentPIDEnvironmentKey] = String(getpid())
-        child.environment = environment
+        // -T (taint mode) is a second layer under the environment allowlist:
+        // perl then ignores PERL5LIB/PERL5OPT outright. Verified on macOS
+        // 27.0.1 that the adapter still loads its framework and runs `get`
+        // and `stream` under -T.
+        child.arguments = ["-T", scriptURL.path, frameworkPath, "stream"]
+        child.environment = AdapterChildEnvironment.current()
         child.standardInput = FileHandle.nullDevice
 
         let stdoutPipe = Pipe()
@@ -85,7 +91,7 @@ final class NowPlayingAdapterProcess {
         child.standardError = stderrPipe
 
         ioQueue.sync {
-            stdoutBuffer.removeAll(keepingCapacity: false)
+            stdoutLines = AdapterLineBuffer()
             stderrTail.removeAll(keepingCapacity: false)
         }
 
@@ -95,7 +101,10 @@ final class NowPlayingAdapterProcess {
                 handle.readabilityHandler = nil
                 return
             }
-            self?.ioQueue.async { self?.consumeStdout(data) }
+            // sync, not async: the next read waits until this chunk is
+            // consumed, so a fast writer cannot pile chunks up in the queue
+            // behind the line buffer's cap (card #70).
+            self?.ioQueue.sync { self?.consumeStdout(data, generation: myGeneration) }
         }
         // Must be drained: a full stderr pipe (64 KB) would block the child.
         stderrPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
@@ -104,7 +113,7 @@ final class NowPlayingAdapterProcess {
                 handle.readabilityHandler = nil
                 return
             }
-            self?.ioQueue.async { self?.consumeStderr(data) }
+            self?.ioQueue.sync { self?.consumeStderr(data) }
         }
 
         child.terminationHandler = { [weak self] finished in
@@ -161,14 +170,28 @@ final class NowPlayingAdapterProcess {
 
     // MARK: - I/O (ioQueue)
 
-    private func consumeStdout(_ data: Data) {
-        stdoutBuffer.append(data)
-        while let newline = stdoutBuffer.firstIndex(of: UInt8(ascii: "\n")) {
-            let line = stdoutBuffer[stdoutBuffer.startIndex..<newline]
-            stdoutBuffer.removeSubrange(stdoutBuffer.startIndex...newline)
-            if !line.isEmpty {
-                onLine?(Data(line))
+    private func consumeStdout(_ data: Data, generation childGeneration: Int) {
+        let wasOverflowed = stdoutLines.hasOverflowed
+        for line in stdoutLines.append(data) {
+            onLine?(line)
+        }
+        if stdoutLines.hasOverflowed && !wasOverflowed {
+            DispatchQueue.main.async { [weak self] in
+                self?.terminateForOverflow(generation: childGeneration)
             }
+        }
+    }
+
+    /// Main thread. Ends the child *without* bumping `generation`, so its
+    /// exit reaches `onUnexpectedExit` and the supervisor treats it as a
+    /// failure (backoff restart, fallback) rather than as a requested stop.
+    private func terminateForOverflow(generation childGeneration: Int) {
+        guard generation == childGeneration, let child = process, child.isRunning else { return }
+        NSLog("[NowPlaying] adapter wrote a line over \(AdapterLineBuffer.defaultLimit) bytes; buffer dropped, terminating child")
+        let pid = child.processIdentifier
+        child.terminate()
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 1) {
+            if child.isRunning { kill(pid, SIGKILL) }
         }
     }
 
@@ -178,4 +201,145 @@ final class NowPlayingAdapterProcess {
             stderrTail = stderrTail.suffix(Self.stderrTailLimit)
         }
     }
+}
+
+/// Splits the adapter's stdout into lines while bounding memory (card #70).
+///
+/// Without a bound, a child that never writes `\n` grows the app's memory
+/// until it dies. When the unterminated tail exceeds `limit`, the buffer is
+/// dropped and the buffer *latches*: every later byte is discarded, because
+/// the stream is no longer line-aligned and the owner is expected to end the
+/// child. `limit` is far above the largest legitimate line (a few MB of
+/// base64 artwork).
+///
+/// Pure value type; no I/O.
+struct AdapterLineBuffer {
+    static let defaultLimit = 8 * 1024 * 1024
+
+    let limit: Int
+    private(set) var hasOverflowed = false
+    private var pending = Data()
+    /// Bytes of `pending` already known to contain no newline, so each byte
+    /// is scanned once even for a multi-megabyte line.
+    private var scannedCount = 0
+
+    init(limit: Int = AdapterLineBuffer.defaultLimit) {
+        self.limit = limit
+    }
+
+    /// Number of buffered bytes without a newline yet.
+    var pendingCount: Int { pending.count }
+
+    /// Appends a chunk and returns the complete, non-empty lines it finished,
+    /// without their trailing newline. Returns `[]` once overflowed.
+    mutating func append(_ chunk: Data) -> [Data] {
+        guard !hasOverflowed else { return [] }
+        // A chunk that cannot finish the pending line and would push it past
+        // the limit is refused before it is copied, so the buffer itself
+        // never holds more than `limit` bytes.
+        if pending.count + chunk.count > limit, !chunk.contains(UInt8(ascii: "\n")) {
+            overflow()
+            return []
+        }
+        pending.append(chunk)
+        var lines: [Data] = []
+        var lineStart = pending.startIndex
+        var cursor = pending.startIndex + scannedCount
+        while let newline = pending[cursor...].firstIndex(of: UInt8(ascii: "\n")) {
+            if newline > lineStart {
+                lines.append(Data(pending[lineStart..<newline]))
+            }
+            lineStart = newline + 1
+            cursor = lineStart
+        }
+        pending.removeSubrange(pending.startIndex..<lineStart)
+        scannedCount = pending.count
+        if pending.count > limit {
+            overflow()
+        }
+        return lines
+    }
+
+    private mutating func overflow() {
+        hasOverflowed = true
+        pending = Data()
+        scannedCount = 0
+    }
+}
+
+/// The complete environment of the `/usr/bin/perl` adapter child (card #67).
+///
+/// The child is built from an explicit allowlist instead of inheriting the
+/// app's environment. `/usr/bin/perl` has neither hardened runtime nor library
+/// validation, and it honours `PERL5OPT` / `PERL5LIB` (load arbitrary
+/// modules), `VERSIONER_PERL_*` (pick another interpreter) and `DYLD_*`; the
+/// adapter itself reads `MEDIAREMOTEADAPTER_OPTION_*` and `ADAPTER_TEST_MODE`.
+/// Any of those set by a same-user process (`launchctl setenv` before umbar
+/// launches at login) would otherwise run code in a child that macOS
+/// attributes to umbar. Nothing outside the allowlist below reaches the child,
+/// so new variables perl or the adapter start honouring later are excluded
+/// without anyone having to remember to add them to a denylist.
+///
+/// The child is additionally started with `perl -T`: taint mode makes perl
+/// ignore `PERL5LIB` and `PERL5OPT` even if they were somehow present.
+enum AdapterChildEnvironment {
+    /// Name of the environment variable the adapter's watchdog reads
+    /// (mediaremote-adapter/Sources/umbar/UmbarParentWatchdog.m).
+    static let parentPIDKey = "UMBAR_ADAPTER_PARENT_PID"
+
+    /// Fixed search path: the adapter execs nothing, but perl modules that
+    /// shell out must never find a binary from a user-writable directory.
+    static let path = "/usr/bin:/bin"
+
+    /// Used when the inherited `LANG` is missing or not a plain locale name.
+    static let fallbackLanguage = "en_US.UTF-8"
+
+    /// Builds the child's environment. Pure: everything comes in as arguments.
+    ///
+    /// - Parameters:
+    ///   - parentPID: The app's pid, for the adapter's exit-with-parent watchdog.
+    ///   - homeDirectory: The user's home (`NSHomeDirectory()`).
+    ///   - temporaryDirectory: The per-user temp dir (`NSTemporaryDirectory()`);
+    ///     a trailing slash is kept as Foundation returns it.
+    ///   - inheritedLanguage: The app's `LANG`, if any. Only passed on when it
+    ///     looks like a locale name (`[A-Za-z0-9_.@-]`, at most 64 characters);
+    ///     otherwise `fallbackLanguage` is used. Perl only uses it for locale
+    ///     warnings, but nothing free-form from the parent reaches the child.
+    /// - Returns: Exactly `UMBAR_ADAPTER_PARENT_PID`, `PATH`, `HOME`, `TMPDIR`
+    ///   and `LANG`.
+    static func make(
+        parentPID: Int32,
+        homeDirectory: String,
+        temporaryDirectory: String,
+        inheritedLanguage: String?
+    ) -> [String: String] {
+        [
+            parentPIDKey: String(parentPID),
+            "PATH": path,
+            "HOME": homeDirectory,
+            "TMPDIR": temporaryDirectory,
+            "LANG": sanitizedLanguage(inheritedLanguage),
+        ]
+    }
+
+    /// The environment for the current process.
+    static func current() -> [String: String] {
+        make(
+            parentPID: getpid(),
+            homeDirectory: NSHomeDirectory(),
+            temporaryDirectory: NSTemporaryDirectory(),
+            inheritedLanguage: ProcessInfo.processInfo.environment["LANG"]
+        )
+    }
+
+    static func sanitizedLanguage(_ value: String?) -> String {
+        guard let value, !value.isEmpty, value.count <= 64,
+              value.unicodeScalars.allSatisfy({ allowedLanguageScalars.contains($0) })
+        else { return fallbackLanguage }
+        return value
+    }
+
+    private static let allowedLanguageScalars = CharacterSet(
+        charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.@-"
+    )
 }

@@ -11,8 +11,9 @@ import Foundation
 ///
 /// Card #38: Now Playing is the default source, so a broken adapter must never
 /// leave the notch blank. The adapter counts as failed when
-/// - its resources or the MediaRemote symbols are missing (`unavailable`,
-///   permanent for this run: nothing on disk changes while we run),
+/// - its resources or the MediaRemote symbols are missing, or the app
+///   bundle fails its signature check before a spawn (`unavailable`,
+///   permanent for this run: a bundle that was altered is not retried),
 /// - `/usr/bin/perl` cannot be launched,
 /// - the process exits without us asking it to (bad framework, missing
 ///   symbol, crash, ...), or
@@ -120,6 +121,16 @@ struct NowPlayingSupervisor: Equatable {
             return switchTo(.nowPlaying, reason: "adapter recovered (data received)")
         }
         return []
+    }
+
+    /// A pre-spawn check found the adapter unusable for the rest of this run
+    /// (card #68: the bundle no longer matches its signature). Nothing was
+    /// spawned; no retry is scheduled.
+    mutating func adapterUnavailable(now: Date, reason: String) -> [Action] {
+        isAdapterRunning = false
+        permanentlyUnavailable = true
+        retryAt = nil
+        return switchTo(.fallback, reason: Failure.unavailable(reason).description)
     }
 
     /// The process ended without the controller asking it to.

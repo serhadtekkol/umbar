@@ -73,6 +73,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     /// title.)
     private var hasLoggedFirstData = false
     private var hasLoggedFirstArtwork = false
+    private var hasLoggedRejectedArtwork = false
 
     /// Adapter health signals for `NowPlayingWithFallbackController`.
     /// `onAdapterData` fires (on the main thread) for every update that
@@ -132,18 +133,27 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         adapter.stop(waitForExit: 0.5)
     }
 
-    /// Starts the stream child. Throws when the adapter is not bundled or
-    /// perl cannot be launched. No-op while it is already running.
+    /// Starts the stream child. No-op while it is already running.
+    ///
+    /// - Throws: `NowPlayingAdapterError.resourcesMissing` when the adapter
+    ///   is not bundled, `.integrityCheckFailed` when the app bundle no
+    ///   longer matches its signature (nothing is spawned then), or the
+    ///   `Process` error when perl cannot be launched.
     func startAdapter() throws {
+        guard !adapter.isRunning else { return }
         guard MediaRemoteAdapterBundle.isAvailable,
               let scriptURL = MediaRemoteAdapterBundle.scriptURL,
               let frameworkPath = MediaRemoteAdapterBundle.frameworkPath
         else {
             throw NowPlayingAdapterError.resourcesMissing
         }
+        // Before every spawn, not once per run: perl runs whatever is on
+        // disk at that moment (card #68).
+        try MediaRemoteAdapterBundle.verifyIntegrity()
         try adapter.start(scriptURL: scriptURL, frameworkPath: frameworkPath)
         hasLoggedFirstData = false
         hasLoggedFirstArtwork = false
+        hasLoggedRejectedArtwork = false
     }
 
     func stopAdapter() {
@@ -222,22 +232,52 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     
     // MARK: - Stream Processing
 
-    /// Runs on the adapter's I/O queue.
+    /// What an update says about artwork, decided on the I/O queue.
+    private enum ArtworkField {
+        /// The update has no artwork field.
+        case absent
+        /// Base64-decoded, size- and type-checked image bytes.
+        case image(Data, typeIdentifier: String)
+        /// The field was present but unusable; treated as "no artwork" so the
+        /// app icon is shown instead.
+        case rejected(ArtworkImageDecoder.Rejection)
+    }
+
+    /// Runs on the adapter's I/O queue. JSON and the base64 artwork (up to
+    /// a few MB) are decoded here so the main thread only assigns state
+    /// (card #70).
     private func handleAdapterLine(_ line: Data) {
         // Non-data lines (none today) and malformed JSON are skipped, as before.
         guard let update = try? decoder.decode(NowPlayingUpdate.self, from: line) else { return }
+        let artwork: ArtworkField
+        if let base64 = update.payload.artworkData {
+            switch ArtworkImageDecoder.validatedArtwork(base64: base64) {
+            case .success(let validated):
+                artwork = .image(validated.data, typeIdentifier: validated.typeIdentifier)
+            case .failure(let rejection):
+                artwork = .rejected(rejection)
+            }
+        } else {
+            artwork = .absent
+        }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.handleAdapterUpdate(update)
+            self.handleAdapterUpdate(update, artwork: artwork)
+            switch artwork {
+            case .image(let data, let type) where !self.hasLoggedFirstArtwork:
+                self.hasLoggedFirstArtwork = true
+                NSLog("[NowPlaying] first adapter artwork: \(data.count) bytes, \(type)")
+            case .rejected(let rejection) where !self.hasLoggedRejectedArtwork:
+                self.hasLoggedRejectedArtwork = true
+                NSLog("[NowPlaying] adapter artwork ignored: \(rejection)")
+            default:
+                break
+            }
             if update.payload.carriesNowPlayingData {
                 if !self.hasLoggedFirstData {
                     self.hasLoggedFirstData = true
                     // Bundle id and state only: titles are the user's listening history.
                     NSLog("[NowPlaying] first adapter data: app \(self.playbackState.bundleIdentifier), playing \(self.playbackState.isPlaying), artwork \(self.playbackState.artwork != nil)")
-                }
-                if !self.hasLoggedFirstArtwork, let artwork = self.playbackState.artwork {
-                    self.hasLoggedFirstArtwork = true
-                    NSLog("[NowPlaying] first adapter artwork: \(artwork.count) bytes, decodes as image \(NSImage(data: artwork) != nil)")
                 }
                 self.onAdapterData?()
             }
@@ -245,7 +285,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     }
 
     // MARK: - Update Methods
-    private func handleAdapterUpdate(_ update: NowPlayingUpdate) {
+    private func handleAdapterUpdate(_ update: NowPlayingUpdate, artwork: ArtworkField) {
         let payload = update.payload
         let diff = update.diff ?? false
 
@@ -285,12 +325,13 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
             newPlaybackState.repeatMode = self.playbackState.repeatMode
         }
 
-        if let artworkDataString = payload.artworkData {
-            newPlaybackState.artwork = Data(
-                base64Encoded: artworkDataString.trimmingCharacters(in: .whitespacesAndNewlines)
-            )
-        } else if !diff {
+        switch artwork {
+        case .image(let data, _):
+            newPlaybackState.artwork = data
+        case .rejected:
             newPlaybackState.artwork = nil
+        case .absent:
+            if !diff { newPlaybackState.artwork = nil }
         }
 
         if let dateString = payload.timestamp,
@@ -378,10 +419,14 @@ extension NowPlayingPayload {
 
 enum NowPlayingAdapterError: Error, CustomStringConvertible {
     case resourcesMissing
+    /// The app bundle failed its code-signature check; the reason is the
+    /// Security framework's message. Permanent for this run.
+    case integrityCheckFailed(String)
 
     var description: String {
         switch self {
         case .resourcesMissing: return "adapter script or framework not bundled"
+        case .integrityCheckFailed(let reason): return "app bundle signature check failed: \(reason)"
         }
     }
 }
