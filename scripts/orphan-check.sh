@@ -19,10 +19,12 @@
 #
 # This launches a real app instance, so it is not a unit test and is not run
 # by scripts/test.sh. It refuses to run when umbar's first-launch flag is not
-# cleared in the app's defaults domain, because a first launch plays the
-# startup sound and shows onboarding. It also refuses when an umbar is already
+# cleared in the app's defaults domain, because a first launch shows
+# onboarding. It also refuses, before every mode, when an umbar is already
 # running, so it never ends an instance it did not start. Afterwards every pid
-# it started is gone; nothing else is touched.
+# it started is gone, on success, on failure and on Ctrl-C: whatever runs from
+# inside APP (the app, its XPC helper, the perl child) is killed on the way
+# out. Nothing else is touched.
 #
 # Ported from Habibe's R2 quitpath.sh regression run.
 set -euo pipefail
@@ -32,7 +34,9 @@ if [ $# -lt 1 ]; then
     exit 4
 fi
 
-app="$(cd "$1" && pwd)"
+# Physical path: LaunchServices starts the executable by its resolved path
+# (/private/tmp/..., not /tmp/...), and that is what ps shows (card #120).
+app="$(cd "$1" && pwd -P)"
 shift
 modes=("$@")
 [ ${#modes[@]} -eq 0 ] && modes=(quit TERM KILL)
@@ -44,19 +48,49 @@ bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Conten
 
 first_launch="$(defaults read "$bundle_id" firstLaunch 2>/dev/null || echo unset)"
 if [ "$first_launch" != "0" ]; then
-    echo "refusing: '$bundle_id' firstLaunch is '$first_launch', a launch would play the startup sound." >&2
+    echo "refusing: '$bundle_id' firstLaunch is '$first_launch', a launch would show onboarding." >&2
     echo "set it with: defaults write $bundle_id firstLaunch -bool false" >&2
     exit 4
 fi
-if pgrep -f '/umbar\.app/Contents/MacOS/umbar$' >/dev/null; then
+umbar_running() {
+    pgrep -f '/umbar\.app/Contents/MacOS/umbar$' >/dev/null
+}
+if umbar_running; then
     echo "refusing: an umbar is already running; quit it first." >&2
     exit 4
 fi
 
+# Passed through the environment, not as awk arguments, so the awk process's
+# own command line never contains the path it is looking for.
+export ORPHAN_CHECK_EXE="$exe" ORPHAN_CHECK_CONTENTS="$app/Contents/"
+
+# Every process running from inside this copy of the app: the app, its XPC
+# helper and the perl child, whose command line names the bundled script. The
+# perl child is found by path, not by parent, so it is found after the app
+# died and it was reparented to launchd. Nothing outside APP can match, and the
+# guard above makes sure no app from it was running before this script started.
+procs_from_app() {
+    ps -axo pid=,command= | awk 'index($0, ENVIRON["ORPHAN_CHECK_CONTENTS"]) { print $1 }'
+}
+
+# Kills everything procs_from_app finds and waits for it to go. Runs after
+# every mode and on exit, so no path out of this script leaves a pid behind.
+reap() {
+    local pids
+    pids="$(procs_from_app | xargs)"
+    [ -z "$pids" ] && return 0
+    kill -9 $pids 2>/dev/null || true
+    for _ in $(seq 1 25); do [ -z "$(procs_from_app)" ] && return 0; sleep 0.2; done
+    echo "could not end: $(procs_from_app | xargs)" >&2
+    return 1
+}
+
 # A pid-targeted Quit. `osascript ... quit` would address the bundle id, i.e.
 # possibly another copy of umbar.
 work="$(mktemp -d "${TMPDIR:-/tmp}/umbar-orphan-check.XXXXXX")"
-trap 'rm -rf "$work"' EXIT
+trap 'reap || true; rm -rf "$work"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 cat > "$work/quitpid.swift" <<'SWIFT'
 import AppKit
 guard CommandLine.arguments.count == 2, let pid = Int32(CommandLine.arguments[1]),
@@ -70,15 +104,16 @@ perl_children() {   # perl adapter children of pid $1, one pid per line
         awk -v p="$1" '$2 == p && /\/usr\/bin\/perl/ && /mediaremote-adapter\.pl/ { print $1 }'
 }
 
-app_pid() {
-    pgrep -f "^$exe$" | head -1 || true
+app_pid() {   # the app itself: command line is exactly the executable path
+    ps -axo pid=,command= |
+        awk '{ pid = $1; sub(/^ *[0-9]+ /, ""); if ($0 == ENVIRON["ORPHAN_CHECK_EXE"]) { print pid; exit } }'
 }
 
 run_mode() {
     local mode="$1" pid="" kids="" n left=""
     open -n "$app"
     for _ in $(seq 1 50); do pid="$(app_pid)"; [ -n "$pid" ] && break; sleep 0.2; done
-    [ -z "$pid" ] && { echo "[$mode] app did not start"; return 3; }
+    [ -z "$pid" ] && { echo "[$mode] app did not start (left behind: [$(procs_from_app | xargs)])"; return 3; }
 
     for _ in $(seq 1 75); do kids="$(perl_children "$pid")"; [ -n "$kids" ] && break; sleep 0.2; done
     sleep "$hold"
@@ -110,10 +145,30 @@ run_mode() {
     echo "[$mode] ok: app and child gone"
 }
 
-status=0
+# The helper is launchd's to end once its client is gone; it is not what this
+# check is about, so a slow one is reported, not failed, and then ended.
+after_mode() {
+    local mode="$1" rest
+    rest="$(procs_from_app | xargs)"
+    [ -n "$rest" ] && echo "[$mode] ending what is still running from the app: [$rest]"
+    reap
+}
+
 for mode in "${modes[@]}"; do
     case "$mode" in quit|TERM|KILL|ABRT|SEGV) ;; *) echo "unknown mode: $mode" >&2; exit 4 ;; esac
+done
+
+status=0
+for mode in "${modes[@]}"; do
+    # Someone may have started an umbar since the last mode; ending it with
+    # the next mode's cleanup would end an instance this script did not start.
+    if umbar_running; then
+        echo "[$mode] refusing: an umbar is running that this script did not start" >&2
+        [ "$status" = 0 ] && status=4
+        break
+    fi
     rc=0; run_mode "$mode" || rc=$?
+    if ! after_mode "$mode" && [ "$rc" = 0 ]; then rc=1; fi
     # The first failure decides the exit status; later modes still run.
     [ "$status" = 0 ] && status=$rc
 done
