@@ -1001,6 +1001,86 @@
         }
       }
     },
+    "A notch-style replacement for the system indicators. Turn it on in Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A notch-style replacement for the system indicators. Turn it on in Settings."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem göstergelerinin yerine çentik tarzı bir gösterge. Ayarlar'dan açın."
+          }
+        }
+      }
+    },
+    "Accessibility access" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility access"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erişilebilirlik erişimi"
+          }
+        }
+      }
+    },
+    "Accessibility access is not on yet. Turn on umbar in System Settings; the HUD switches on as soon as access is granted." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility access is not on yet. Turn on umbar in System Settings; the HUD switches on as soon as access is granted."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erişilebilirlik erişimi henüz açık değil. Sistem Ayarları'nda umbar'ı açın; gösterge, erişim verildiği anda devreye girer."
+          }
+        }
+      }
+    },
+    "Allow" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İzin ver"
+          }
+        }
+      }
+    },
+    "Allow Reminders access to list your reminders here." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Reminders access to list your reminders here."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcılarınızı burada listelemek için erişime izin verin."
+          }
+        }
+      }
+    },
     "Apple Music" : {
       "localizations" : {
         "en" : {
@@ -1029,6 +1109,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple Music + Spotify"
+          }
+        }
+      }
+    },
+    "Calendar access" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar access"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takvim erişimi"
+          }
+        }
+      }
+    },
+    "Calendar access is off. Turn it on for umbar in System Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar access is off. Turn it on for umbar in System Settings."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takvim erişimi kapalı. Sistem Ayarları'nda umbar için açın."
+          }
+        }
+      }
+    },
+    "Calendar and reminders" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar and reminders"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takvim ve hatırlatıcılar"
           }
         }
       }
@@ -1065,6 +1193,86 @@
         }
       }
     },
+    "Controls for whatever is playing on your Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controls for whatever is playing on your Mac."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac'inizde ne çalıyorsa onun kontrolleri."
+          }
+        }
+      }
+    },
+    "Dismiss" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapat"
+          }
+        }
+      }
+    },
+    "Drop files on the notch to keep them close at hand." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop files on the notch to keep them close at hand."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosyaları çentiğe bırakın, elinizin altında dursun."
+          }
+        }
+      }
+    },
+    "Everything lives in the notch. Move the pointer over it or click it to open." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything lives in the notch. Move the pointer over it or click it to open."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her şey çentikte. Açmak için imleci üzerine getirin ya da tıklayın."
+          }
+        }
+      }
+    },
+    "File shelf" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File shelf"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosya rafı"
+          }
+        }
+      }
+    },
     "Follows Apple Music and Spotify and switches to whichever started playing last." : {
       "localizations" : {
         "en" : {
@@ -1077,6 +1285,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple Music ve Spotify'ı izler, en son çalmaya başlayana geçer."
+          }
+        }
+      }
+    },
+    "No permissions are requested now. When a feature needs your calendar, reminders or Accessibility, umbar tells you why and asks you then." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No permissions are requested now. When a feature needs your calendar, reminders or Accessibility, umbar tells you why and asks you then."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu an hiçbir izin istenmiyor. Bir özellik takviminize, hatırlatıcılarınıza ya da Erişilebilirlik'e ihtiyaç duyduğunda umbar nedenini söyler ve o zaman sorar."
+          }
+        }
+      }
+    },
+    "Now Playing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now Playing"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi Çalıyor"
           }
         }
       }
@@ -1113,6 +1353,70 @@
         }
       }
     },
+    "Open System Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open System Settings"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem Ayarları'nı Aç"
+          }
+        }
+      }
+    },
+    "Reminders access" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders access"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcı erişimi"
+          }
+        }
+      }
+    },
+    "Reminders access is off." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders access is off."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcı erişimi kapalı."
+          }
+        }
+      }
+    },
+    "Reminders access is off. Turn it on for umbar in System Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders access is off. Turn it on for umbar in System Settings."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcı erişimi kapalı. Sistem Ayarları'nda umbar için açın."
+          }
+        }
+      }
+    },
     "Shows whatever macOS is playing, including YouTube Music and other browser tabs. Falls back to Apple Music + Spotify if it stops working." : {
       "localizations" : {
         "en" : {
@@ -1141,6 +1445,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spotify"
+          }
+        }
+      }
+    },
+    "Today's events and reminders at a glance. Turn it on in Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's events and reminders at a glance. Turn it on in Settings."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünün etkinlikleri ve hatırlatıcıları bir bakışta. Ayarlar'dan açın."
+          }
+        }
+      }
+    },
+    "umbar needs access to Reminders to list your reminders next to your events. Your reminders never leave your Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar needs access to Reminders to list your reminders next to your events. Your reminders never leave your Mac."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar'ın hatırlatıcılarınızı etkinliklerinizin yanında listeleyebilmesi için Hatırlatıcılar'a erişmesi gerekir. Hatırlatıcılarınız Mac'inizden hiç çıkmaz."
+          }
+        }
+      }
+    },
+    "umbar needs access to your calendar to list today's events here." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar needs access to your calendar to list today's events here."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar'ın bugünkü etkinlikleri burada listeleyebilmesi için takviminize erişmesi gerekir."
+          }
+        }
+      }
+    },
+    "umbar needs access to your calendar to list today's events in the notch. Your events never leave your Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar needs access to your calendar to list today's events in the notch. Your events never leave your Mac."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar'ın bugünkü etkinlikleri çentikte listeleyebilmesi için takviminize erişmesi gerekir. Etkinlikleriniz Mac'inizden hiç çıkmaz."
+          }
+        }
+      }
+    },
+    "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar'ın ses ve parlaklık tuşlarını görebilmesi için Erişilebilirlik erişimi gerekir. Yazdıklarınızı asla görmez."
+          }
+        }
+      }
+    },
+    "Volume and brightness indicator" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume and brightness indicator"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ses ve parlaklık göstergesi"
+          }
+        }
+      }
+    },
+    "What umbar can do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What umbar can do"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar neler yapar"
           }
         }
       }
@@ -1741,106 +2157,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "访问被拒绝"
-          }
-        }
-      }
-    },
-    "Accessibility access is required to replace the system HUD." : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Der Zugriff auf Barrierefreiheit ist erforderlich, um das System HUD zu ersetzen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "시스템 HUD를 교체하기 위해서는 접근성 권한이 필요합니다."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Zezwolenie dostępności jest wymagane, żeby zastąpić system HUD."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accessibility access is required to replace the system HUD."
           }
         }
       }
@@ -4042,106 +4358,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "日历"
-          }
-        }
-      }
-    },
-    "Calendar access is denied. Please enable it in System Settings." : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Calendar access is denied. Please enable it in System Settings."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Přístup do kalendáře byl odepřen. Prosím povolte jej v nastavení systému."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Kalender Zugriff verweigert. Bitte aktiviere es in den Systemeinstellungen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar access is denied. Please enable it in System Settings."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar access is denied. Please enable it in System Settings."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Acceso al calendario denegado. Por favor, habilítelo en Configuración del sistema."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'accès au calendrier est refusé. Veuillez l'activer dans les réglages."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Calendar access is denied. Please enable it in System Settings."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'accesso al calendario è negato. Si prega di abilitarlo nelle impostazioni di sistema."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "캘린더 권한 거부됨. 시스템 설정에서 허용해주세요.."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dostęp do kalendarza został zablokowany. Proszę odblokować dostęp w Ustawieniach Systemowych."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Acesso ao Calendário negado. Por favor, autorize nas Configurações do Sistema."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Доступ к календарю запрещен. Пожалуйста, включите его в Системных настройках."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Takvim erişimi reddedildi. Lütfen Sistem Ayarlarından izin verin."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Доступ до календаря заборонений. Будь ласка, увімкніть його в Налаштуваннях Системи."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "日历访问被拒绝。请在系统设置中启用它。"
           }
         }
       }
@@ -15464,106 +15680,6 @@
         }
       }
     },
-    "Open Calendar Settings" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Calendar Settings"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Otevřít nastavení Kalendáře"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Kalendereinstellungen öffnen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Calendar Settings"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Calendar Settings"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abrir ajustes de Calendario"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ouvrir les paramètres du calendrier"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Calendar Settings"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Apri Impostazioni Calendario"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "캘린더 설정 열기"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Otwórz ustawienia kalendarza"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Calendar Settings"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Calendar Settings"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Takvim Ayarlarını Aç"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Calendar Settings"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "打开日历设置"
-          }
-        }
-      }
-    },
     "Open Notch" : {
       "localizations" : {
         "ar" : {
@@ -15760,106 +15876,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "悬停时打开Notch"
-          }
-        }
-      }
-    },
-    "Open Reminder Settings" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Reminder Settings"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Otevřít nastavení Připomínek"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Erinnerungseinstellungen öffnen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Reminder Settings"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open Reminder Settings"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abrir ajustes de Recordatorios"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ouvrir les paramètres de rappel"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Reminder Settings"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Apri Impostazioni Promemoria"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "미리알림 설정 열기"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Otwórz ustawienia przypomnień"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Reminder Settings"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Reminder Settings"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Anımsatıcı Ayarlarını Aç"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Open Reminder Settings"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "打开提醒事项设置"
           }
         }
       }
@@ -17064,106 +17080,6 @@
         }
       }
     },
-    "Reminder access is denied. Please enable it in System Settings." : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Reminder access is denied. Please enable it in System Settings."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Přístup do kalendáře byl odepřen. Prosím povolte jej v nastavení systému."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Erinnerungen Zugriff verweigert. Bitte aktiviere es in den Systemeinstellungen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminder access is denied. Please enable it in System Settings."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminder access is denied. Please enable it in System Settings."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Acceso a Recordatorios denegado. Conceda acceso en Configuración del Sistema"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'accès au rappel est refusé. Veuillez l'activer dans les paramètres."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Reminder access is denied. Please enable it in System Settings."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'accesso al promemoria è negato. Si prega di abilitarlo nelle impostazioni di sistema."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "미리알림 엑세스 거부됨. 시스템설정에서 허용해주세요."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Odmowa dostępu do przypomnień. Proszę włączyć dostęp w ustawieniach systemowych."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Reminder access is denied. Please enable it in System Settings."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Reminder access is denied. Please enable it in System Settings."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hatırlatıcılar erişimi reddedildi. Lütfen Sistem Ayarlarından izin verin."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Reminder access is denied. Please enable it in System Settings."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "提醒事项访问被拒绝。请在系统设置中启用它。"
-          }
-        }
-      }
-    },
     "Reminders" : {
       "localizations" : {
         "ar" : {
@@ -17446,8 +17362,8 @@
         },
         "tr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Replace system HUD"
+            "state" : "translated",
+            "value" : "Sistem göstergesini değiştir"
           }
         },
         "uk" : {
@@ -17546,120 +17462,20 @@
         },
         "tr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Replaces the standard macOS volume, display brightness, and keyboard brightness HUDs with a custom design."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Replaces the standard macOS volume, display brightness, and keyboard brightness HUDs with a custom design."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Replaces the standard macOS volume, display brightness, and keyboard brightness HUDs with a custom design."
-          }
-        }
-      }
-    },
-    "Request Accessibility" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Bedienungshilfen anfordern"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
             "state" : "translated",
-            "value" : "Request Accessibility"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "접근성 권한 요청"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Prośba o dostępność"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Request Accessibility"
+            "value" : "macOS'un standart ses, ekran parlaklığı ve klavye parlaklığı göstergelerini özel bir tasarımla değiştirir."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Request Accessibility"
+            "value" : "Replaces the standard macOS volume, display brightness, and keyboard brightness HUDs with a custom design."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Request Accessibility"
+            "value" : "Replaces the standard macOS volume, display brightness, and keyboard brightness HUDs with a custom design."
           }
         }
       }
@@ -23165,206 +22981,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Window Behavior"
-          }
-        }
-      }
-    },
-    "You can now enjoy the app. If you want to tweak things further, you can always visit the settings." : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You can now enjoy the app. If you want to tweak things further, you can always visit the settings."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : ""
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Du kannst die App nun genießen. Wenn du Dinge weiter anpassen möchtest, kannst du dies jederzeit in den Einstellungen tun."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can now enjoy the app. If you want to tweak things further, you can always visit the settings."
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can now enjoy the app. If you want to tweak things further, you can always visit the settings."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ahora puede disfrutar de la aplicación. Si desea modificar otros detalles, siempre puede visitar los ajustes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vous pouvez maintenant profiter de l'application. Si vous voulez modifier davantage les choses, vous pouvez toujours consulter les paramètres."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You can now enjoy the app. If you want to tweak things further, you can always visit the settings."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ora puoi goderti l'app. Se vuoi modificare ulteriormente le cose, puoi sempre visitare le impostazioni."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "이제 앱을 즐기실 수 있습니다. 추가로 설정을 조정하고 싶으시면 언제든지 설정 메뉴를 방문하시면 됩니다."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Możesz już cieszyć się aplikacją. Jeśli chcesz wprowadzić dodatkowe zmiany, zajrzyj do ustawień."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You can now enjoy the app. If you want to tweak things further, you can always visit the settings."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You can now enjoy the app. If you want to tweak things further, you can always visit the settings."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Artık uygulamanın keyfini çıkarabilirsiniz. Daha fazla ayar yapmak isterseniz, her zaman ayarlar bölümünü ziyaret edebilirsiniz."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You can now enjoy the app. If you want to tweak things further, you can always visit the settings."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "如果您想进一步调整内容，您可以随时访问设置。"
-          }
-        }
-      }
-    },
-    "You're All Set!" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You're All Set!"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vše je nastaveno!"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Du bist bereit!"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You're All Set!"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You're All Set!"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "¡Todo listo!"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tout est prêt!"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You're All Set!"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "È Tutto ok!"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "준비되었습니다!"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wszystko gotowe!"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You're All Set!"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You're All Set!"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tamamen Hazırsın!"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "You're All Set!"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "一切都准备好了！"
           }
         }
       }
