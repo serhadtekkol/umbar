@@ -1,0 +1,19 @@
+umbar
+=====
+
+umbar is a fork of boring.notch by TheBoredTeam, GPL-3.0.
+
+  Upstream project: boring.notch
+  Upstream authors: TheBoredTeam and the boring.notch contributors
+  Upstream source:  https://github.com/TheBoredTeam/boring.notch
+  Forked from:      upstream main at 23e7705 (2026-10-18)
+
+umbar is distributed under the GNU General Public License, version 3
+(see LICENSE). The upstream copyright notices and author headers in the
+source files are retained as required by the license. Changes made in
+this fork are recorded in the git history of this repository.
+
+umbar is not affiliated with or endorsed by TheBoredTeam.
+
+Third-party components bundled with umbar and their licenses are listed
+in THIRD_PARTY_LICENSES.

@@ -783,7 +783,9 @@ struct About: View {
             }
             VStack(spacing: 0) {
                 Divider()
-                Text("Made with 🫶🏻 by not so boring not.people")
+                // GPL-3.0 attribution for the upstream project; keep it visible
+                // in About (card #40, see NOTICE).
+                Text("umbar is a fork of boring.notch by TheBoredTeam, GPL-3.0")
                     .foregroundStyle(.secondary)
                     .padding(.top, 5)
                     .padding(.bottom, 7)
