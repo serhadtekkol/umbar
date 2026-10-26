@@ -200,7 +200,8 @@ extension Defaults.Keys {
     static let openShelfByDefault = Key<Bool>("openShelfByDefault", default: true)
     static let shelfTapToOpen = Key<Bool>("shelfTapToOpen", default: true)
     static let copyOnDrag = Key<Bool>("copyOnDrag", default: false)
-    static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)
+    /// On for fresh installs (#93, user decision 2026-10-26); existing installs keep theirs (DefaultsMigration).
+    static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: true)
     static let expandedDragDetection = Key<Bool>("expandedDragDetection", default: true)
     
     // MARK: Calendar

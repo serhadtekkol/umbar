@@ -21,6 +21,7 @@ enum DefaultsMigration {
     /// Append a change with the next version number; never edit a shipped row.
     static let changes: [Change] = [
         Change(version: 1, key: "hudReplacement", previousDefault: false),
+        Change(version: 1, key: "autoRemoveShelfItems", previousDefault: false),
     ]
 
     static let versionKey = "defaultsVersion"
