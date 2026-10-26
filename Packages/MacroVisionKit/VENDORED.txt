@@ -1,0 +1,23 @@
+Vendored: TheBoredTeam/MacroVisionKit
+Source:   https://github.com/TheBoredTeam/MacroVisionKit
+Version:  0.2.0
+Commit:   da481a6be8d8b1bf7fcb218507a72428bbcae7b0
+License:  MIT (see LICENSE in this directory)
+
+Why it is vendored
+  Upstream binds the private CGSMainConnectionID / CGSCopyManagedDisplaySpaces
+  with @_silgen_name, so a macOS update that drops either symbol makes dyld
+  abort the whole app before main() (security card #42). The only way to change
+  that is to change the package source.
+
+Local changes (all in Sources/MacroVisionKit/FullScreenMonitor.swift)
+  - The two private functions are resolved with dlsym at runtime; if either is
+    missing, detectSpaces() returns [] (no full-screen detection) instead of
+    crashing. Debug builds honor NOTCH_DISABLE_PRIVATE_CGS=1 to force that.
+  - CGSCopyManagedDisplaySpaces follows the Copy rule (+1); its result is now
+    taken with takeRetainedValue() instead of being leaked.
+  Not vendored: Examples/ (FullScreenMonitorExample executable), CI workflows.
+
+Updating
+  Diff the new upstream FullScreenMonitor.swift against this one, re-apply the
+  "Private CGS API" section, update Version/Commit here.
