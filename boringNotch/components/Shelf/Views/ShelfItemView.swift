@@ -10,6 +10,10 @@ import SwiftUI
 import Defaults
 
 import QuickLook
+import os
+
+/// Paths are never logged here (#72): a file name can be personal data.
+private let shelfDragLog = Logger(subsystem: "umbar", category: "ShelfDrag")
 
 struct ShelfItemView: View {
     let item: ShelfItem
@@ -222,6 +226,12 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
         private let dragThreshold: CGFloat = 3.0
         private var draggedURLs: [URL] = []
         private var draggedItems: [ShelfItem] = []
+        /// Path and identity of each dragged file at drag start, to confirm a
+        /// move before the item leaves the shelf.
+        private var draggedSources: [ShelfItem.ID: (path: String, identity: ShelfFileIdentity)] = [:]
+        private var draggedSourcesDeletable = true
+        /// Where the pointer was at the last mask query, i.e. at the drop.
+        private var lastDestination: ShelfDragDestination = .ownApp
         
         override func rightMouseDown(with event: NSEvent) {
             onRightClick?(event, self)
@@ -262,14 +272,17 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
                 itemsToDrag = [item]
             }
 
-            // Store items being dragged for auto-remove feature
-            draggedItems = itemsToDrag
+            draggedItems = []
+            draggedSources = [:]
+            draggedSourcesDeletable = true
+            lastDestination = .ownApp
 
             // Create dragging items for AppKit
             var draggingItems: [NSDraggingItem] = []
 
             for dragItem in itemsToDrag {
                 if let pasteboardItem = createPasteboardItem(for: dragItem) {
+                    draggedItems.append(dragItem)
                     let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
 
                     // Use the drag preview image
@@ -291,22 +304,29 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
             beginDraggingSession(with: draggingItems, event: event, source: self)
         }
         
+        /// Builds the pasteboard item for one shelf item and records what the
+        /// drag-end handling needs to know about its file. Returns nil for an
+        /// item whose file cannot be found: it is not draggable (AC-3.8).
         private func createPasteboardItem(for item: ShelfItem) -> NSPasteboardItem? {
-            let pasteboardItem = NSPasteboardItem()
-
             switch item.kind {
             case .file:
-                guard let url = ShelfStateViewModel.shared.resolveAndUpdateBookmark(for: item) else {
-                    pasteboardItem.setString(item.displayName, forType: .string)
-                    return pasteboardItem
+                guard let url = ShelfStateViewModel.shared.resolveAndUpdateBookmark(for: item),
+                      let identity = ShelfFileIdentity(path: url.path) else {
+                    return nil
                 }
-                
-                // Start accessing security-scoped resource and keep it active during drag
+
+                // Balanced in draggingSession(_:endedAt:operation:), which
+                // AppKit calls exactly once per session, also on cancel.
                 if url.startAccessingSecurityScopedResource() {
                     draggedURLs.append(url)
-                    NSLog("🔐 Started security-scoped access for drag: \(url.path)")
                 }
-                
+
+                draggedSources[item.id] = (url.path, identity)
+                if !FileManager.default.isDeletableFile(atPath: url.path) {
+                    draggedSourcesDeletable = false
+                }
+
+                let pasteboardItem = NSPasteboardItem()
                 pasteboardItem.setString(url.absoluteString, forType: .fileURL)
                 pasteboardItem.setString(url.path, forType: .string)
                 return pasteboardItem
@@ -315,20 +335,32 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
         
         // MARK: - NSDraggingSource
         
+        // The Finder-only move relies on AppKit asking for the mask again as
+        // the pointer moves between destinations, not once per context. If
+        // it asked only once, a drag that leaves umbar over another app and
+        // then reaches Finder would keep that app's copy-or-move mask, and
+        // Finder would copy across volumes: a missed move, never a lost file.
+        // The debug line below is how a hand test on a real drag confirms it
+        // (`log stream --level debug --predicate 'category == "ShelfDrag"'`).
         func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-            // When copyOnDrag is enabled, only allow copy operations
-            if Defaults[.copyOnDrag] {
-                return [.copy]
-            }
-            
             switch context {
             case .outsideApplication:
-                return [.copy, .move]
+                lastDestination = ShelfDragDestinationProbe.destinationUnderPointer()
             case .withinApplication:
-                return [.copy, .move, .generic]
+                lastDestination = .ownApp
             @unknown default:
-                return [.copy]
+                // Per NSDragging.h, unknown contexts are more specific kinds
+                // of "within the application".
+                lastDestination = .ownApp
             }
+            let mask = ShelfDragOutPolicy.operationMask(
+                destination: lastDestination,
+                optionKeyHeld: NSEvent.modifierFlags.contains(.option),
+                copyOnDrag: Defaults[.copyOnDrag],
+                sourcesDeletable: draggedSourcesDeletable
+            )
+            shelfDragLog.debug("mask query: destination=\(String(describing: self.lastDestination), privacy: .public) mask=\(mask.rawValue, privacy: .public)")
+            return mask
         }
         
         func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
@@ -339,20 +371,22 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
         func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
             ShelfSelectionModel.shared.endDrag()
 
-            // Stop accessing security-scoped resources after drag completes
+            // Ends the access begun in createPasteboardItem. The move watcher
+            // that may run after this needs none: it only calls lstat.
             for url in draggedURLs {
                 url.stopAccessingSecurityScopedResource()
-                NSLog("🔐 Stopped security-scoped access after drag: \(url.path)")
             }
             draggedURLs.removeAll()
 
-            // Auto-remove items from shelf if enabled and drag succeeded
-            if Defaults[.autoRemoveShelfItems] && !operation.isEmpty {
-                for item in draggedItems {
-                    ShelfStateViewModel.shared.remove(item)
-                }
-            }
+            let action = ShelfDragOutPolicy.endAction(
+                operation: operation,
+                lastDestination: lastDestination,
+                autoRemove: Defaults[.autoRemoveShelfItems]
+            )
+            shelfDragLog.debug("drag ended: operation=\(operation.rawValue, privacy: .public) destination=\(String(describing: self.lastDestination), privacy: .public) action=\(String(describing: action), privacy: .public) items=\(self.draggedItems.count, privacy: .public)")
+            ShelfStateViewModel.shared.handleDragEnd(action, for: draggedItems, sources: draggedSources)
             draggedItems.removeAll()
+            draggedSources.removeAll()
         }
         
         func ignoreModifierKeys(for session: NSDraggingSession) -> Bool {
