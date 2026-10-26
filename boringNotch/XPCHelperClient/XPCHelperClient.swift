@@ -5,12 +5,8 @@ import AsyncXPCConnection
 final class XPCHelperClient: NSObject {
     nonisolated static let shared = XPCHelperClient()
     
-    /// The embedded helper's bundle identifier, which launchd uses as its
-    /// XPC service name. The project derives both IDs from one build setting
-    /// (`UMBAR_BUNDLE_ID_ROOT`, card #40): host = root, helper = root +
-    /// ".XPCHelper". Deriving it from our own bundle at runtime keeps the two
-    /// from drifting apart if the root ever changes again.
-    private let serviceName = "\(bundleIdentifier).XPCHelper"
+    /// The embedded helper's XPC service name; see `AppIdentity`.
+    private let serviceName = AppIdentity.helperServiceName(hostBundleID: bundleIdentifier)
     
     private var remoteService: RemoteXPCService<BoringNotchXPCHelperProtocol>?
     private var connection: NSXPCConnection?
