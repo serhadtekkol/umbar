@@ -71,7 +71,7 @@ final class MediaKeyInterceptor {
             options: .defaultTap,
             eventsOfInterest: mask,
             callback: { _, type, cgEvent, userInfo in
-                guard let userInfo else { return MediaKeyInterceptor.passThrough(cgEvent) }
+                guard let userInfo else { return EventTap.passThrough(cgEvent) }
                 let interceptor = Unmanaged<MediaKeyInterceptor>.fromOpaque(userInfo).takeUnretainedValue()
                 return interceptor.handleTapCallback(type: type, event: cgEvent)
             },
@@ -100,16 +100,6 @@ final class MediaKeyInterceptor {
     
     // MARK: - Event Handling
 
-    /// Returns an event to the tap unchanged.
-    ///
-    /// The tap callback receives the event at +0 and the system takes the
-    /// returned reference without consuming a retain, so it must go back
-    /// unretained. Upstream used `passRetained`, which leaked one CGEvent per
-    /// passed-through system-defined event (card #45).
-    static func passThrough(_ cgEvent: CGEvent) -> Unmanaged<CGEvent> {
-        Unmanaged.passUnretained(cgEvent)
-    }
-
     /// Maximum re-enable attempts after the system disables the tap.
     static let maxReenableAttempts = 5
 
@@ -119,11 +109,11 @@ final class MediaKeyInterceptor {
     /// (`tapDisabledByTimeout`) or when secure input intervenes
     /// (`tapDisabledByUserInput`) and tells us only through these pseudo-events.
     /// Without re-enabling, HUD replacement silently stops until relaunch
-    /// (card #62). The event is still returned unretained (see `passThrough`).
+    /// (card #62). The event is still returned unretained (see `EventTap.passThrough`).
     func handleTapCallback(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             reenableTap(attempt: 1, reason: type == .tapDisabledByTimeout ? "timeout" : "user input")
-            return Self.passThrough(event)
+            return EventTap.passThrough(event)
         }
         return handleEvent(event)
     }
@@ -150,12 +140,12 @@ final class MediaKeyInterceptor {
     private func handleEvent(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
         // Ensure the CGEvent has a valid type before converting to NSEvent
         guard cgEvent.type != .null else {
-            return Self.passThrough(cgEvent)
+            return EventTap.passThrough(cgEvent)
         }
         guard let nsEvent = NSEvent(cgEvent: cgEvent),
               nsEvent.type == .systemDefined,
               nsEvent.subtype.rawValue == 8 else {
-            return Self.passThrough(cgEvent)
+            return EventTap.passThrough(cgEvent)
         }
         
         let data1 = nsEvent.data1
@@ -165,7 +155,7 @@ final class MediaKeyInterceptor {
         // 0xA = key down, 0xB = key up. Only handle key down.
         guard stateByte == 0xA,
               let keyType = NXKeyType(rawValue: keyCode) else {
-            return Self.passThrough(cgEvent)
+            return EventTap.passThrough(cgEvent)
         }
         
         let flags = nsEvent.modifierFlags
