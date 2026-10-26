@@ -132,15 +132,23 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         adapter.stop(waitForExit: 0.5)
     }
 
-    /// Starts the stream child. Throws when the adapter is not bundled or
-    /// perl cannot be launched. No-op while it is already running.
+    /// Starts the stream child. No-op while it is already running.
+    ///
+    /// - Throws: `NowPlayingAdapterError.resourcesMissing` when the adapter
+    ///   is not bundled, `.integrityCheckFailed` when the app bundle no
+    ///   longer matches its signature (nothing is spawned then), or the
+    ///   `Process` error when perl cannot be launched.
     func startAdapter() throws {
+        guard !adapter.isRunning else { return }
         guard MediaRemoteAdapterBundle.isAvailable,
               let scriptURL = MediaRemoteAdapterBundle.scriptURL,
               let frameworkPath = MediaRemoteAdapterBundle.frameworkPath
         else {
             throw NowPlayingAdapterError.resourcesMissing
         }
+        // Before every spawn, not once per run: perl runs whatever is on
+        // disk at that moment (card #68).
+        try MediaRemoteAdapterBundle.verifyIntegrity()
         try adapter.start(scriptURL: scriptURL, frameworkPath: frameworkPath)
         hasLoggedFirstData = false
         hasLoggedFirstArtwork = false
@@ -378,10 +386,14 @@ extension NowPlayingPayload {
 
 enum NowPlayingAdapterError: Error, CustomStringConvertible {
     case resourcesMissing
+    /// The app bundle failed its code-signature check; the reason is the
+    /// Security framework's message. Permanent for this run.
+    case integrityCheckFailed(String)
 
     var description: String {
         switch self {
         case .resourcesMissing: return "adapter script or framework not bundled"
+        case .integrityCheckFailed(let reason): return "app bundle signature check failed: \(reason)"
         }
     }
 }

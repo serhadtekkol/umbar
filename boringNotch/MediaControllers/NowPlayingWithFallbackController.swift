@@ -100,6 +100,10 @@ final class NowPlayingWithFallbackController: MediaControllerProtocol {
                 try nowPlaying.startAdapter()
                 NSLog("[NowPlaying] adapter started (pid \(nowPlaying.adapterProcessIdentifier.map(String.init) ?? "?"))")
                 apply { $0.adapterLaunched(now: $1) }
+            } catch let error as NowPlayingAdapterError {
+                // Missing or tampered resources do not heal by retrying.
+                NSLog("[NowPlaying] adapter unavailable (\(error)); not retrying this run")
+                apply { $0.adapterUnavailable(now: $1, reason: error.description) }
             } catch {
                 apply { $0.adapterLaunchFailed(now: $1, error: "\(error)") }
             }
