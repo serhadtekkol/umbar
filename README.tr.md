@@ -26,6 +26,27 @@ arayüzdeki halleriyle verilmiştir. İki doküman çelişirse İngilizce olan g
   yere sürükleyip bırakın. Sağ tıklayınca Open, Open With, Show in Finder, Quick Look, Share,
   Copy, Copy Path, Rename ve Remove; uygun olduğunda Compress, Create PDF, Convert Image ve
   Remove Background seçenekleri çıkar. Raf yalnızca dosya kabul eder.
+
+  Raf taşıma değişikliğini içeren ilk sürümden itibaren (şu anki `product/main`'de yok): raftaki
+  bir öğeyi Finder'daki bir klasöre sürüklemek dosyayı taşır; aynı diskte de başka bir diske de.
+  Orijinal eski yerinde kalmaz. Kopyalamak için ⌥ tuşunu basılı tutun. Yalnızca kopya kabul eden
+  bir uygulamaya (örneğin bir Mail iletisi) bıraktığınızda umbar dosyayı kopyalar.
+  **Settings > Shelf** içindeki **Remove from shelf after dragging** açıkken öğe, taşıma
+  doğrulandıktan sonra raftan kalkar; bırakmayı iptal ederseniz ya da başarısız olursa öğe rafta
+  kalır. Bulunduğu yerden silinemeyen dosyalar (örneğin salt okunur bir disk görüntüsündekiler)
+  kopyalanır.
+- **Caffeinate.** Açık notch'un üst çubuğundaki fincan düğmesi Mac'i uyanık tutar. Düğmeye tıklayıp
+  ∞ (siz kapatana kadar), 15m, 1h veya 2h seçin. Açıkken fincan dolu görünür, açık notch kalan
+  süreyi gösterir, kapalı notch'ta küçük bir fincan rozeti çıkar. Kapatmak için dolu fincana
+  tıklayın. Pil gücündeyken pil %10'un altına düşerse caffeinate kendiliğinden kapanır ve %10'un
+  altında başlamaz. umbar her açıldığında kapalıdır.
+- **Göz molası hatırlatıcıları.** 20 dakikalık aktif kullanımdan sonra umbar, 20 saniye boyunca
+  yaklaşık 6 metre (20 feet) uzağa bakmanızı ister; notch'ta geri sayım görünür. **Snooze 5 min**
+  ile 5 dakika sonra yeniden sorulmasını, **Skip** ile 20 dakikalık sayacın baştan başlamasını
+  seçersiniz. Klavye ya da fare girdisi olmayan süre (varsayılan 5 dakika), kilitli ekran ve uyku
+  mola sayılır ve sayacı sıfırlar. Tam ekran video ya da sunum açıkken hatırlatıcı bekler. Hiç ses
+  çalmaz. Yeni kurulumda varsayılan olarak açıktır; süreleri değiştirmek ya da kapatmak için
+  **Settings > Eye break**'i kullanın.
 - **Sistem HUD'unun yerine geçme.** macOS'un ses, ekran parlaklığı ve klavye aydınlatması
   göstergelerinin yerine notch'ta çizilen göstergeler koyar. Varsayılan olarak kapalıdır;
   Erişilebilirlik (Accessibility) izni gerekir.
