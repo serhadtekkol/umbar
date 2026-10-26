@@ -10,8 +10,19 @@ import Foundation
 class ServiceDelegate: NSObject, NSXPCListenerDelegate {
     
     /// This method is where the NSXPCListener configures, accepts, and resumes a new incoming NSXPCConnection.
+    /// Computed once: the host app's signature cannot change while this
+    /// helper process is alive.
+    private let callerRequirement = CallerRequirement.make()
+
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        
+        // Only the host app may talk to this helper (card #46). Fail closed if
+        // the requirement could not be built.
+        guard let callerRequirement else {
+            NSLog("BoringNotchXPCHelper: rejecting connection, caller requirement unavailable")
+            return false
+        }
+        newConnection.setCodeSigningRequirement(callerRequirement)
+
         // Configure the connection.
         // First, set the interface that the exported object implements.
         newConnection.exportedInterface = NSXPCInterface(with: (any BoringNotchXPCHelperProtocol).self)
