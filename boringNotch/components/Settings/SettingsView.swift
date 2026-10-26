@@ -35,6 +35,12 @@ struct SettingsView: View {
                 NavigationLink(value: "HUD") {
                     Label("HUDs", systemImage: "dial.medium.fill")
                 }
+                NavigationLink(value: "Caffeinate") {
+                    Label("Caffeinate", systemImage: "cup.and.saucer")
+                }
+                NavigationLink(value: "EyeBreak") {
+                    Label("Eye break", systemImage: "eye")
+                }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
@@ -71,6 +77,10 @@ struct SettingsView: View {
                     CalendarSettings()
                 case "HUD":
                     HUD()
+                case "Caffeinate":
+                    CaffeinateSettings()
+                case "EyeBreak":
+                    EyeBreakSettings()
                 case "Battery":
                     Charge()
                 case "Shelf":

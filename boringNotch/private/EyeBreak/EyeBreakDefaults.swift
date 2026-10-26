@@ -20,9 +20,9 @@ enum EyeBreakDelivery: String, CaseIterable, Identifiable, Defaults.Serializable
 }
 
 extension Defaults.Keys {
-    /// Off by default: AC-1.13 makes every feature individually switchable and
-    /// the spec does not require F14 to be on out of the box.
-    static let eyeBreakEnabled = Key<Bool>("eyeBreakEnabled", default: false)
+    /// On for fresh installs (K17, 2026-10-26); existing installs keep the
+    /// value they ran with (DefaultsMigration). Switchable in Settings (AC-1.13).
+    static let eyeBreakEnabled = Key<Bool>("eyeBreakEnabled", default: true)
     static let eyeBreakDelivery = Key<EyeBreakDelivery>("eyeBreakDelivery", default: .panel)
     /// Minutes of active use between reminders (BR-14.1, default 20).
     static let eyeBreakIntervalMinutes = Key<Int>("eyeBreakIntervalMinutes", default: 20)

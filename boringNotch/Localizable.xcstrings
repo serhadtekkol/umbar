@@ -201,6 +201,54 @@
         }
       }
     },
+    "%lld min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld dk"
+          }
+        }
+      }
+    },
+    "%lld min idle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min idle"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld dk boşta"
+          }
+        }
+      }
+    },
+    "%lld s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld s"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sn"
+          }
+        }
+      }
+    },
     "'Now Playing' was the only option on previous versions and works with all media apps." : {
       "localizations" : {
         "ar" : {
@@ -1049,6 +1097,22 @@
         }
       }
     },
+    "After every %lld minutes of use, umbar asks you to look about 6 metres (20 feet) away for %lld seconds. It never plays a sound." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After every %lld minutes of use, umbar asks you to look about 6 metres (20 feet) away for %lld seconds. It never plays a sound."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar, her %1$lld dakikalık kullanımdan sonra %2$lld saniye boyunca yaklaşık 6 metre uzağa bakmanızı ister. Hiçbir zaman ses çalmaz."
+          }
+        }
+      }
+    },
     "Allow" : {
       "localizations" : {
         "en" : {
@@ -1109,6 +1173,278 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple Music + Spotify"
+          }
+        }
+      }
+    },
+    "Caffeinate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caffeinate"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uyanık tut"
+          }
+        }
+      }
+    },
+    "caffeinate.badge.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caffeinate is on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uyanık tut açık"
+          }
+        }
+      }
+    },
+    "caffeinate.duration.15m" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15m"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 dk"
+          }
+        }
+      }
+    },
+    "caffeinate.duration.15m.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 minutes"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 dakika"
+          }
+        }
+      }
+    },
+    "caffeinate.duration.1h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1h"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 sa"
+          }
+        }
+      }
+    },
+    "caffeinate.duration.1h.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 hour"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 saat"
+          }
+        }
+      }
+    },
+    "caffeinate.duration.2h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2h"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 sa"
+          }
+        }
+      }
+    },
+    "caffeinate.duration.2h.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 hours"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 saat"
+          }
+        }
+      }
+    },
+    "caffeinate.duration.indefinite.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until turned off"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siz kapatana kadar"
+          }
+        }
+      }
+    },
+    "caffeinate.help.off" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep the Mac awake"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac'i uyanık tut"
+          }
+        }
+      }
+    },
+    "caffeinate.help.on" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeping the Mac awake. Click to turn off."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac uyanık tutuluyor. Kapatmak için tıklayın."
+          }
+        }
+      }
+    },
+    "caffeinate.notice.batteryOff" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caffeinate turned off: battery below 10%."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uyanık tut kapandı: pil %10'un altında."
+          }
+        }
+      }
+    },
+    "caffeinate.notice.batteryTooLow" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery is below 10%. Plug in to use caffeinate."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pil %10'un altında. Uyanık tut'u kullanmak için şarja takın."
+          }
+        }
+      }
+    },
+    "caffeinate.notice.failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not keep the Mac awake."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac uyanık tutulamadı."
+          }
+        }
+      }
+    },
+    "caffeinate.remaining.hoursMinutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lldh %@m"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sa %@ dk"
+          }
+        }
+      }
+    },
+    "caffeinate.remaining.minutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lldm"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld dk"
+          }
+        }
+      }
+    },
+    "caffeinate.remaining.seconds" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%llds"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sn"
           }
         }
       }
@@ -1209,6 +1545,22 @@
         }
       }
     },
+    "Count as a break after" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Count as a break after"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mola sayılması için"
+          }
+        }
+      }
+    },
     "Dismiss" : {
       "localizations" : {
         "en" : {
@@ -1257,6 +1609,102 @@
         }
       }
     },
+    "Eye break" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eye break"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Göz molası"
+          }
+        }
+      }
+    },
+    "eyebreak.countdown" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld s"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sn"
+          }
+        }
+      }
+    },
+    "eyebreak.notification.body" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest your eyes for %lld seconds."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gözlerinizi %lld saniye dinlendirin."
+          }
+        }
+      }
+    },
+    "eyebreak.skip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atla"
+          }
+        }
+      }
+    },
+    "eyebreak.snooze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snooze 5 min"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 dk ertele"
+          }
+        }
+      }
+    },
+    "eyebreak.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look 20 feet away"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 metre uzağa bakın"
+          }
+        }
+      }
+    },
     "File shelf" : {
       "localizations" : {
         "en" : {
@@ -1289,6 +1737,54 @@
         }
       }
     },
+    "Keeps the Mac and its display awake. Choose the length in the notch: until you turn it off, 15 minutes, 1 hour or 2 hours." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeps the Mac and its display awake. Choose the length in the notch: until you turn it off, 15 minutes, 1 hour or 2 hours."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac'i ve ekranını uyanık tutar. Süreyi notch'tan seçin: siz kapatana kadar, 15 dakika, 1 saat ya da 2 saat."
+          }
+        }
+      }
+    },
+    "Look away for" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look away for"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzağa bakma süresi"
+          }
+        }
+      }
+    },
+    "macOS asks once whether umbar may send notifications. If they are not allowed, the reminder appears in the notch instead." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS asks once whether umbar may send notifications. If they are not allowed, the reminder appears in the notch instead."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS, umbar'ın bildirim gönderip gönderemeyeceğini bir kez sorar. İzin verilmezse hatırlatma notch'ta görünür."
+          }
+        }
+      }
+    },
     "No permissions are requested now. When a feature needs your calendar, reminders or Accessibility, umbar tells you why and asks you then." : {
       "localizations" : {
         "en" : {
@@ -1301,6 +1797,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Şu an hiçbir izin istenmiyor. Bir özellik takviminize, hatırlatıcılarınıza ya da Erişilebilirlik'e ihtiyaç duyduğunda umbar nedenini söyler ve o zaman sorar."
+          }
+        }
+      }
+    },
+    "Notch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch"
+          }
+        }
+      }
+    },
+    "Notification" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notification"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirim"
           }
         }
       }
@@ -1353,6 +1881,22 @@
         }
       }
     },
+    "On battery power, Caffeinate turns itself off when the charge drops below %lld%% and tells you. Closing the lid still puts the Mac to sleep." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On battery power, Caffeinate turns itself off when the charge drops below %lld%% and tells you. Closing the lid still puts the Mac to sleep."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pille çalışırken şarj %%%lld'un altına düşünce Uyanık tut kendiliğinden kapanır ve size haber verir. Kapağı kapatınca Mac yine uyur."
+          }
+        }
+      }
+    },
     "Open System Settings" : {
       "localizations" : {
         "en" : {
@@ -1365,6 +1909,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sistem Ayarları'nı Aç"
+          }
+        }
+      }
+    },
+    "Remind every" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind every"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatma aralığı"
+          }
+        }
+      }
+    },
+    "Remind me to rest my eyes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind me to rest my eyes"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gözlerimi dinlendirmemi hatırlat"
+          }
+        }
+      }
+    },
+    "Reminder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatma"
           }
         }
       }
@@ -1449,6 +2041,22 @@
         }
       }
     },
+    "Show Caffeinate in the notch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Caffeinate in the notch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uyanık tut'u notch'ta göster"
+          }
+        }
+      }
+    },
     "Show reminders" : {
       "localizations" : {
         "en" : {
@@ -1461,6 +2069,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hatırlatıcıları göster"
+          }
+        }
+      }
+    },
+    "Show the reminder in" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the reminder in"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatmanın görüneceği yer"
           }
         }
       }
@@ -1493,6 +2117,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spotify"
+          }
+        }
+      }
+    },
+    "Time away from the keyboard and mouse counts as a break, and so does a locked or sleeping Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time away from the keyboard and mouse counts as a break, and so does a locked or sleeping Mac."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klavye ve fareden uzak geçen süre mola sayılır; Mac'in kilitli ya da uykuda olması da öyle."
+          }
+        }
+      }
+    },
+    "Timing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timing"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamanlama"
           }
         }
       }
@@ -1605,6 +2261,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ses ve parlaklık göstergesi"
+          }
+        }
+      }
+    },
+    "Wait while a full-screen video or presentation is on" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wait while a full-screen video or presentation is on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tam ekran video ya da sunum sürerken bekle"
           }
         }
       }
