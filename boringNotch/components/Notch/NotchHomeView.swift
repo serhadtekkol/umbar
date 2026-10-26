@@ -12,14 +12,29 @@ import SwiftUI
 
 // MARK: - Music Player Components
 
+/// Spacing scale from docs/design/design-language.md §3.6
+/// (`xxs 2 · xs 4 · s 8 · m 12 · l 16`). Local until UmbarTokens lands.
+private enum MusicSpace {
+    static let xs: CGFloat = 4
+    static let s: CGFloat = 8
+    static let m: CGFloat = 12
+    static let l: CGFloat = 16
+}
+
 struct MusicPlayerView: View {
     @EnvironmentObject var vm: BoringViewModel
     let albumArtNamespace: Namespace.ID
+    /// The art is as tall as the controls column, so its top meets the title
+    /// and its bottom meets the control row: one grid, no floating square.
+    @State private var artSide: CGFloat = MusicPlayerImageSizes.size.opened.height
 
     var body: some View {
-        HStack {
-            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace).padding(.all, 5)
+        HStack(alignment: .top, spacing: MusicSpace.l) {
+            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
+                .frame(width: artSide, height: artSide)
             MusicControlsView().drawingGroup().compositingGroup()
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { artSide = $0 }
         }
     }
 }
@@ -117,9 +132,10 @@ struct MusicControlsView: View {
     @State private var lastDragged: Date = .distantPast
     @Default(.musicControlSlots) private var slotConfig
     @Default(.musicControlSlotLimit) private var slotLimit
+    @State private var infoWidth: CGFloat = 0
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: MusicSpace.m) {
             songInfoAndSlider
             slotToolbar
         }
@@ -127,14 +143,12 @@ struct MusicControlsView: View {
     }
 
     private var songInfoAndSlider: some View {
-        GeometryReader { geo in
-            VStack(alignment: .leading, spacing: 4) {
-                songInfo(width: geo.size.width)
-                musicSlider
-            }
+        VStack(alignment: .leading, spacing: MusicSpace.s) {
+            songInfo(width: infoWidth)
+            musicSlider
         }
-        .padding(.top, 10)
-        .padding(.leading, 5)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { infoWidth = $0 }
     }
 
     private func songInfo(width: CGFloat) -> some View {
@@ -171,17 +185,14 @@ struct MusicControlsView: View {
             ) { newValue in
                 MusicManager.shared.seek(to: newValue)
             }
-            .padding(.top, 5)
-            .frame(height: 36)
         }
     }
 
     private var slotToolbar: some View {
         let slots = activeSlots
-        return HStack(spacing: 6) {
-            ForEach(Array(slots.enumerated()), id: \.offset) { index, slot in
+        return HStack(spacing: MusicSpace.s) {
+            ForEach(Array(slots.enumerated()), id: \.offset) { _, slot in
                 slotView(for: slot)
-                    .frame(alignment: .center)
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
@@ -233,7 +244,8 @@ struct MusicControlsView: View {
                 MusicManager.shared.skip(seconds: 15)
             }
         case .none:
-            Color.clear.frame(height: 1)
+            // Same footprint as an icon button, so the row stays an even grid.
+            Color.clear.frame(width: HoverButton.iconSize, height: HoverButton.iconSize)
         }
     }
 
@@ -428,7 +440,7 @@ struct MusicSliderView: View {
 
 
     var body: some View {
-        VStack {
+        VStack(spacing: MusicSpace.xs) {
             CustomSlider(
                 value: $sliderValue,
                 range: 0...duration,
