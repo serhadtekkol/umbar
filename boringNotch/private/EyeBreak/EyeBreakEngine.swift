@@ -6,7 +6,7 @@
 //
 //  Deliberately Foundation-only and free of timers, Defaults and AppKit: every
 //  input (the clock, idle seconds, lock state) is passed in, so the whole state
-//  machine is unit-testable with a fake clock. See scripts/eyebreak-engine-tests.
+//  machine is unit-testable with a fake clock. See umbarTests/EyeBreakEngineTests.
 //
 
 import Foundation

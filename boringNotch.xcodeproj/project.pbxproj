@@ -344,10 +344,18 @@
 			);
 			target = A1837B1361C7F96E52B64318 /* umbarTests */;
 		};
+		9165C67A556D9C1E01F10C80 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Caffeinate/CaffeinatePolicy.swift,
+				EyeBreak/EyeBreakEngine.swift,
+			);
+			target = A1837B1361C7F96E52B64318 /* umbarTests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		112FB72F2CCF12CC0015238C /* private */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = private; sourceTree = "<group>"; };
+		112FB72F2CCF12CC0015238C /* private */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (9165C67A556D9C1E01F10C80 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = private; sourceTree = "<group>"; };
 		11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (11F7485C2EC9AABA00F841DB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, C429C6B7EA29E1EA0BEE75B0 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = BoringNotchXPCHelper; sourceTree = "<group>"; };
 		E317D82E8A844741BF11F30A /* Sources */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Sources; sourceTree = "<group>"; };
 		E2E6081DCD3B418802323E0C /* umbarTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = umbarTests; sourceTree = "<group>"; };
