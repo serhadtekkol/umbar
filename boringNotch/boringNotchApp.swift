@@ -216,6 +216,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        EyeBreakManager.shared.start()
 
         NotificationCenter.default.addObserver(
             self,
