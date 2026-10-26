@@ -1,23 +1,17 @@
-## Pull Request template
-Please, go through these steps before you submit a PR.
+## What this changes and why
 
-1. Make sure that your PR is not a duplicate.
-2. If not, then make sure that:
+<!-- One or two sentences. Link the issue it fixes: "Fixes #123". -->
 
-    a. Your changes MUST NOT change translations. Please submit translations on [Crowdin](https://crowdin.com/project/boring-notch).
+## How I checked it
 
-    b. You have tested the code yourself to ensure it builds correctly and functions as intended.
+<!-- product/main has no automated test target yet. Say what you ran and on which Mac and
+macOS version. Add a screenshot or recording for any visible change. -->
 
-3. **After** these steps, you're ready to open a pull request.
+## Checklist
 
-    a. Your pull request MUST NOT target the `main` branch on this repository. You probably want to target `dev` instead.
+- [ ] The branch is based on `product/main`, and this pull request targets `product/main`.
+- [ ] The **boringNotch** scheme builds.
+- [ ] README.md and README.tr.md are updated if users see or do something differently.
+- [ ] GPL-3.0 license and upstream copyright headers are kept in the files I touched.
 
-    b. Give a descriptive title to your PR.
-
-    c. Describe your changes. PR should also include screen recording or screenshots to show the changes that were made.
-
-    d. Put `closes #XXXX` in your description to link your PR to the issue(s) that it fixes (if such).
-
-IMPORTANT: Please review the [CONTRIBUTING.md](../CONTRIBUTING.md) file for detailed contributing guidelines.
-
-**PLEASE REMOVE THIS TEMPLATE BEFORE SUBMITTING**
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
