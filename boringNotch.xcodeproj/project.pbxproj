@@ -141,6 +141,7 @@
 		ED6B47C8BE819F40B7428B17 /* AutomaticMediaController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223A7E9047157B80F4CE2F4D /* AutomaticMediaController.swift */; };
 		9DC26FF093CC7DD430F37B69 /* MediaRemoteAdapterBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A260557462DB4C6C7630FA7A /* MediaRemoteAdapterBundle.swift */; };
 		4913AAF906A749808695B13E /* MediaRemoteAdapter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 918B494336D8A086F1188FC8 /* MediaRemoteAdapter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		64C28BD882D6B7B8C3E2C45F /* DefaultVisualizer.json in Resources */ = {isa = PBXBuildFile; fileRef = 52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -314,6 +315,7 @@
 		223A7E9047157B80F4CE2F4D /* AutomaticMediaController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomaticMediaController.swift; sourceTree = "<group>"; };
 		A260557462DB4C6C7630FA7A /* MediaRemoteAdapterBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteAdapterBundle.swift; sourceTree = "<group>"; };
 		918B494336D8A086F1188FC8 /* MediaRemoteAdapter.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MediaRemoteAdapter.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultVisualizer.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -622,6 +624,7 @@
 		14D570B72C5E98960011E668 /* animations */ = {
 			isa = PBXGroup;
 			children = (
+				52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */,
 				14D570B82C5E98A20011E668 /* drop.swift */,
 				14A7E5872C64A89C008C1BE9 /* HelloAnimation.swift */,
 			);
@@ -919,6 +922,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				64C28BD882D6B7B8C3E2C45F /* DefaultVisualizer.json in Resources */,
 				14CEF41D2C5CAED400855D72 /* Preview Assets.xcassets in Resources */,
 				14CEF41A2C5CAED400855D72 /* Assets.xcassets in Resources */,
 				112B0EB92E30DD0F00562D6C /* mediaremote-adapter.pl in Resources */,
@@ -1273,7 +1277,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = boringNotch/boringNotch.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
@@ -1324,7 +1327,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = boringNotch/boringNotch.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";

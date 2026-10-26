@@ -39,11 +39,47 @@ public final class ImageService: ImageServiceProtocol {
         }
     }
 
+    /// Downloads artwork bytes.
+    ///
+    /// Only `https` URLs on `ArtworkHostPolicy`'s allowlist are fetched, and a
+    /// redirect off the allowlist is refused. Anything else throws
+    /// `URLError(.unsupportedURL)` before any network I/O.
+    ///
+    /// The bytes are decoded by ImageIO in this (unsandboxed) process, so the
+    /// allowlist is what limits which servers can feed that parser (card #41).
     public func fetchImageData(from url: URL) async throws -> Data {
-        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else {
+        guard ArtworkHostPolicy.allows(url) else {
             throw URLError(.unsupportedURL)
         }
-        let (data, _) = try await session.data(from: url)
+        let (data, _) = try await session.data(from: url, delegate: RedirectGuard.shared)
         return data
+    }
+}
+
+/// Which artwork URLs the app may download.
+enum ArtworkHostPolicy {
+    /// Spotify serves `artwork url` from its image CDN (`i.scdn.co` today).
+    /// Apple Music artwork arrives as bytes over AppleScript and needs no host.
+    static let allowedHostSuffixes = ["scdn.co", "spotifycdn.com"]
+
+    static func allows(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "https", let host = url.host?.lowercased() else {
+            return false
+        }
+        return allowedHostSuffixes.contains { host == $0 || host.hasSuffix("." + $0) }
+    }
+}
+
+/// Cancels redirects that would leave `ArtworkHostPolicy`.
+private final class RedirectGuard: NSObject, URLSessionTaskDelegate, Sendable {
+    static let shared = RedirectGuard()
+
+    func urlSession(
+        _ session: URLSession, task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest
+    ) async -> URLRequest? {
+        guard let url = request.url, ArtworkHostPolicy.allows(url) else { return nil }
+        return request
     }
 }
