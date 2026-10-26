@@ -24,6 +24,26 @@ Türkçe: [README.tr.md](README.tr.md)
   need them. Right-click an item for Open, Open With, Show in Finder, Quick Look, Share, Copy,
   Copy Path, Rename and Remove, plus Compress, Create PDF, Convert Image and Remove Background
   where they apply. The shelf accepts files only.
+
+  From the first version that includes the shelf move change (not in the current `product/main`):
+  dragging an item from the shelf into a Finder folder moves the file, on the same disk and to
+  another disk, so the original is no longer at its old place. Hold ⌥ to copy instead. When you drop
+  into an app that accepts only a copy, such as a Mail message, umbar copies the file. With
+  **Remove from shelf after dragging** on in **Settings > Shelf**, the item leaves the shelf only
+  after the move is confirmed; if you cancel the drop or it fails, the item stays. Files that cannot
+  be removed from where they are, such as files on a read-only disk image, are copied.
+- **Caffeinate.** The cup button in the open notch's header keeps the Mac awake. Click it, then
+  choose ∞ (until you turn it off), 15m, 1h or 2h. While it is on, the cup is filled, the open notch
+  shows the time left, and the closed notch shows a small cup badge. Click the filled cup to turn it
+  off. On battery power, caffeinate turns itself off when the battery falls below 10%, and it does
+  not start below 10%. It is off whenever you start umbar.
+- **Eye break reminders.** After 20 minutes of active use, umbar asks you to look about 6 metres
+  (20 feet) away for 20 seconds, with a countdown in the notch. Choose **Snooze 5 min** to be asked
+  again in 5 minutes, or **Skip** to restart the 20 minutes. Time with no keyboard or mouse input
+  (5 minutes by default), a locked screen and sleep all count as a break and restart the count.
+  The reminder waits while a full-screen video or presentation is on. It never plays a sound. It is
+  on by default on a new installation; change the timings or turn it off in
+  **Settings > Eye break**.
 - **System HUD replacement.** Replaces the macOS volume, display brightness and keyboard
   brightness indicators with ones drawn in the notch. Off by default; it needs Accessibility
   access.
