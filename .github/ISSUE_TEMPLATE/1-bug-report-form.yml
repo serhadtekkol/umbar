@@ -30,12 +30,11 @@ body:
   - type: input
     id: version
     attributes:
-      label: Boring Notch Version
+      label: umbar version
       description: >-
-        What version of our software are you running? (Go to ✦ in the menu bar >
-        Settings > About). The "Report a Bug" button in the About pane prefills
-        the exact version, build number, and update channel.
-      placeholder: "v2.7.3 (build 274, beta channel)"
+        Open Settings from the umbar menu bar icon, go to About, and click the
+        version to show the build number.
+      placeholder: "2.7.3 (271)"
     validations:
       required: true
   - type: input
@@ -50,13 +49,13 @@ body:
     attributes:
       label: Music Source? (If relevant)
       description: >-
-        If this issue is related to music, what music source did you select in
-        Boring Notch settings?
+        If this issue is related to music, which music source is selected in
+        umbar Settings > Media?
       options:
-        - Now Playing
+        - Now Playing (all apps)
+        - Apple Music + Spotify
         - Apple Music
         - Spotify
-        - YouTube Music
     validations:
       required: false
   - type: input

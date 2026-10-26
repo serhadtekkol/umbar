@@ -1,133 +1,74 @@
-# Contributing
+# Contributing to umbar
 
-Thank you for taking the time to contribute! ❤️
+This guide is for anyone who wants to report a bug in umbar or send a change to it.
 
-These guidelines help streamline the contribution process for everyone involved. By following them, you'll make it easier for maintainers to review your work and collaborate with you effectively.
+umbar is a fork of [boring.notch](https://github.com/TheBoredTeam/boring.notch). Report umbar
+problems here, not to the boring.notch project: they do not maintain umbar.
 
-You can contribute in many ways: writing code, improving documentation, reporting bugs, requesting features, or creating tutorials and blog posts. Every contribution, large or small, helps make Boring Notch better.
+## Report a bug
 
-## Table of Contents
+Open an issue with the **Bug Report** form. Include:
 
-- [Localizations](#localizations)
-- [Contributing Code](#contributing-code)
-  - [Before You Start](#before-you-start)
-  - [Setting Up Your Environment](#setting-up-your-environment)
-  - [Making Changes](#making-changes)
-  - [Pull Requests](#pull-requests)
-<!-- - [Code Style Guidelines](#code-style-guidelines) -->
-- [Reporting Bugs](#reporting-bugs)
-- [Feature Requests](#feature-requests)
-- [Getting Help](#getting-help)
+- what you did, what you expected, and what happened instead;
+- the umbar version, from **Settings > About** (click the version to show the build number);
+- the macOS version, from **Apple menu > About This Mac**;
+- for music problems, the **Music Source** selected in **Settings > Media** and the app or website
+  that was playing.
 
-## Localizations
+Report security problems privately as described in [SECURITY.md](SECURITY.md), not in a public
+issue.
 
-Please submit all translations to [Crowdin](https://crowdin.com/project/boring-notch). New strings added to the `dev` branch from code changes will sync automatically to Crowdin, and Crowdin will automatically open a new PR with translations to allow us to integrate them.
+## Suggest a feature
 
-## Contributing Code
+Open an issue with the **Feature Request** form. Describe the problem you want solved before the
+solution you have in mind.
 
-### Before You Start
+## Send a change
 
-- **Check existing issues**: Before creating a new issue or starting work, search existing issues to avoid duplicates.
-- **Discuss major changes**: For significant features or major changes, please open an issue first to discuss your approach with maintainers and the community.
-<!-- - **Review the code style**: Familiarize yourself with our code style guidelines below to ensure consistency. -->
+### Branches
 
-> [!IMPORTANT]
-> All code contributions must be based on the `dev` branch, not `main`. Documentation changes should be based on `main` instead.
+| Branch | Contains |
+|---|---|
+| `product/main` | umbar. Base every change on this branch. |
+| `main` | An unmodified mirror of upstream boring.notch. Do not send changes to it. |
 
-### Setting Up Your Environment
+### Set up
 
-1. **Fork the repository**: Click the "Fork" button at the top of the repository page to create your own copy.
+Prerequisites: macOS 27.0 or later and Xcode 27.0 or later.
 
-2. **Clone your fork**:
+1. Clone the repository.
+2. Create a branch from `product/main`:
+
    ```bash
-   git clone https://github.com/{your-username}/boring.notch.git
-   cd boring.notch
-   ```
-   Replace `{your-username}` with your GitHub username.
-
-3. **Switch to the `dev` branch**:
-   ```bash
-   git checkout dev
-   ```
-   All code contributions must be based on the `dev` branch, not `main`. Documentation changes should be based on `main` instead.
-
-5. **Create a new feature branch**:
-   ```bash
-   git checkout -b feature/{your-feature-name}
-   ```
-   Replace `{your-feature-name}` with a descriptive name. Use lowercase letters, numbers, and hyphens only (e.g., `feature/add-dark-mode` or `fix/notification-crash`).
-
-### Making Changes
-
-1. **Make your changes**: Implement your feature or bug fix. Write clean, well-documented code <!-- following the project's style guidelines. -->
-
-2. **Test your changes**: Ensure your changes work as expected and don't break existing functionality.
-
-3. **Commit your changes**:
-   ```bash
-   git add .
-   git commit -m "Add descriptive commit message"
-   ```
-   Write clear, concise commit messages that explain what your changes do and why.
-
-4. **Keep your branch up to date**:
-   Regularly sync your branch with the latest changes from the `dev` branch to avoid conflicts.
-
-5. **Push to your fork**:
-   ```bash
-   git push origin feature/{your-feature-name}
+   git switch -c fix/short-description product/main
    ```
 
-### Pull Requests
+3. Build the app:
 
-1. **Create a pull request**: Go to the original repository and click "New Pull Request." Select your feature branch and set the base branch to `dev`.
+   ```bash
+   xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Debug build
+   ```
 
-2. **Write a detailed description**: Your PR should include:
-   - A clear title summarizing the changes
-   - A detailed description of what was changed and why
-   - Reference to any related issues (e.g., "Fixes #123" or "Relates to #456")
-   - Screenshots or screen recordings for UI changes
+   The last line of output is `** BUILD SUCCEEDED **`.
 
-3. **Respond to feedback**: Maintainers may request changes.
+The project, scheme and source folders keep upstream's `boringNotch` names so that upstream
+changes can still be merged. Do not rename them in a feature change.
 
-4. **Be patient**: Reviews take time. Maintainers will get to your PR as soon as they can.
+### Before you open a pull request
 
-<!-- ## Code Style Guidelines
+- Build the **boringNotch** scheme and make sure it succeeds.
+- Run the app and check the behaviour you changed. `product/main` has no automated test target
+  yet, so describe in the pull request what you checked and on which Mac.
+- Keep the GPL-3.0 license and the upstream copyright headers in every file you touch.
+- If your change alters what a user sees or does, update [README.md](README.md) and
+  [README.tr.md](README.tr.md) in the same pull request.
 
-- Follow the existing code style and conventions used in the project
-- Write clear, self-documenting code with meaningful variable and function names
-- Add comments for complex logic or non-obvious implementations
-- Ensure your code is properly formatted before committing
-- Remove any debugging code, console logs, or commented-out code before submitting -->
+### Translations
 
-## Reporting Bugs
+Strings live in `boringNotch/Localizable.xcstrings`. Edit them in Xcode and send them as a pull
+request. umbar does not use upstream's Crowdin project.
 
-When reporting bugs, please include:
+## License
 
-- A clear, descriptive title
-- Steps to reproduce the issue
-- Expected behavior vs. actual behavior
-- Screenshots or error messages if applicable
-- Your environment details (OS version, app version, etc.)
-
-## Feature Requests
-
-Feature requests are welcome! Please:
-
-- Check if the feature has already been requested
-- Clearly describe the feature and its use case
-- Explain why this feature would be valuable to users
-- Be open to discussion and alternative approaches
-
-## Getting Help
-
-If you need help or have questions:
-
-- Check the project documentation
-- Search existing issues for similar questions
-- Open a new issue with the "question" label
-- Join our [community Discord server](https://discord.com/servers/boring-notch-1269588937320566815)
-
----
-
-Thank you for contributing to Boring Notch! Your efforts help make this project better for everyone. 🎉
+By contributing, you agree that your contribution is licensed under the
+[GNU General Public License v3.0](LICENSE), the license of umbar.
