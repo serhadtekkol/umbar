@@ -128,7 +128,7 @@ umbar has no account, no analytics and no crash reporting. Everything it stores 
 |---|---|
 | Settings and keyboard shortcuts | The `com.serhadbahadir.umbar` defaults domain (`~/Library/Preferences/com.serhadbahadir.umbar.plist`) |
 | Shelf contents: references to your files, not copies of them | `~/Library/Application Support/com.serhadbahadir.umbar/Shelf/items.json` |
-| Downloaded Spotify artwork, up to 100 MB | `~/Library/Caches/com.serhadbahadir.umbar/` |
+| Downloaded Spotify artwork, up to 20 MB, deleted after 7 days | `~/Library/Caches/com.serhadbahadir.umbar/Artwork/` |
 | Files created by shelf actions such as Compress or Convert Image, before you drag them out | The macOS temporary folder |
 
 Calendar events and reminders are read from macOS each time they are shown. umbar does not save

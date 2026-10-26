@@ -131,7 +131,7 @@ umbar'da hesap, analitik ve çökme raporlama yoktur. Sakladığı her şey Mac'
 |---|---|
 | Ayarlar ve klavye kısayolları | `com.serhadbahadir.umbar` defaults alanı (`~/Library/Preferences/com.serhadbahadir.umbar.plist`) |
 | Raftakiler: dosyalarınızın kopyası değil, onlara referanslar | `~/Library/Application Support/com.serhadbahadir.umbar/Shelf/items.json` |
-| İndirilen Spotify kapak görselleri, en fazla 100 MB | `~/Library/Caches/com.serhadbahadir.umbar/` |
+| İndirilen Spotify kapak görselleri, en fazla 20 MB, 7 gün sonra silinir | `~/Library/Caches/com.serhadbahadir.umbar/Artwork/` |
 | Compress ya da Convert Image gibi raf işlemlerinin ürettiği dosyalar (siz sürükleyip çıkarana kadar) | macOS geçici klasörü |
 
 Takvim etkinlikleri ve anımsatıcılar her gösterildiğinde macOS'tan okunur; umbar kopyalarını
