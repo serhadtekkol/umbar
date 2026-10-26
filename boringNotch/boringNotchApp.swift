@@ -16,6 +16,12 @@ struct DynamicNotchApp: App {
     @Default(.menubarIcon) var showMenuBarIcon
     @Environment(\.openWindow) var openWindow
 
+    init() {
+        // Before any other code reads or writes a default: tells a fresh
+        // install from an existing one (K13, #93).
+        DefaultsMigration.apply()
+    }
+
     var body: some Scene {
         MenuBarExtra("umbar", image: "MenuBarIcon", isInserted: $showMenuBarIcon) {
             Button("Settings") {
@@ -216,6 +222,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         EyeBreakManager.shared.start()
+        HUDAccessCard.shared.start()
         // Spike A2 prototype; inert unless clipboardMonitorEnabled is set.
         ClipboardMonitorController.shared.activate()
 

@@ -23,6 +23,7 @@ struct ContentView: View {
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
     @ObservedObject var eyeBreak = EyeBreakManager.shared
+    @ObservedObject var hudAccessCard = HUDAccessCard.shared
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var anyDropDebounceTask: Task<Void, Never>?
@@ -164,6 +165,11 @@ struct ContentView: View {
                         }
                     }
                     .onChange(of: vm.notchState) { _, newState in
+                        if newState == .open {
+                            hudAccessCard.notchDidOpen()
+                        } else {
+                            hudAccessCard.notchDidClose()
+                        }
                         if newState == .closed && isHovering {
                             withAnimation {
                                 isHovering = false
@@ -349,6 +355,8 @@ struct ContentView: View {
                 VStack {
                     if eyeBreak.isPromptingInPanel {
                         EyeBreakPromptView()
+                    } else if hudAccessCard.isShowing {
+                        HUDAccessCardView()
                     } else {
                         switch coordinator.currentView {
                         case .home:
@@ -373,6 +381,11 @@ struct ContentView: View {
             // F14: pop the notch open for the reminder; fold it again when the
             // reminder ends unless the pointer is still on it.
             if prompting { doOpen() } else if !isHovering { vm.close() }
+        }
+        .onChange(of: hudAccessCard.isShowing) { _, showing in
+            // K13: a volume change can bring the card up while the notch is
+            // closed; it folds again when the card goes unless hovered.
+            if showing { doOpen() } else if !isHovering { vm.close() }
         }
     }
 

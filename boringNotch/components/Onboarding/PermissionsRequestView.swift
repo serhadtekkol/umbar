@@ -121,6 +121,21 @@ struct NotchCapsuleButtonStyle: ButtonStyle {
     }
 }
 
+/// The quieter choice next to a `NotchCapsuleButtonStyle` button: white
+/// label on white 18 % over black, 13.6:1. Same fill as the caffeinate chips.
+struct NotchSecondaryCapsuleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(.white.opacity(0.18)))
+            .opacity(configuration.isPressed ? 0.75 : 1)
+            .contentShape(Capsule())
+    }
+}
+
 /// Full-size pre-prompt that stands in for a notch widget until the
 /// permission it needs is granted.
 struct NotchPermissionPrompt: View {

@@ -64,6 +64,10 @@ final class MediaKeyInterceptor {
             }
         }
         
+        // Several callers (launch, the HUD setting, Accessibility being
+        // granted, the notch card) can be awaiting the check above at once.
+        guard eventTap == nil, Defaults[.hudReplacement] else { return }
+
         let mask = CGEventMask(1 << kSystemDefinedEventType.rawValue)
         eventTap = CGEvent.tapCreate(
             tap: .cghidEventTap,

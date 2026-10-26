@@ -372,27 +372,6 @@ struct HUD: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.accessibilityPromptShown) var accessibilityPromptShown
     @State private var accessibilityAuthorized = false
-    /// The user switched the HUD on but Accessibility is not granted yet; the
-    /// switch stays off and the pre-prompt below explains why (card #59).
-    @State private var wantsHUD = false
-
-    /// The HUD only turns on once Accessibility is granted, so no event tap
-    /// is ever attempted without it (AC-1.12, #45).
-    private var hudToggle: Binding<Bool> {
-        Binding(
-            get: { hudReplacement },
-            set: { isOn in
-                if !isOn {
-                    wantsHUD = false
-                    hudReplacement = false
-                } else if accessibilityAuthorized {
-                    hudReplacement = true
-                } else {
-                    wantsHUD = true
-                }
-            }
-        )
-    }
 
     var body: some View {
         Form {
@@ -407,27 +386,30 @@ struct HUD: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 40)
-                    Toggle("Replace system HUD", isOn: hudToggle)
+                    Toggle("Replace system HUD", isOn: $hudReplacement)
                         .labelsHidden()
                         .toggleStyle(.switch)
                         .controlSize(.large)
                 }
 
-                if wantsHUD && !accessibilityAuthorized {
+                // K13: the switch can be on without Accessibility. Until it
+                // is granted macOS keeps its own HUD; this row says so and
+                // is the place to grant it (AC-15.9).
+                if hudReplacement && !accessibilityAuthorized {
                     PermissionPrompt(
                         state: accessibilityPromptShown ? .denied : .notDetermined,
                         systemImage: "hand.raised",
-                        title: "Accessibility access",
-                        reason: "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type.",
+                        title: "Accessibility access needed",
+                        reason: "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type. Until then, macOS shows its own HUD.",
                         deniedMessage: "Accessibility access is not on yet. Turn on umbar in System Settings; the HUD switches on as soon as access is granted.",
                         pane: .accessibility,
-                        onNotNow: { wantsHUD = false },
                         onAllow: {
                             accessibilityPromptShown = true
                             Task {
-                                let granted = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
-                                accessibilityAuthorized = granted
-                                enableHUDIfWanted()
+                                accessibilityAuthorized = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
+                                if accessibilityAuthorized {
+                                    await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
+                                }
                             }
                         }
                     )
@@ -512,15 +494,8 @@ struct HUD: View {
         .onReceive(NotificationCenter.default.publisher(for: .accessibilityAuthorizationChanged)) { notification in
             if let granted = notification.userInfo?["granted"] as? Bool {
                 accessibilityAuthorized = granted
-                enableHUDIfWanted()
             }
         }
-    }
-
-    private func enableHUDIfWanted() {
-        guard wantsHUD, accessibilityAuthorized else { return }
-        wantsHUD = false
-        hudReplacement = true
     }
 }
 

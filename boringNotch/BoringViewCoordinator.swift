@@ -54,7 +54,6 @@ class BoringViewCoordinator: ObservableObject {
     @Published var helloAnimationRunning: Bool = false
     private var sneakPeekDispatch: DispatchWorkItem?
     private var expandingViewDispatch: DispatchWorkItem?
-    private var hudEnableTask: Task<Void, Never>?
 
     @AppStorage("firstLaunch") var firstLaunch: Bool = true
     @AppStorage("showWhatsNew") var showWhatsNew: Bool = true
@@ -135,29 +134,14 @@ class BoringViewCoordinator: ObservableObject {
             }
         }
 
-        // Observe changes to hudReplacement
+        // Observe changes to hudReplacement. Switching it on never prompts:
+        // the tap starts only if Accessibility is already granted, otherwise
+        // macOS keeps its own HUD and the notch card or Settings asks (K13).
         hudReplacementCancellable = Defaults.publisher(.hudReplacement)
-            .sink { [weak self] change in
+            .sink { change in
                 Task { @MainActor in
-                    guard let self = self else { return }
-
-                    self.hudEnableTask?.cancel()
-                    self.hudEnableTask = nil
-
                     if change.newValue {
-                        self.hudEnableTask = Task { @MainActor in
-                            // Never prompt from here: the HUD setting asks for
-                            // Accessibility with its own pre-prompt and only
-                            // flips hudReplacement once access is granted (#59).
-                            let granted = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: false)
-                            if Task.isCancelled { return }
-
-                            if granted {
-                                await MediaKeyInterceptor.shared.start()
-                            } else {
-                                Defaults[.hudReplacement] = false
-                            }
-                        }
+                        await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
                     } else {
                         MediaKeyInterceptor.shared.stop()
                     }
@@ -166,15 +150,6 @@ class BoringViewCoordinator: ObservableObject {
 
         Task { @MainActor in
             helloAnimationRunning = firstLaunch
-
-            if Defaults[.hudReplacement] {
-                let authorized = await XPCHelperClient.shared.isAccessibilityAuthorized()
-                if !authorized {
-                    Defaults[.hudReplacement] = false
-                } else {
-                    await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
-                }
-            }
         }
     }
     

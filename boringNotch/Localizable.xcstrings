@@ -1017,22 +1017,6 @@
         }
       }
     },
-    "Accessibility access" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accessibility access"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erişilebilirlik erişimi"
-          }
-        }
-      }
-    },
     "Accessibility access is not on yet. Turn on umbar in System Settings; the HUD switches on as soon as access is granted." : {
       "localizations" : {
         "en" : {
@@ -1045,6 +1029,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Erişilebilirlik erişimi henüz açık değil. Sistem Ayarları'nda umbar'ı açın; gösterge, erişim verildiği anda devreye girer."
+          }
+        }
+      }
+    },
+    "Accessibility access needed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility access needed"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erişilebilirlik izni gerekli"
+          }
+        }
+      }
+    },
+    "Allow" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İzin ver"
           }
         }
       }
@@ -1433,6 +1449,22 @@
         }
       }
     },
+    "To show volume and brightness in the notch, umbar needs Accessibility access." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To show volume and brightness in the notch, umbar needs Accessibility access."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ses ve parlaklığı notch'ta göstermek için Erişilebilirlik izni gerekiyor."
+          }
+        }
+      }
+    },
     "Today's events and reminders at a glance. Turn it on in Settings." : {
       "localizations" : {
         "en" : {
@@ -1497,18 +1529,18 @@
         }
       }
     },
-    "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type." : {
+    "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type. Until then, macOS shows its own HUD." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type."
+            "value" : "umbar needs Accessibility access to see the volume and brightness keys. It never sees what you type. Until then, macOS shows its own HUD."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "umbar'ın ses ve parlaklık tuşlarını görebilmesi için Erişilebilirlik erişimi gerekir. Yazdıklarınızı asla görmez."
+            "value" : "umbar'ın ses ve parlaklık tuşlarını görebilmesi için Erişilebilirlik erişimi gerekir. Yazdıklarınızı asla görmez. O zamana kadar macOS kendi göstergesini gösterir."
           }
         }
       }

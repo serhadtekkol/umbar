@@ -346,6 +346,8 @@
 				Caffeinate/CaffeinatePolicy.swift,
 				Clipboard/ClipboardMonitor.swift,
 				EyeBreak/EyeBreakEngine.swift,
+				HUD/HUDAccessCardPolicy.swift,
+				Settings/DefaultsMigration.swift,
 			);
 			target = A1837B1361C7F96E52B64318 /* umbarTests */;
 		};

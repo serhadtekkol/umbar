@@ -173,9 +173,13 @@ extension Defaults.Keys {
     static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
     
     // MARK: HUD
-    static let hudReplacement = Key<Bool>("hudReplacement", default: false)
-    /// The Accessibility system prompt was shown once from the HUD setting; afterwards umbar sends the user to System Settings instead (card #59).
+    /// The user's choice. On by default for fresh installs (K13); existing installs keep theirs (DefaultsMigration).
+    /// It only takes effect once Accessibility is granted; until then macOS shows its own HUD (AC-15.4).
+    static let hudReplacement = Key<Bool>("hudReplacement", default: true)
+    /// The Accessibility system prompt was shown once; afterwards umbar sends the user to System Settings instead (card #59).
     static let accessibilityPromptShown = Key<Bool>("accessibilityPromptShown", default: false)
+    /// The notch's Accessibility explanation card appeared once; it never appears on its own again (AC-15.9).
+    static let hudAccessCardShown = Key<Bool>("hudAccessCardShown", default: false)
     static let inlineHUD = Key<Bool>("inlineHUD", default: false)
     static let enableGradient = Key<Bool>("enableGradient", default: false)
     static let systemEventIndicatorShadow = Key<Bool>("systemEventIndicatorShadow", default: false)
