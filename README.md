@@ -19,17 +19,19 @@ Türkçe: [README.tr.md](README.tr.md)
   previous, play/pause, next, repeat, volume, favourite, skip back, skip forward) and get a short
   preview in the closed notch when the track changes.
 - **Calendar and Reminders.** Shows the events and scheduled reminders of the day you pick in a
-  week strip. Turn it on in **Settings > Calendar**; it is off by default.
+  week strip. It is on by default on a new installation (an existing installation keeps its
+  setting); turn it off in **Settings > Calendar**. Calendar access is asked for only when you
+  click **Allow** on the calendar's card in the notch.
 - **File shelf.** Drag files onto the notch to keep them at hand, then drag them out where you
   need them. Right-click an item for Open, Open With, Show in Finder, Quick Look, Share, Copy,
   Copy Path, Rename and Remove, plus Compress, Create PDF, Convert Image and Remove Background
   where they apply. The shelf accepts files only.
 
-  From the first version that includes the shelf move change (not in the current `product/main`):
-  dragging an item from the shelf into a Finder folder moves the file, on the same disk and to
+  Dragging an item from the shelf into a Finder folder moves the file, on the same disk and to
   another disk, so the original is no longer at its old place. Hold ⌥ to copy instead. When you drop
   into an app that accepts only a copy, such as a Mail message, umbar copies the file. With
-  **Remove from shelf after dragging** on in **Settings > Shelf**, the item leaves the shelf only
+  **Remove from shelf after dragging** on in **Settings > Shelf** (on by default on a new
+  installation), the item leaves the shelf only
   after the move is confirmed; if you cancel the drop or it fails, the item stays. Files that cannot
   be removed from where they are, such as files on a read-only disk image, are copied.
 - **Caffeinate.** The cup button in the open notch's header keeps the Mac awake. Click it, then
@@ -41,12 +43,14 @@ Türkçe: [README.tr.md](README.tr.md)
   (20 feet) away for 20 seconds, with a countdown in the notch. Choose **Snooze 5 min** to be asked
   again in 5 minutes, or **Skip** to restart the 20 minutes. Time with no keyboard or mouse input
   (5 minutes by default), a locked screen and sleep all count as a break and restart the count.
-  The reminder waits while a full-screen video or presentation is on. It never plays a sound. It is
+  The reminder waits while a full-screen video or presentation is on; full-screen video detection
+  may not work with every player. It never plays a sound. It is
   on by default on a new installation; change the timings or turn it off in
   **Settings > Eye break**.
 - **System HUD replacement.** Replaces the macOS volume, display brightness and keyboard
-  brightness indicators with ones drawn in the notch. Off by default; it needs Accessibility
-  access.
+  brightness indicators with ones drawn in the notch. On by default on a new installation (an
+  existing installation keeps its setting); it needs Accessibility access, which the notch asks for
+  from a card the first time you change the volume or open the notch.
 - **Battery.** Shows battery level and charging state, and a short notice when the power source
   changes.
 - **Keyboard shortcuts.** Toggle the notch open with ⌘⇧I and toggle the track preview with ⌘⇧H.
@@ -128,7 +132,7 @@ own prompt. If you decline, only that feature stops working.
 |---|---|---|---|
 | Calendars | When the calendar first appears in the notch, or in **Settings > Calendar** | Reading your events to show them in the notch | No events are shown |
 | Reminders | In a banner under your events once calendar access is on, or in **Settings > Calendar** | Reading scheduled reminders to show them next to your events | No reminders are shown |
-| Accessibility | When you turn on **Replace system HUD** in **Settings > HUDs** | Seeing the volume and brightness keys so umbar can draw its own HUD | The HUD replacement stays off; macOS shows its own HUD |
+| Accessibility | From a card in the notch the first time you change the volume or open the notch while the HUD replacement is on, or in **Settings > HUDs** | Seeing the volume and brightness keys so umbar can draw its own HUD | The HUD replacement stays off; macOS shows its own HUD |
 | Automation: Music, Spotify | macOS asks the first time umbar sends a command to that app | Reading the current track and controlling playback, volume and favourites in that app | umbar cannot read or control that app |
 
 The **Now Playing** music source needs no permission prompt.

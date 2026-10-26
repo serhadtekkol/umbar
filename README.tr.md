@@ -21,17 +21,19 @@ arayüzdeki halleriyle verilmiştir. İki doküman çelişirse İngilizce olan g
   önceki, oynat/duraklat, sonraki, tekrar, ses, favori, geri sar, ileri sar). Parça değişince
   kapalı notch'ta kısa bir önizleme gösterebilir.
 - **Takvim ve Anımsatıcılar.** Haftalık şeritte seçtiğiniz günün etkinliklerini ve zamanlanmış
-  anımsatıcılarını gösterir. Varsayılan olarak kapalıdır; **Settings > Calendar**'dan açın.
+  anımsatıcılarını gösterir. Yeni kurulumda varsayılan olarak açıktır (mevcut bir kurulum kendi
+  ayarını korur); **Settings > Calendar**'dan kapatabilirsiniz. Takvim izni yalnızca notch'taki
+  takvim kartında **Allow**'a tıkladığınızda istenir.
 - **Dosya rafı.** Dosyaları notch'a sürükleyip elinizin altında tutun, sonra ihtiyaç duyduğunuz
   yere sürükleyip bırakın. Sağ tıklayınca Open, Open With, Show in Finder, Quick Look, Share,
   Copy, Copy Path, Rename ve Remove; uygun olduğunda Compress, Create PDF, Convert Image ve
   Remove Background seçenekleri çıkar. Raf yalnızca dosya kabul eder.
 
-  Raf taşıma değişikliğini içeren ilk sürümden itibaren (şu anki `product/main`'de yok): raftaki
-  bir öğeyi Finder'daki bir klasöre sürüklemek dosyayı taşır; aynı diskte de başka bir diske de.
+  Raftaki bir öğeyi Finder'daki bir klasöre sürüklemek dosyayı taşır; aynı diskte de başka bir diske de.
   Orijinal eski yerinde kalmaz. Kopyalamak için ⌥ tuşunu basılı tutun. Yalnızca kopya kabul eden
   bir uygulamaya (örneğin bir Mail iletisi) bıraktığınızda umbar dosyayı kopyalar.
-  **Settings > Shelf** içindeki **Remove from shelf after dragging** açıkken öğe, taşıma
+  **Settings > Shelf** içindeki **Remove from shelf after dragging** açıkken (yeni kurulumda
+  varsayılan olarak açıktır) öğe, taşıma
   doğrulandıktan sonra raftan kalkar; bırakmayı iptal ederseniz ya da başarısız olursa öğe rafta
   kalır. Bulunduğu yerden silinemeyen dosyalar (örneğin salt okunur bir disk görüntüsündekiler)
   kopyalanır.
@@ -44,12 +46,13 @@ arayüzdeki halleriyle verilmiştir. İki doküman çelişirse İngilizce olan g
   yaklaşık 6 metre (20 feet) uzağa bakmanızı ister; notch'ta geri sayım görünür. **Snooze 5 min**
   ile 5 dakika sonra yeniden sorulmasını, **Skip** ile 20 dakikalık sayacın baştan başlamasını
   seçersiniz. Klavye ya da fare girdisi olmayan süre (varsayılan 5 dakika), kilitli ekran ve uyku
-  mola sayılır ve sayacı sıfırlar. Tam ekran video ya da sunum açıkken hatırlatıcı bekler. Hiç ses
-  çalmaz. Yeni kurulumda varsayılan olarak açıktır; süreleri değiştirmek ya da kapatmak için
+  mola sayılır ve sayacı sıfırlar. Tam ekran video ya da sunum açıkken hatırlatıcı bekler; tam ekran
+  video algılama her oynatıcıda çalışmayabilir. Hiç ses çalmaz. Yeni kurulumda varsayılan olarak açıktır; süreleri değiştirmek ya da kapatmak için
   **Settings > Eye break**'i kullanın.
 - **Sistem HUD'unun yerine geçme.** macOS'un ses, ekran parlaklığı ve klavye aydınlatması
-  göstergelerinin yerine notch'ta çizilen göstergeler koyar. Varsayılan olarak kapalıdır;
-  Erişilebilirlik (Accessibility) izni gerekir.
+  göstergelerinin yerine notch'ta çizilen göstergeler koyar. Yeni kurulumda varsayılan olarak
+  açıktır (mevcut bir kurulum kendi ayarını korur); Erişilebilirlik (Accessibility) izni gerekir.
+  Bu izni notch, sesi ilk değiştirdiğinizde ya da notch'u ilk açtığınızda bir kartla ister.
 - **Pil.** Pil seviyesini ve şarj durumunu gösterir; güç kaynağı değiştiğinde kısa bir bildirim
   verir.
 - **Klavye kısayolları.** Notch'u ⌘⇧I ile açıp kapatın, parça önizlemesini ⌘⇧H ile açıp kapatın.
@@ -132,7 +135,7 @@ tıklamanızı bekler. Reddederseniz yalnızca o özellik çalışmaz.
 |---|---|---|---|
 | Takvimler (Calendars) | Takvim notch'ta ilk göründüğünde ya da **Settings > Calendar**'da | Etkinliklerinizi notch'ta göstermek için okumak | Etkinlik gösterilmez |
 | Anımsatıcılar (Reminders) | Takvim izni açıldıktan sonra etkinliklerin altındaki bir bantta ya da **Settings > Calendar**'da | Zamanlanmış anımsatıcıları etkinliklerin yanında göstermek için okumak | Anımsatıcı gösterilmez |
-| Erişilebilirlik (Accessibility) | **Settings > HUDs** içinde **Replace system HUD**'u açtığınızda | Ses ve parlaklık tuşlarını görüp kendi HUD'unu çizmek | HUD değiştirme kapalı kalır; macOS kendi HUD'unu gösterir |
+| Erişilebilirlik (Accessibility) | HUD değiştirme açıkken sesi ilk değiştirdiğinizde ya da notch'u ilk açtığınızda notch'taki bir kartta, ya da **Settings > HUDs**'da | Ses ve parlaklık tuşlarını görüp kendi HUD'unu çizmek | HUD değiştirme kapalı kalır; macOS kendi HUD'unu gösterir |
 | Otomasyon (Automation): Music, Spotify | umbar o uygulamaya ilk komutu gönderdiğinde macOS sorar | O uygulamadaki parçayı okumak; çalmayı, sesi ve favorileri kontrol etmek | umbar o uygulamayı okuyamaz ve kontrol edemez |
 
 **Now Playing** müzik kaynağı herhangi bir izin istemez.
