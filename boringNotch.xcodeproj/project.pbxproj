@@ -146,6 +146,14 @@
 		D586A4A4937170E9DF3C953F /* NSItemProvider+LoadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */; };
 		9BF13C723E0F2491868ACD0A /* EventTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE194F420E86CD8921282C8C /* EventTap.swift */; };
 		735706B77AF7649EDC9860C9 /* EventTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE194F420E86CD8921282C8C /* EventTap.swift */; };
+		7AC69F60910901F1F9820823 /* AdapterLineBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C722C562305E0B6D7F38B16 /* AdapterLineBuffer.swift */; };
+		089D9ACC236B48F7C43E4CD3 /* AdapterLineBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C722C562305E0B6D7F38B16 /* AdapterLineBuffer.swift */; };
+		95F288022D9727699FE48AEF /* AdapterChildEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD79480429BB60F9916BD5C /* AdapterChildEnvironment.swift */; };
+		8B95ACE20C68844E695A407A /* AdapterChildEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD79480429BB60F9916BD5C /* AdapterChildEnvironment.swift */; };
+		DABEE7A67837812D8B409593 /* NativePlayerNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870FE67C1CDC96D64CBCCEF6 /* NativePlayerNotification.swift */; };
+		FE6CE8033EFAE60A38255A8F /* NativePlayerNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870FE67C1CDC96D64CBCCEF6 /* NativePlayerNotification.swift */; };
+		91FDA97E797FDD455ED4F596 /* ArtworkImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328AAC32AC61569DFD935C01 /* ArtworkImageDecoder.swift */; };
+		42B111040D680B340C7E0EC5 /* ArtworkImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328AAC32AC61569DFD935C01 /* ArtworkImageDecoder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -315,6 +323,10 @@
 		317E0FA54B61F48FD7EE3342 /* AppIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentity.swift; sourceTree = "<group>"; };
 		5AD5A6685BB3A4E57764AA13 /* umbarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = umbarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE194F420E86CD8921282C8C /* EventTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventTap.swift; sourceTree = "<group>"; };
+		1C722C562305E0B6D7F38B16 /* AdapterLineBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdapterLineBuffer.swift; sourceTree = "<group>"; };
+		5BD79480429BB60F9916BD5C /* AdapterChildEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdapterChildEnvironment.swift; sourceTree = "<group>"; };
+		870FE67C1CDC96D64CBCCEF6 /* NativePlayerNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativePlayerNotification.swift; sourceTree = "<group>"; };
+		328AAC32AC61569DFD935C01 /* ArtworkImageDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImageDecoder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -445,7 +457,10 @@
 				EAC6368B7A7BF8E6E5033F42 /* PlayerArbiter.swift */,
 				1153BD9B2D98853B00979FB0 /* NowPlayingController.swift */,
 				6E1A0C3801D94B2F8A51C006 /* NowPlayingWithFallbackController.swift */,
+				870FE67C1CDC96D64CBCCEF6 /* NativePlayerNotification.swift */,
 				6E1A0C3801D94B2F8A51C004 /* NowPlayingAdapterProcess.swift */,
+				5BD79480429BB60F9916BD5C /* AdapterChildEnvironment.swift */,
+				1C722C562305E0B6D7F38B16 /* AdapterLineBuffer.swift */,
 				6E1A0C3801D94B2F8A51C002 /* NowPlayingSupervisor.swift */,
 			);
 			path = MediaControllers;
@@ -525,6 +540,7 @@
 			isa = PBXGroup;
 			children = (
 				11D58EA12E760AE100FA8377 /* ImageService.swift */,
+				328AAC32AC61569DFD935C01 /* ArtworkImageDecoder.swift */,
 				7FF5B25C31EE71C706689070 /* ArtworkHostPolicy.swift */,
 				F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */,
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
@@ -1069,6 +1085,10 @@
 				14D570D22C5F6C6A0011E668 /* BoringExtrasMenu.swift in Sources */,
 				11D58EA22E760AE100FA8377 /* ImageService.swift in Sources */,
 				E69875F39B0EBDD76DC86ABB /* ArtworkHostPolicy.swift in Sources */,
+				91FDA97E797FDD455ED4F596 /* ArtworkImageDecoder.swift in Sources */,
+				DABEE7A67837812D8B409593 /* NativePlayerNotification.swift in Sources */,
+				95F288022D9727699FE48AEF /* AdapterChildEnvironment.swift in Sources */,
+				7AC69F60910901F1F9820823 /* AdapterLineBuffer.swift in Sources */,
 				11F748822ECB07A400F841DB /* MusicControlButton.swift in Sources */,
 				14288DDC2C6E015000B9F80C /* AudioPlayer.swift in Sources */,
 				14288E0C2C6F8EC000B9F80C /* AppIcons.swift in Sources */,
@@ -1103,6 +1123,10 @@
 				07F1DABDE24E0E27CBF09724 /* URL+SecurityScoped.swift in Sources */,
 				383A52007D2BD4929E076DE1 /* TemporaryFileStorageService.swift in Sources */,
 				D586A4A4937170E9DF3C953F /* NSItemProvider+LoadHelpers.swift in Sources */,
+				42B111040D680B340C7E0EC5 /* ArtworkImageDecoder.swift in Sources */,
+				FE6CE8033EFAE60A38255A8F /* NativePlayerNotification.swift in Sources */,
+				8B95ACE20C68844E695A407A /* AdapterChildEnvironment.swift in Sources */,
+				089D9ACC236B48F7C43E4CD3 /* AdapterLineBuffer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
