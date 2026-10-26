@@ -10,6 +10,12 @@ import ApplicationServices
 import IOKit
 import CoreGraphics
 
+/// Strips the frame offsets from an ObjC method type encoding, e.g.
+/// `"B28@0:8f16Q20"` -> `"B@:fQ"`, so signatures compare across ABIs.
+func normalizedTypeEncoding(_ encoding: String) -> String {
+    String(encoding.filter { !$0.isNumber })
+}
+
 class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
     
     @objc func isAccessibilityAuthorized(with reply: @escaping (Bool) -> Void) {
@@ -77,9 +83,25 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         private typealias BrightnessGetter = @convention(c) (NSObject, Selector, UInt64) -> Float
         private typealias BrightnessSetter = @convention(c) (NSObject, Selector, Float, UInt64) -> ObjCBool
 
+        /// Expected ObjC type encodings (offsets stripped), verified against
+        /// CoreBrightness on macOS 27.0.1: `brightnessForKeyboard:` is
+        /// `f24@0:8Q16`, `setBrightness:forKeyboard:` is `B28@0:8f16Q20`.
+        private static let expectedEncodings: [String: String] = [
+            "brightnessForKeyboard:": "f@:Q",
+            "setBrightness:forKeyboard:": "B@:fQ",
+        ]
+
+        /// Returns the method's IMP cast to `type` only if the private method
+        /// still exists **and** still has the signature the cast assumes.
+        /// Calling an IMP through a mismatched C signature is undefined
+        /// behavior, so any drift after an OS update disables the feature
+        /// (returns nil) instead of risking a crash (card #45).
         private func methodIMP<T>(on object: NSObject, selector: Selector, as type: T.Type) -> T? {
             guard let cls = object_getClass(object),
-                  let method = class_getInstanceMethod(cls, selector)
+                  let method = class_getInstanceMethod(cls, selector),
+                  let rawEncoding = method_getTypeEncoding(method),
+                  let expected = Self.expectedEncodings[NSStringFromSelector(selector)],
+                  normalizedTypeEncoding(String(cString: rawEncoding)) == expected
             else { return nil }
             let imp = method_getImplementation(method)
             return unsafeBitCast(imp, to: type)
