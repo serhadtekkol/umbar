@@ -1049,22 +1049,6 @@
         }
       }
     },
-    "Allow" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İzin ver"
-          }
-        }
-      }
-    },
     "Allow Reminders access to list your reminders here." : {
       "localizations" : {
         "en" : {
