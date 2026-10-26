@@ -134,6 +134,16 @@
 		64C28BD882D6B7B8C3E2C45F /* DefaultVisualizer.json in Resources */ = {isa = PBXBuildFile; fileRef = 52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */; };
 		E69875F39B0EBDD76DC86ABB /* ArtworkHostPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FF5B25C31EE71C706689070 /* ArtworkHostPolicy.swift */; };
 		28BAA4F868EBF3BCEA88C492 /* AppIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317E0FA54B61F48FD7EE3342 /* AppIdentity.swift */; };
+		D6155DC127128AE05536FAC0 /* NowPlayingSupervisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1A0C3801D94B2F8A51C002 /* NowPlayingSupervisor.swift */; };
+		A95DA7C10EFAFD30D56DA27B /* PlayerArbiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC6368B7A7BF8E6E5033F42 /* PlayerArbiter.swift */; };
+		E3B83440A15F60DF1DCAD914 /* ArtworkHostPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FF5B25C31EE71C706689070 /* ArtworkHostPolicy.swift */; };
+		D5D72CB62D8A2A6F6628A84B /* AppIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317E0FA54B61F48FD7EE3342 /* AppIdentity.swift */; };
+		7C7C4053654D312B345E897B /* ShelfDropService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1113ABBD2E80E27000EC13B2 /* ShelfDropService.swift */; };
+		3657BA3A536D113429F2226C /* ShelfItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1113ABB72E80E27000EC13B2 /* ShelfItem.swift */; };
+		9C293F4CA34270289CBF4177 /* Bookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118EBE2C2E97165600D54B5A /* Bookmark.swift */; };
+		07F1DABDE24E0E27CBF09724 /* URL+SecurityScoped.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118EBE302E9717DB00D54B5A /* URL+SecurityScoped.swift */; };
+		383A52007D2BD4929E076DE1 /* TemporaryFileStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */; };
+		D586A4A4937170E9DF3C953F /* NSItemProvider+LoadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -301,6 +311,7 @@
 		52CD44DDAD4CA8A792B0BC4A /* DefaultVisualizer.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultVisualizer.json; sourceTree = "<group>"; };
 		7FF5B25C31EE71C706689070 /* ArtworkHostPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkHostPolicy.swift; sourceTree = "<group>"; };
 		317E0FA54B61F48FD7EE3342 /* AppIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentity.swift; sourceTree = "<group>"; };
+		5AD5A6685BB3A4E57764AA13 /* umbarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = umbarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -311,12 +322,20 @@
 			);
 			target = 11F7484E2EC9AABA00F841DB /* BoringNotchXPCHelper */;
 		};
+		C429C6B7EA29E1EA0BEE75B0 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CallerRequirement.swift,
+			);
+			target = A1837B1361C7F96E52B64318 /* umbarTests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		112FB72F2CCF12CC0015238C /* private */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = private; sourceTree = "<group>"; };
-		11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (11F7485C2EC9AABA00F841DB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = BoringNotchXPCHelper; sourceTree = "<group>"; };
+		11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (11F7485C2EC9AABA00F841DB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, C429C6B7EA29E1EA0BEE75B0 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = BoringNotchXPCHelper; sourceTree = "<group>"; };
 		E317D82E8A844741BF11F30A /* Sources */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Sources; sourceTree = "<group>"; };
+		E2E6081DCD3B418802323E0C /* umbarTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = umbarTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -345,6 +364,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0A1EBA850BB679595CB79A96 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		17E30CD94A3F47C86D99AAFA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -520,6 +546,7 @@
 				112B0EB62E30DD0F00562D6C /* mediaremote-adapter */,
 				14CEF4142C5CAED300855D72 /* boringNotch */,
 				11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */,
+				E2E6081DCD3B418802323E0C /* umbarTests */,
 				14CEF4132C5CAED300855D72 /* Products */,
 				14D031EC2C689DB70096E6A1 /* Frameworks */,
 			);
@@ -531,6 +558,7 @@
 				14CEF4122C5CAED300855D72 /* umbar.app */,
 				11F7484F2EC9AABA00F841DB /* umbarHelper.xpc */,
 				918B494336D8A086F1188FC8 /* MediaRemoteAdapter.framework */,
+				5AD5A6685BB3A4E57764AA13 /* umbarTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -808,6 +836,28 @@
 			productReference = 918B494336D8A086F1188FC8 /* MediaRemoteAdapter.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		A1837B1361C7F96E52B64318 /* umbarTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B1B50FEC679A3C17428F6CF8 /* Build configuration list for PBXNativeTarget "umbarTests" */;
+			buildPhases = (
+				E71100F9DAB0118A8F15D0EE /* Sources */,
+				17E30CD94A3F47C86D99AAFA /* Frameworks */,
+				1EF34FB84081C1C20D63014D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E2E6081DCD3B418802323E0C /* umbarTests */,
+			);
+			name = umbarTests;
+			packageProductDependencies = (
+			);
+			productName = umbarTests;
+			productReference = 5AD5A6685BB3A4E57764AA13 /* umbarTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -819,6 +869,9 @@
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					6DA30E1B478CE08E11790E3D = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					A1837B1361C7F96E52B64318 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 					11F7484E2EC9AABA00F841DB = {
@@ -857,6 +910,7 @@
 				14CEF4112C5CAED300855D72 /* boringNotch */,
 				11F7484E2EC9AABA00F841DB /* BoringNotchXPCHelper */,
 				6DA30E1B478CE08E11790E3D /* MediaRemoteAdapter */,
+				A1837B1361C7F96E52B64318 /* umbarTests */,
 			);
 		};
 /* End PBXProject section */
@@ -884,6 +938,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0D3616F725837106E2D084BA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1EF34FB84081C1C20D63014D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1019,6 +1080,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E71100F9DAB0118A8F15D0EE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D6155DC127128AE05536FAC0 /* NowPlayingSupervisor.swift in Sources */,
+				A95DA7C10EFAFD30D56DA27B /* PlayerArbiter.swift in Sources */,
+				E3B83440A15F60DF1DCAD914 /* ArtworkHostPolicy.swift in Sources */,
+				D5D72CB62D8A2A6F6628A84B /* AppIdentity.swift in Sources */,
+				7C7C4053654D312B345E897B /* ShelfDropService.swift in Sources */,
+				3657BA3A536D113429F2226C /* ShelfItem.swift in Sources */,
+				9C293F4CA34270289CBF4177 /* Bookmark.swift in Sources */,
+				07F1DABDE24E0E27CBF09724 /* URL+SecurityScoped.swift in Sources */,
+				383A52007D2BD4929E076DE1 /* TemporaryFileStorageService.swift in Sources */,
+				D586A4A4937170E9DF3C953F /* NSItemProvider+LoadHelpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1397,6 +1475,42 @@
 			};
 			name = Release;
 		};
+		473E5EC93EB02310715A9AF0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(UMBAR_BUNDLE_ID_ROOT).Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		8744EB264764D225F6282A42 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(UMBAR_BUNDLE_ID_ROOT).Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1432,6 +1546,15 @@
 			buildConfigurations = (
 				C7F65B67C545B7BD77A760E0 /* Debug */,
 				570CADFE8896BD7D7C84B4CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B1B50FEC679A3C17428F6CF8 /* Build configuration list for PBXNativeTarget "umbarTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				473E5EC93EB02310715A9AF0 /* Debug */,
+				8744EB264764D225F6282A42 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
