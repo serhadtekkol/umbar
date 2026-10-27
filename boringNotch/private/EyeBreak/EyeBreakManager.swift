@@ -135,6 +135,7 @@ final class EyeBreakManager: ObservableObject {
             idleSeconds: Self.secondsSinceLastInput(),
             isSuspended: isSuspended,
             isDeferred: Defaults[.eyeBreakDeferDuringVideo] && Self.frontmostAppKeepsDisplayAwake()
+                || FocusTimerService.shared.defersEyeBreaks
         )
         if engine.tick(input) { publish() }
     }
