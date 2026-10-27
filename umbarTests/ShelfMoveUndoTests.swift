@@ -650,6 +650,9 @@ struct ShelfDeletionRuleTests {
     static let allowedRemoveItem: [String: Int] = [
         "boringNotch/components/Shelf/Services/TemporaryFileStorageService.swift": 3,
         "boringNotch/extensions/NSItemProvider+LoadHelpers.swift": 2,
+        // umbar's own artwork cache under ~/Library/Caches/<bundle id>/Artwork (#79)
+        "boringNotch/private/ArtworkCache/ArtworkDiskCache.swift": 4,
+        "boringNotch/private/ArtworkCache/ArtworkCacheLocation.swift": 1,
     ]
 
     static func appSources() throws -> [String: String] {
