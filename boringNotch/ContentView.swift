@@ -151,13 +151,13 @@ struct ContentView: View {
                             }
                     }
                     .onReceive(NotificationCenter.default.publisher(for: .sharingDidFinish)) { _ in
-                        if vm.notchState == .open && !isHovering && !vm.isBatteryPopoverActive {
+                        if vm.notchState == .open && !isHovering && !vm.isBatteryPopoverActive && pointerMayClose {
                             hoverTask?.cancel()
                             hoverTask = Task {
                                 try? await Task.sleep(for: .milliseconds(100))
                                 guard !Task.isCancelled else { return }
                                 await MainActor.run {
-                                    if self.vm.notchState == .open && !self.isHovering && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose {
+                                    if self.vm.notchState == .open && !self.isHovering && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose && self.pointerMayClose {
                                         self.vm.close()
                                     }
                                 }
@@ -177,13 +177,13 @@ struct ContentView: View {
                         }
                     }
                     .onChange(of: vm.isBatteryPopoverActive) {
-                        if !vm.isBatteryPopoverActive && !isHovering && vm.notchState == .open && !SharingStateManager.shared.preventNotchClose {
+                        if !vm.isBatteryPopoverActive && !isHovering && vm.notchState == .open && !SharingStateManager.shared.preventNotchClose && pointerMayClose {
                             hoverTask?.cancel()
                             hoverTask = Task {
                                 try? await Task.sleep(for: .milliseconds(100))
                                 guard !Task.isCancelled else { return }
                                 await MainActor.run {
-                                    if !self.vm.isBatteryPopoverActive && !self.isHovering && self.vm.notchState == .open && !SharingStateManager.shared.preventNotchClose {
+                                    if !self.vm.isBatteryPopoverActive && !self.isHovering && self.vm.notchState == .open && !SharingStateManager.shared.preventNotchClose && self.pointerMayClose {
                                         self.vm.close()
                                     }
                                 }
@@ -380,12 +380,12 @@ struct ContentView: View {
         .onChange(of: eyeBreak.isPromptingInPanel) { _, prompting in
             // F14: pop the notch open for the reminder; fold it again when the
             // reminder ends unless the pointer is still on it.
-            if prompting { doOpen() } else if !isHovering { vm.close() }
+            if prompting { doOpen() } else if !isHovering && pointerMayClose { vm.close() }
         }
         .onChange(of: hudAccessCard.isShowing) { _, showing in
             // K13: a volume change can bring the card up while the notch is
             // closed; it folds again when the card goes unless hovered.
-            if showing { doOpen() } else if !isHovering { vm.close() }
+            if showing { doOpen() } else if !isHovering && pointerMayClose { vm.close() }
         }
     }
 
@@ -535,6 +535,13 @@ struct ContentView: View {
 
     // MARK: - Hover Management
 
+    /// The pointer-driven closes (pointer exit, a popover or share sheet
+    /// ending while the pointer is away) apply only while this panel does not
+    /// hold the keyboard (AC-1.4 R1.2, Can B1/C3).
+    private var pointerMayClose: Bool {
+        PanelKeyPolicy.closesOnPointerExit(isKey: PanelKeyController.shared.isKey(vm))
+    }
+
     private func handleHover(_ hovering: Bool) {
         if coordinator.firstLaunch { return }
         hoverTask?.cancel()
@@ -574,7 +581,10 @@ struct ContentView: View {
                         self.isHovering = false
                     }
                     
-                    if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose && !self.eyeBreak.isPromptingInPanel {
+                    // A key panel ignores the pointer leaving (AC-1.4 R1.2
+                    // exception): it closes on Esc, an outside click or the
+                    // shortcut again, through PanelKeyController.
+                    if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose && !self.eyeBreak.isPromptingInPanel && self.pointerMayClose {
                         self.vm.close()
                     }
                 }

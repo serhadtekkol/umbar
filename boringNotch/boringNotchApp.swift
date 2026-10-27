@@ -8,6 +8,7 @@
 import Combine
 import Defaults
 import KeyboardShortcuts
+import os
 import SwiftUI
 
 @main
@@ -24,6 +25,15 @@ struct DynamicNotchApp: App {
 
     var body: some Scene {
         MenuBarExtra("umbar", image: "MenuBarIcon", isInserted: $showMenuBarIcon) {
+            // AC-1.20: the keyboard and VoiceOver way in (Ctrl-F8 reaches the
+            // menu bar extras). First item, with the panel shortcut shown.
+            Button("Open panel") {
+                DispatchQueue.main.async {
+                    appDelegate.openPanelFromKeyboard(source: .menu)
+                }
+            }
+            .keyboardShortcut(.toggleNotchOpen)
+            Divider()
             Button("Settings") {
                 DispatchQueue.main.async {
                     SettingsWindowController.shared.showWindow()
@@ -51,7 +61,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     var whatsNewWindow: NSWindow?
     var timer: Timer?
-    var closeNotchTask: Task<Void, Never>?
     private var previousScreens: [NSScreen]?
     private var onboardingWindowController: NSWindowController?
     private var screenLockedObserver: Any?
@@ -184,6 +193,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let styleMask: NSWindow.StyleMask = [.borderless, .nonactivatingPanel, .utilityWindow, .hudWindow]
         
         let window = BoringNotchSkyLightWindow(contentRect: rect, styleMask: styleMask, backing: .buffered, defer: false)
+        window.viewModel = viewModel
+        window.onSelectPage = { [weak self] page in
+            self?.selectPage(page)
+        }
 
         window.contentView = NSHostingView(
             rootView: ContentView()
@@ -311,48 +324,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         KeyboardShortcuts.onKeyDown(for: .toggleNotchOpen) { [weak self] in
-            Task { [weak self] in
-                guard let self = self else { return }
-
-                let mouseLocation = NSEvent.mouseLocation
-
-                var viewModel = self.vm
-
-                if Defaults[.showOnAllDisplays] {
-                    for screen in NSScreen.screens {
-                        if screen.frame.contains(mouseLocation) {
-                            if let uuid = screen.displayUUID, let screenViewModel = self.viewModels[uuid] {
-                                viewModel = screenViewModel
-                                break
-                            }
-                        }
-                    }
-                }
-
-                self.closeNotchTask?.cancel()
-                self.closeNotchTask = nil
-
-                switch viewModel.notchState {
-                case .closed:
-                    await MainActor.run {
-                        viewModel.open()
-                    }
-
-                    let task = Task { [weak viewModel] in
-                        do {
-                            try await Task.sleep(for: .seconds(3))
-                            await MainActor.run {
-                                viewModel?.close()
-                            }
-                        } catch { }
-                    }
-                    self.closeNotchTask = task
-                case .open:
-                    await MainActor.run {
-                        viewModel.close()
-                    }
-                }
-            }
+            // Opened from the keyboard, the panel takes the keyboard and stays
+            // until Esc, an outside click or this shortcut again. Upstream
+            // closed it after 3 s, before a keyboard or VoiceOver user could
+            // reach anything in it (Can B1, AC-1.18).
+            self?.handlePanelShortcut()
         }
 
         if !Defaults[.showOnAllDisplays] {
@@ -366,6 +342,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         setupDragDetectors()
+
+        #if DEBUG
+        runKeyPanelProbeIfRequested()
+        #endif
 
         // No launch ever plays a sound, onboarding included (card #76).
         if coordinator.firstLaunch {
@@ -475,6 +455,87 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
+
+    // MARK: - Keyboard access to the panel (Can B1, #98)
+
+    /// The notch window the keyboard should act on: with a notch on every
+    /// display, the one under the pointer (upstream's rule for the shortcut);
+    /// otherwise the single notch window.
+    private func keyboardTargetWindow() -> BoringNotchSkyLightWindow? {
+        if Defaults[.showOnAllDisplays] {
+            let mouseLocation = NSEvent.mouseLocation
+            let screen = NSScreen.screens.first { $0.frame.contains(mouseLocation) } ?? NSScreen.main
+            if let uuid = screen?.displayUUID, let window = windows[uuid] as? BoringNotchSkyLightWindow {
+                return window
+            }
+            return windows.values.first as? BoringNotchSkyLightWindow
+        }
+        return window as? BoringNotchSkyLightWindow
+    }
+
+    @MainActor
+    private func handlePanelShortcut() {
+        guard let target = keyboardTargetWindow() else { return }
+        PanelKeyController.shared.handleShortcut(for: target)
+    }
+
+    /// "Open panel" in the menu bar extra (AC-1.20). Opens and takes the
+    /// keyboard; it never closes the panel, unlike the shortcut.
+    @MainActor
+    func openPanelFromKeyboard(source: PanelOpenSource) {
+        guard let target = keyboardTargetWindow() else { return }
+        PanelKeyController.shared.open(target, from: source)
+    }
+
+    /// ⌘1…⌘5 in a key panel (AC-1.19). Pages without a view yet (Pano,
+    /// Notlar, Takvim) and a turned-off shelf do nothing; the window has
+    /// already consumed the key, so it does not reach the app behind.
+    @MainActor
+    private func selectPage(_ page: PanelPage) {
+        switch page {
+        case .now:
+            coordinator.currentView = .home
+        case .shelf where Defaults[.boringShelf]:
+            coordinator.currentView = .shelf
+        case .shelf, .clipboard, .notes, .calendar:
+            break
+        }
+    }
+
+    #if DEBUG
+    /// QA aid for #98: with `-UmbarKeyPanelProbe YES` on the command line, a
+    /// Debug build opens the panel the way "Open panel" does, logs whether it
+    /// is key, closes it the way Esc does, and logs again (category
+    /// "PanelKeyProbe"). Lets the key-window part of AC-1.18 be checked over
+    /// SSH without sending keystrokes or clicks. Never compiled into Release.
+    private func runKeyPanelProbeIfRequested() {
+        guard UserDefaults.standard.bool(forKey: "UmbarKeyPanelProbe") else { return }
+        let probeLog = Logger(subsystem: "umbar", category: "PanelKeyProbe")
+        func report(_ step: String) {
+            let target = keyboardTargetWindow()
+            let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "nil"
+            probeLog.notice("""
+                \(step, privacy: .public): notchState=\(String(describing: target?.viewModel?.notchState), privacy: .public) \
+                isKeyWindow=\(target?.isKeyWindow ?? false, privacy: .public) \
+                canBecomeKey=\(target?.canBecomeKey ?? false, privacy: .public) \
+                NSApp.keyWindowIsPanel=\(NSApp.keyWindow === target, privacy: .public) \
+                appActive=\(NSApp.isActive, privacy: .public) frontmost=\(front, privacy: .public)
+                """)
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            report("before")
+            openPanelFromKeyboard(source: .menu)
+            try? await Task.sleep(for: .seconds(2))
+            report("afterOpen")
+            if let target = keyboardTargetWindow() {
+                PanelKeyController.shared.close(target)
+            }
+            try? await Task.sleep(for: .seconds(2))
+            report("afterClose")
+        }
+    }
+    #endif
 
     @objc func togglePopover(_ sender: Any?) {
         if window?.isVisible == true {
