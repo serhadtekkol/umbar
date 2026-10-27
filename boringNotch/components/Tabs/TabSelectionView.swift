@@ -34,20 +34,20 @@ struct TabSelectionView: View {
         PanelTab.isOn(coordinator.currentView) ? coordinator.currentView : .home
     }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         HStack(spacing: 2) {
             ForEach(tabs) { tab in
-                let selected = tab.view == shownView
-                TabButton(tab: tab, selected: selected) { select(tab.view) }
-                    .background {
-                        if selected {
-                            Capsule()
-                                .fill(PageTokens.raisedStrong)
-                                .matchedGeometryEffect(id: "capsule", in: animation)
-                        }
-                    }
+                TabButton(tab: tab, selected: tab.view == shownView, capsuleNamespace: animation) {
+                    select(tab.view)
+                }
             }
         }
+        // Any change of the selected tab moves the capsule, widens the new
+        // tab and slides the neighbours on one spring, including the ⌘1…⌘5
+        // shortcuts, which set the page without an animation of their own.
+        .animation(UmbarMotion.tab(reduce: reduceMotion), value: shownView)
         .padding(2)
         // System focus ring (design-language §3.1 `island.focus`), not a drawn one.
         .focusable()
@@ -68,7 +68,7 @@ struct TabSelectionView: View {
     }
 
     private func select(_ view: NotchViews) {
-        withAnimation(.easeOut(duration: 0.18)) {
+        withAnimation(UmbarMotion.tab(reduce: reduceMotion)) {
             coordinator.currentView = view
         }
     }

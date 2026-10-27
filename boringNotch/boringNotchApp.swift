@@ -236,6 +236,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         #if DEBUG
         if PanelPageRenderer.runIfRequested() { return }
+        if MotionFrameRenderer.runIfRequested() { return }
         #endif
         EyeBreakManager.shared.start()
         HUDAccessCard.shared.start()
