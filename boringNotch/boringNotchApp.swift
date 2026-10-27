@@ -238,6 +238,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HUDAccessCard.shared.start()
         // Spike A2 prototype; inert unless clipboardMonitorEnabled is set.
         ClipboardMonitorController.shared.activate()
+        // F16: new screenshots land on the shelf; briefly show the shelf
+        // without taking focus, and put the notch back unless the user is in it.
+        ScreenshotShelfController.shared.start { [weak self] in
+            guard let self, self.vm.notchState == .closed else { return }
+            self.vm.open()
+            self.coordinator.currentView = .shelf
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                guard let self, !self.vm.isMouseHovering() else { return }
+                self.vm.close()
+            }
+        }
 
         NotificationCenter.default.addObserver(
             self,
