@@ -348,6 +348,7 @@
 				Caffeinate/CaffeinatePolicy.swift,
 				Clipboard/ClipboardMonitor.swift,
 				EyeBreak/EyeBreakEngine.swift,
+				FocusTimer/FocusTimerEngine.swift,
 				HUD/HUDAccessCardPolicy.swift,
 				Panel/PanelKeyPolicy.swift,
 				Settings/DefaultsMigration.swift,
