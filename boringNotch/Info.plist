@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>umbar shows your calendar events in the notch. Your events never leave your Mac.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>umbar lists your reminders next to your events in the notch. When you check a reminder off there, or uncheck it, umbar saves that change to Reminders. Your reminders never leave your Mac.</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>

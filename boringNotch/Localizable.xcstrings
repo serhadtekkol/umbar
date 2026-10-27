@@ -241,6 +241,22 @@
         }
       }
     },
+    "After every %lld minutes of use, umbar asks you to look away for %lld seconds. On by default; turn it off under Eye break in Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After every %lld minutes of use, umbar asks you to look away for %lld seconds. On by default; turn it off under Eye break in Settings."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar, her %1$lld dakikalık kullanımdan sonra %2$lld saniye uzağa bakmanızı ister. Varsayılan olarak açıktır; Ayarlar'daki Göz molası bölümünden kapatabilirsiniz."
+          }
+        }
+      }
+    },
     "Allow" : {
       "localizations" : {
         "en" : {
@@ -268,7 +284,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcılarınızı burada listelemek için erişime izin verin."
+            "value" : "Anımsatıcılarınızı burada listelemek için erişime izin verin."
           }
         }
       }
@@ -620,7 +636,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Takvim ve hatırlatıcılar"
+            "value" : "Takvim ve anımsatıcılar"
           }
         }
       }
@@ -716,7 +732,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dosyaları çentiğe bırakın, elinizin altında dursun."
+            "value" : "Dosyaları notch'a bırakın, elinizin altında dursun."
           }
         }
       }
@@ -924,7 +940,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şu an hiçbir izin istenmiyor. Bir özellik takviminize, hatırlatıcılarınıza ya da Erişilebilirlik'e ihtiyaç duyduğunda umbar nedenini söyler ve o zaman sorar."
+            "value" : "Şu an hiçbir izin istenmiyor. Bir özellik takviminize, anımsatıcılarınıza ya da Erişilebilirlik'e ihtiyaç duyduğunda umbar nedenini söyler ve o zaman sorar."
           }
         }
       }
@@ -1100,7 +1116,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcı listeleri"
+            "value" : "Anımsatıcı listeleri"
           }
         }
       }
@@ -1116,7 +1132,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcı erişimi"
+            "value" : "Anımsatıcı erişimi"
           }
         }
       }
@@ -1132,7 +1148,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcı erişimi kapalı."
+            "value" : "Anımsatıcı erişimi kapalı."
           }
         }
       }
@@ -1148,7 +1164,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcı erişimi kapalı. Sistem Ayarları'nda umbar için açın."
+            "value" : "Anımsatıcı erişimi kapalı. Sistem Ayarları'nda umbar için açın."
           }
         }
       }
@@ -1164,7 +1180,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcılar takvimde görünür. Görmek için Takvimi göster'i açın."
+            "value" : "Anımsatıcılar takvimde görünür. Görmek için Takvimi göster'i açın."
           }
         }
       }
@@ -1196,7 +1212,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcıları göster"
+            "value" : "Anımsatıcıları göster"
           }
         }
       }
@@ -1217,18 +1233,18 @@
         }
       }
     },
-    "Shows volume and brightness in the notch. umbar asks for Accessibility the first time you change them." : {
+    "Shows volume and brightness in the notch. On by default; umbar asks for Accessibility the first time you change them." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shows volume and brightness in the notch. umbar asks for Accessibility the first time you change them."
+            "value" : "Shows volume and brightness in the notch. On by default; umbar asks for Accessibility the first time you change them."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ses ve parlaklığı notch'ta gösterir. umbar Erişilebilirlik iznini bunları ilk kez değiştirdiğinizde ister."
+            "value" : "Ses ve parlaklığı notch'ta gösterir. Varsayılan olarak açıktır; umbar Erişilebilirlik iznini bunları ilk kez değiştirdiğinizde ister."
           }
         }
       }
@@ -1313,18 +1329,18 @@
         }
       }
     },
-    "Today's events and reminders at a glance. Turn it on in Settings." : {
+    "Today's events and reminders at a glance. On by default; umbar asks for access the first time you open it in the notch." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Today's events and reminders at a glance. Turn it on in Settings."
+            "value" : "Today's events and reminders at a glance. On by default; umbar asks for access the first time you open it in the notch."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bugünün etkinlikleri ve hatırlatıcıları bir bakışta. Ayarlar'dan açın."
+            "value" : "Bugünün etkinlikleri ve anımsatıcıları bir bakışta. Varsayılan olarak açıktır; notch'ta ilk açtığınızda umbar erişim ister."
           }
         }
       }
@@ -1340,7 +1356,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "umbar'ın hatırlatıcılarınızı etkinliklerinizin yanında listeleyebilmesi için Hatırlatıcılar'a erişmesi gerekir. Hatırlatıcılarınız Mac'inizden hiç çıkmaz."
+            "value" : "umbar'ın anımsatıcılarınızı etkinliklerinizin yanında listeleyebilmesi için Anımsatıcılar'a erişmesi gerekir. Anımsatıcılarınız Mac'inizden hiç çıkmaz."
           }
         }
       }
@@ -2604,7 +2620,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tamamlanan hatırlatıcıları gizle"
+            "value" : "Tamamlanan anımsatıcıları gizle"
           }
         }
       }
@@ -3484,7 +3500,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcılar"
+            "value" : "Anımsatıcılar"
           }
         }
       }

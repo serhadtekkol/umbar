@@ -6,13 +6,20 @@
 //
 //  The last onboarding screen: what umbar does, and the promise that
 //  permissions are asked for in context, not now (AC-1.12, card #59).
+//  Every feature that is on by default says so, and how it asks or how to
+//  turn it off (card #126): a fresh install should not be surprised by an
+//  eye-break prompt or a permission ask it was never told about.
 //
 
+import Defaults
 import SwiftUI
 
 struct OnboardingFinishView: View {
     let onFinish: () -> Void
     let onOpenSettings: () -> Void
+
+    @Default(.eyeBreakIntervalMinutes) private var eyeBreakMinutes
+    @Default(.eyeBreakDurationSeconds) private var eyeBreakSeconds
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -26,9 +33,9 @@ struct OnboardingFinishView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.top, 44)
-            .padding(.bottom, 28)
+            .padding(.bottom, 24)
 
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 14) {
                 FeatureRow(
                     systemImage: "music.note",
                     title: "Now Playing",
@@ -37,7 +44,7 @@ struct OnboardingFinishView: View {
                 FeatureRow(
                     systemImage: "calendar",
                     title: "Calendar and reminders",
-                    detail: "Today's events and reminders at a glance. Turn it on in Settings."
+                    detail: "Today's events and reminders at a glance. On by default; umbar asks for access the first time you open it in the notch."
                 )
                 FeatureRow(
                     systemImage: "tray",
@@ -47,7 +54,12 @@ struct OnboardingFinishView: View {
                 FeatureRow(
                     systemImage: "speaker.wave.2",
                     title: "Volume and brightness indicator",
-                    detail: "Shows volume and brightness in the notch. umbar asks for Accessibility the first time you change them."
+                    detail: "Shows volume and brightness in the notch. On by default; umbar asks for Accessibility the first time you change them."
+                )
+                FeatureRow(
+                    systemImage: "eye",
+                    title: "Eye break",
+                    detail: "After every \(eyeBreakMinutes) minutes of use, umbar asks you to look away for \(eyeBreakSeconds) seconds. On by default; turn it off under Eye break in Settings."
                 )
             }
 
@@ -60,7 +72,7 @@ struct OnboardingFinishView: View {
             }
             .font(.subheadline)
             .foregroundStyle(permissionMutedText)
-            .padding(.top, 28)
+            .padding(.top, 24)
 
             Spacer(minLength: 20)
 
