@@ -41,6 +41,9 @@ struct SettingsView: View {
                 NavigationLink(value: "EyeBreak") {
                     Label("Eye break", systemImage: "eye")
                 }
+                NavigationLink(value: "QuickToggles") {
+                    Label("Quick toggles", systemImage: "switch.2")
+                }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
@@ -81,6 +84,8 @@ struct SettingsView: View {
                     CaffeinateSettings()
                 case "EyeBreak":
                     EyeBreakSettings()
+                case "QuickToggles":
+                    QuickTogglesSettings()
                 case "Battery":
                     Charge()
                 case "Shelf":
