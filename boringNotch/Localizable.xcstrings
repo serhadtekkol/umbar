@@ -268,7 +268,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcılarınızı burada listelemek için erişime izin verin."
+            "value" : "Anımsatıcılarınızı burada listelemek için erişime izin verin."
           }
         }
       }
@@ -620,7 +620,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Takvim ve hatırlatıcılar"
+            "value" : "Takvim ve anımsatıcılar"
           }
         }
       }
@@ -924,7 +924,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şu an hiçbir izin istenmiyor. Bir özellik takviminize, hatırlatıcılarınıza ya da Erişilebilirlik'e ihtiyaç duyduğunda umbar nedenini söyler ve o zaman sorar."
+            "value" : "Şu an hiçbir izin istenmiyor. Bir özellik takviminize, anımsatıcılarınıza ya da Erişilebilirlik'e ihtiyaç duyduğunda umbar nedenini söyler ve o zaman sorar."
           }
         }
       }
@@ -1100,7 +1100,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcı listeleri"
+            "value" : "Anımsatıcı listeleri"
           }
         }
       }
@@ -1116,7 +1116,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcı erişimi"
+            "value" : "Anımsatıcı erişimi"
           }
         }
       }
@@ -1132,7 +1132,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcı erişimi kapalı."
+            "value" : "Anımsatıcı erişimi kapalı."
           }
         }
       }
@@ -1148,7 +1148,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcı erişimi kapalı. Sistem Ayarları'nda umbar için açın."
+            "value" : "Anımsatıcı erişimi kapalı. Sistem Ayarları'nda umbar için açın."
           }
         }
       }
@@ -1164,7 +1164,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcılar takvimde görünür. Görmek için Takvimi göster'i açın."
+            "value" : "Anımsatıcılar takvimde görünür. Görmek için Takvimi göster'i açın."
           }
         }
       }
@@ -1196,7 +1196,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcıları göster"
+            "value" : "Anımsatıcıları göster"
           }
         }
       }
@@ -1324,7 +1324,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bugünün etkinlikleri ve hatırlatıcıları bir bakışta. Ayarlar'dan açın."
+            "value" : "Bugünün etkinlikleri ve anımsatıcıları bir bakışta. Ayarlar'dan açın."
           }
         }
       }
@@ -1340,7 +1340,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "umbar'ın hatırlatıcılarınızı etkinliklerinizin yanında listeleyebilmesi için Hatırlatıcılar'a erişmesi gerekir. Hatırlatıcılarınız Mac'inizden hiç çıkmaz."
+            "value" : "umbar'ın anımsatıcılarınızı etkinliklerinizin yanında listeleyebilmesi için Anımsatıcılar'a erişmesi gerekir. Anımsatıcılarınız Mac'inizden hiç çıkmaz."
           }
         }
       }
@@ -2604,7 +2604,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tamamlanan hatırlatıcıları gizle"
+            "value" : "Tamamlanan anımsatıcıları gizle"
           }
         }
       }
@@ -3484,7 +3484,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hatırlatıcılar"
+            "value" : "Anımsatıcılar"
           }
         }
       }
