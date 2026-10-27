@@ -842,6 +842,7 @@ struct Shelf: View {
                     Text("General")
                 }
             }
+            ScreenshotShelfSettingsSection()
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Shelf")
