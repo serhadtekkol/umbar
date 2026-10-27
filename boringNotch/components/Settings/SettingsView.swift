@@ -41,6 +41,9 @@ struct SettingsView: View {
                 NavigationLink(value: "EyeBreak") {
                     Label("Eye break", systemImage: "eye")
                 }
+                NavigationLink(value: "FocusTimer") {
+                    Label("Focus timer", systemImage: "timer")
+                }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
@@ -81,6 +84,8 @@ struct SettingsView: View {
                     CaffeinateSettings()
                 case "EyeBreak":
                     EyeBreakSettings()
+                case "FocusTimer":
+                    FocusTimerSettings()
                 case "Battery":
                     Charge()
                 case "Shelf":

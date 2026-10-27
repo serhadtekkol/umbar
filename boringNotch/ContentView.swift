@@ -23,6 +23,7 @@ struct ContentView: View {
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
     @ObservedObject var eyeBreak = EyeBreakManager.shared
+    @ObservedObject var focusTimer = FocusTimerService.shared
     @ObservedObject var hudAccessCard = HUDAccessCard.shared
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
@@ -119,6 +120,9 @@ struct ContentView: View {
                     )
                     .overlay(alignment: .topTrailing) {
                         CaffeinateClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
+                    }
+                    .overlay(alignment: .topLeading) {
+                        FocusTimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                     }
                 
                 mainLayout
@@ -355,6 +359,8 @@ struct ContentView: View {
                 VStack {
                     if eyeBreak.isPromptingInPanel {
                         EyeBreakPromptView()
+                    } else if focusTimer.isShowingBanner {
+                        FocusTimerBannerView()
                     } else if hudAccessCard.isShowing {
                         HUDAccessCardView()
                     } else {
@@ -381,6 +387,10 @@ struct ContentView: View {
             // F14: pop the notch open for the reminder; fold it again when the
             // reminder ends unless the pointer is still on it.
             if prompting { doOpen() } else if !isHovering && pointerMayClose { vm.close() }
+        }
+        .onChange(of: focusTimer.isShowingBanner) { _, showing in
+            // F18: same as the eye-break reminder; pop open for the banner, fold after.
+            if showing { doOpen() } else if !isHovering && pointerMayClose { vm.close() }
         }
         .onChange(of: hudAccessCard.isShowing) { _, showing in
             // K13: a volume change can bring the card up while the notch is
@@ -584,7 +594,7 @@ struct ContentView: View {
                     // A key panel ignores the pointer leaving (AC-1.4 R1.2
                     // exception): it closes on Esc, an outside click or the
                     // shortcut again, through PanelKeyController.
-                    if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose && !self.eyeBreak.isPromptingInPanel && self.pointerMayClose {
+                    if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose && !self.eyeBreak.isPromptingInPanel && !self.focusTimer.isShowingBanner && self.pointerMayClose {
                         self.vm.close()
                     }
                 }
