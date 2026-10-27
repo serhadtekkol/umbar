@@ -48,8 +48,21 @@ struct ContentView: View {
 
     @Default(.showNotHumanFace) var showNotHumanFace
 
-    // Shared interactive spring for movement/resizing to avoid conflicting animations
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Whether the closed island shows the live strip; a key for the ear
+    /// spring so the island grows with the strip instead of snapping.
+    @State private var liveStripShown = false
+
+    // Shared interactive spring for the swipe gestures (gestureProgress).
     private let animationSpring = Animation.interactiveSpring(response: 0.38, dampingFraction: 0.8, blendDuration: 0)
+
+    /// The hover hint (design-language §3.7 `motion.hoverHint`): the closed
+    /// island reaches down a few points while the pointer rests on it. Drawn
+    /// by the black shape only, so the measured hover frame does not move.
+    private var hoverHintGrow: CGFloat {
+        (isHovering && vm.notchState == .closed && !reduceMotion) ? UmbarMotion.hoverHintGrow : 0
+    }
 
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
@@ -113,8 +126,14 @@ struct ContentView: View {
                         : cornerRadiusInsets.closed.bottom
                     )
                     .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
-                    .background(.black)
+                    // Content is clipped by the shape as it grows, so the
+                    // panel is revealed by the island rather than faded over it.
                     .clipShape(currentNotchShape)
+                    .background(alignment: .top) {
+                        currentNotchShape
+                            .fill(.black)
+                            .padding(.bottom, -hoverHintGrow)
+                    }
                     .overlay(alignment: .top) {
                         Rectangle()
                             .fill(.black)
@@ -129,10 +148,12 @@ struct ContentView: View {
                         .bottom,
                         vm.effectiveClosedNotchHeight == 0 ? 10 : 0
                     )
-                    .overlay(alignment: .topTrailing) {
+                    // Behind the island, so a badge slides out from under the
+                    // notch edge instead of fading in on top of it.
+                    .background(alignment: .topTrailing) {
                         CaffeinateClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                     }
-                    .overlay(alignment: .topLeading) {
+                    .background(alignment: .topLeading) {
                         FocusTimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                         NetMonitorClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                     }
@@ -142,13 +163,18 @@ struct ContentView: View {
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
                         if vm.notchState == .closed { closedHoverFrame = frame }
                     }
-                    .conditionalModifier(true) { view in
-                        let openAnimation = Animation.spring(response: 0.42, dampingFraction: 0.8, blendDuration: 0)
-                        let closeAnimation = Animation.spring(response: 0.45, dampingFraction: 1.0, blendDuration: 0)
-                        
-                        return view
-                            .animation(vm.notchState == .open ? openAnimation : closeAnimation, value: vm.notchState)
-                            .animation(.smooth, value: gestureProgress)
+                    // Innermost wins: an open/close always uses motion.open /
+                    // motion.close; the ear spring covers closed-island changes
+                    // (music starts, a live strip, a HUD) in a transaction
+                    // where the state did not change.
+                    .animation(vm.notchState == .open ? UmbarMotion.open(reduce: reduceMotion) : UmbarMotion.close(reduce: reduceMotion), value: vm.notchState)
+                    .animation(.smooth, value: gestureProgress)
+                    .animation(UmbarMotion.ear(reduce: reduceMotion), value: computedChinWidth)
+                    .animation(UmbarMotion.ear(reduce: reduceMotion), value: liveStripShown)
+                    .animation(UmbarMotion.ear(reduce: reduceMotion), value: coordinator.sneakPeek.show)
+                    .animation(UmbarMotion.ear(reduce: reduceMotion), value: coordinator.expandingView.show)
+                    .onReceive(LiveActivityCenter.shared.$stripItems.map { !$0.isEmpty }.removeDuplicates()) { shown in
+                        liveStripShown = shown
                     }
                     .contentShape(Rectangle())
                     .onHover { hovering in
@@ -192,7 +218,7 @@ struct ContentView: View {
                             stopPointerWatch()
                         }
                         if newState == .closed && isHovering {
-                            withAnimation {
+                            withAnimation(UmbarMotion.hoverHint(reduce: reduceMotion)) {
                                 isHovering = false
                             }
                         }
@@ -314,18 +340,22 @@ struct ContentView: View {
                             .frame(width: 76, alignment: .trailing)
                         }
                         .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                        .transition(.closedContent(reduce: reduceMotion))
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
                           MusicLiveActivity()
                               .frame(alignment: .center)
+                              .transition(.closedContent(reduce: reduceMotion))
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           BoringFaceAnimation()
+                              .transition(.closedContent(reduce: reduceMotion))
                        } else if vm.notchState == .open {
                            BoringHeader()
                                .frame(height: max(24, vm.effectiveClosedNotchHeight))
                                .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
+                               .transition(.islandContent(delay: UmbarMotion.headerDelay, reduce: reduceMotion))
                        } else {
                            Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
                        }
@@ -389,11 +419,7 @@ struct ContentView: View {
                         PanelPageView(albumArtNamespace: albumArtNamespace)
                     }
                 }
-                .transition(
-                    .scale(scale: 0.8, anchor: .top)
-                    .combined(with: .opacity)
-                    .animation(.smooth(duration: 0.35))
-                )
+                .transition(.islandContent(delay: UmbarMotion.pageDelay, reduce: reduceMotion))
                 .zIndex(1)
                 .allowsHitTesting(vm.notchState == .open)
                 .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
@@ -555,7 +581,7 @@ struct ContentView: View {
     }
 
     private func doOpen() {
-        withAnimation(animationSpring) {
+        withAnimation(UmbarMotion.open(reduce: reduceMotion)) {
             vm.open()
         }
     }
@@ -579,7 +605,7 @@ struct ContentView: View {
 
         if hovering {
             let wasHovering = isHovering
-            withAnimation(animationSpring) {
+            withAnimation(UmbarMotion.hoverHint(reduce: reduceMotion)) {
                 isHovering = true
             }
             guard vm.notchState == .closed else { return }
@@ -607,7 +633,7 @@ struct ContentView: View {
         } else if vm.notchState == .closed, !pointerIsOnClosedNotch() {
             // A real exit before the open delay ran out: a pass-over, not a rest.
             hoverTask?.cancel()
-            withAnimation(animationSpring) {
+            withAnimation(UmbarMotion.hoverHint(reduce: reduceMotion)) {
                 isHovering = false
             }
         }
@@ -666,7 +692,7 @@ struct ContentView: View {
             while !Task.isCancelled, vm.notchState == .open {
                 let inside = pointerIsOnOpenPanel()
                 if inside != isHovering {
-                    withAnimation(animationSpring) { isHovering = inside }
+                    withAnimation(UmbarMotion.hoverHint(reduce: reduceMotion)) { isHovering = inside }
                 }
                 let due = hoverTracker.sample(isInside: inside, at: ProcessInfo.processInfo.systemUptime)
                 if due && pointerExitMayClose {

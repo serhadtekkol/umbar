@@ -509,6 +509,10 @@ struct CustomSlider: View {
                 Rectangle()
                     .fill(color)
                     .frame(width: filledTrackWidth, height: height)
+                    // Linear over the 0.1 s timeline tick, so the fill glides
+                    // between samples (and eases on a seek) instead of
+                    // stepping. Off while dragging: the fill follows the pointer.
+                    .animation(dragging ? nil : .linear(duration: 0.1), value: filledTrackWidth)
             }
             .cornerRadius(height / 2)
             .frame(height: 10)

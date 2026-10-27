@@ -22,8 +22,10 @@ struct BoringHeader: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            // No blur ramp: animating a blur radius over the header costs a
+            // full offscreen pass per frame. ContentView's islandContent
+            // transition brings the header in and out.
             .opacity(vm.notchState == .closed ? 0 : 1)
-            .blur(radius: vm.notchState == .closed ? 20 : 0)
             .zIndex(2)
 
             if vm.notchState == .open {
@@ -77,8 +79,10 @@ struct BoringHeader: View {
             }
             .font(.system(.headline, design: .rounded))
             .frame(maxWidth: .infinity, alignment: .trailing)
+            // No blur ramp: animating a blur radius over the header costs a
+            // full offscreen pass per frame. ContentView's islandContent
+            // transition brings the header in and out.
             .opacity(vm.notchState == .closed ? 0 : 1)
-            .blur(radius: vm.notchState == .closed ? 20 : 0)
             .zIndex(2)
         }
         .foregroundColor(.gray)

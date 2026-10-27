@@ -125,8 +125,10 @@ struct LiveActivityClosedStrip: View {
             LiveActivityLine(activity: first, extraCount: center.stripItems.count - 1, compact: true)
                 .padding(.horizontal, 8)
                 .frame(width: Self.width(notchWidth: notchWidth, notchHeight: notchHeight), height: Self.height)
-                .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: first)
+                // Comes down out of the notch while ContentView's ear spring
+                // grows the island under it (`liveStripShown`).
+                .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(y: -Self.height / 2)))
+                .animation(UmbarMotion.ear(reduce: reduceMotion), value: first)
         }
     }
 }

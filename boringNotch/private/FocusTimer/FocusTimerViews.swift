@@ -108,8 +108,16 @@ struct FocusTimerClosedBadge: View {
 
     private let width: CGFloat = 48
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        if isClosed && !service.state.isIdle {
+        ZStack {
+            if isClosed && !service.state.isIdle { badge }
+        }
+        .animation(UmbarMotion.ear(reduce: reduceMotion), value: isClosed && !service.state.isIdle)
+    }
+
+    private var badge: some View {
             FocusClockText(state: service.state)
                 .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
                 .foregroundStyle(service.state.isPaused ? Color.gray : Color.orange)
@@ -120,8 +128,8 @@ struct FocusTimerClosedBadge: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(phaseTitle(service.state.phase))
                 .accessibilityValue(FocusTimerFormat.clock(service.state.remaining(at: Date())))
-                .transition(.opacity)
-        }
+                // Slides out from under the island's leading edge.
+                .transition(.ear(inward: width, reduce: reduceMotion))
     }
 }
 

@@ -36,11 +36,15 @@ struct HoverButton: View {
                 .font(.system(size: Self.glyphSize, weight: .semibold))
                 .foregroundColor(isProminent ? Self.buttonFg : iconColor)
                 .contentTransition(contentTransition)
+                // The glyph swap (play ↔ pause) needs an animation in its
+                // transaction to run the symbol replace; the player sets
+                // isPlaying without one.
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: icon)
                 .frame(width: size, height: size)
                 .background(Circle().fill(background))
                 .contentShape(Circle())
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(IslandPressStyle())
         .onHover { hovering in
             withAnimation(.easeOut(duration: 0.15)) {
                 isHovering = hovering

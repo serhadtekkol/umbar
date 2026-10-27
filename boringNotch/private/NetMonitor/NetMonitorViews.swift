@@ -290,11 +290,18 @@ struct NetMonitorClosedBadge: View {
     let isClosed: Bool
     let height: CGFloat
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        if isClosed && enabled && showInClosed && height > 0 {
-            NetMonitorEar(height: height)
-                .transition(.opacity)
+        let shown = isClosed && enabled && showInClosed && height > 0
+        ZStack {
+            if shown {
+                // Slides out from under the island's leading edge.
+                NetMonitorEar(height: height)
+                    .transition(.ear(inward: max(30, height + 6), reduce: reduceMotion))
+            }
         }
+        .animation(UmbarMotion.ear(reduce: reduceMotion), value: shown)
     }
 }
 

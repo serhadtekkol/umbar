@@ -78,8 +78,18 @@ struct CaffeinateClosedBadge: View {
 
     private var side: CGFloat { max(16, height - 8) }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        if isClosed && service.isActive {
+        // The container stays so the ear's insertion and removal animate on
+        // their own spring, whatever transaction flipped the service state.
+        ZStack {
+            if isClosed && service.isActive { badge }
+        }
+        .animation(UmbarMotion.ear(reduce: reduceMotion), value: isClosed && service.isActive)
+    }
+
+    private var badge: some View {
             Image(systemName: "cup.and.saucer.fill")
                 .font(.system(size: max(9, side - 8)))
                 .foregroundStyle(.orange)
@@ -88,7 +98,7 @@ struct CaffeinateClosedBadge: View {
                 .offset(x: side + 6)
                 .allowsHitTesting(false)
                 .accessibilityLabel(String(localized: "caffeinate.badge.a11y", defaultValue: "Caffeinate is on"))
-                .transition(.opacity)
-        }
+                // Slides out from under the island's trailing edge.
+                .transition(.ear(inward: -(side + 6), reduce: reduceMotion))
     }
 }

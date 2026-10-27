@@ -79,20 +79,58 @@ struct PanelTab: Identifiable, Equatable {
 
 /// The selected page's body. Falls back to Şimdi when the selected page's
 /// feature was turned off while the panel was on it.
+///
+/// A page change slides 8 pt in the direction of the tab bar (the new page
+/// comes from the side its tab is on) and crossfades (§3.7 `motion.page`).
+/// The shown page lags the selection by one run-loop turn: SwiftUI takes a
+/// removed view's transition from its last render, so the leaving page has
+/// to be drawn once with the new direction before it is removed.
 struct PanelPageView: View {
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
+    @EnvironmentObject private var vm: BoringViewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let albumArtNamespace: Namespace.ID
 
+    @State private var shown: NotchViews?
+    @State private var direction: CGFloat = 1
+
+    private var selected: NotchViews {
+        PanelTab.isOn(coordinator.currentView) ? coordinator.currentView : .home
+    }
+
     var body: some View {
-        Group {
-            switch PanelTab.isOn(coordinator.currentView) ? coordinator.currentView : .home {
-            case .home: NotchHomeView(albumArtNamespace: albumArtNamespace)
-            case .shelf: ShelfView()
-            case .calendar: CalendarPage()
-            case .network: NetworkPage()
-            case .tools: ToolsPage()
-            }
+        let page = shown ?? selected
+        // A ZStack, not a Group: the leaving and arriving pages overlap
+        // during the change instead of stacking in the parent VStack.
+        ZStack(alignment: .topLeading) {
+            content(page)
+                .id(page)
+                .transition(.page(direction: direction, reduce: reduceMotion))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onChange(of: selected) { old, new in
+            // close() puts the selection back on Şimdi; the page that is
+            // folding away keeps showing what it showed.
+            guard vm.notchState == .open else { return }
+            direction = Self.index(of: new) >= Self.index(of: old) ? 1 : -1
+            DispatchQueue.main.async {
+                withAnimation(UmbarMotion.page(reduce: reduceMotion)) { shown = new }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func content(_ view: NotchViews) -> some View {
+        switch view {
+        case .home: NotchHomeView(albumArtNamespace: albumArtNamespace)
+        case .shelf: ShelfView()
+        case .calendar: CalendarPage()
+        case .network: NetworkPage()
+        case .tools: ToolsPage()
+        }
+    }
+
+    private static func index(of view: NotchViews) -> Int {
+        PanelTab.all.firstIndex { $0.view == view } ?? 0
     }
 }
