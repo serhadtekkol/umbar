@@ -407,6 +407,17 @@ struct NotchHomeView: View {
     }
 
     private var mainContent: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            mediaAndCalendar
+            if Defaults[.quickTogglesEnabled] {
+                QuickTogglesRow()
+            }
+        }
+        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+        .blur(radius: vm.notchState == .closed ? 30 : 0)
+    }
+
+    private var mediaAndCalendar: some View {
         HStack(alignment: .top, spacing: 15) {
             MusicPlayerView(albumArtNamespace: albumArtNamespace)
 
@@ -420,8 +431,6 @@ struct NotchHomeView: View {
                     .transition(.opacity)
             }
         }
-        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
-        .blur(radius: vm.notchState == .closed ? 30 : 0)
     }
 }
 

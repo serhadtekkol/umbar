@@ -351,6 +351,7 @@
 				FocusTimer/FocusTimerEngine.swift,
 				HUD/HUDAccessCardPolicy.swift,
 				Panel/PanelKeyPolicy.swift,
+				QuickToggles/QuickTogglesCore.swift,
 				Settings/DefaultsMigration.swift,
 				ScreenshotShelf/ScreenshotShelfPolicy.swift,
 			);

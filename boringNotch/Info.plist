@@ -2,8 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>umbar lists your paired Bluetooth devices so you can connect headphones from the notch.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>umbar shows your calendar events in the notch. Your events never leave your Mac.</string>
+	<key>NSFocusStatusUsageDescription</key>
+	<string>umbar shows whether a Focus is on in the notch's quick toggles.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>umbar lists your reminders next to your events in the notch. When you check a reminder off there, or uncheck it, umbar saves that change to Reminders. Your reminders never leave your Mac.</string>
 	<key>UTImportedTypeDeclarations</key>

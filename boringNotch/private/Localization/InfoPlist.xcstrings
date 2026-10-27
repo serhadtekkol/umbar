@@ -1,96 +1,132 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "NSAppleEventsUsageDescription" : {
-      "comment" : "Apple Events permission prompt: why umbar talks to Music and Spotify.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar uses Apple Events to read what Music and Spotify are playing and to control playback and volume from the notch."
+  "sourceLanguage": "en",
+  "strings": {
+    "NSAppleEventsUsageDescription": {
+      "comment": "Apple Events permission prompt: why umbar talks to Music and Spotify.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar uses Apple Events to read what Music and Spotify are playing, to control playback and volume from the notch, and to switch Dark Mode from the quick toggles."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar, Müzik ve Spotify'da çalanı okumak, çalmayı ve ses düzeyini notch'tan denetlemek için Apple Events kullanır."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, Müzik ve Spotify'da çalanı okumak, çalmayı ve ses düzeyini notch'tan denetlemek ve hızlı ayarlardan Karanlık Mod'u değiştirmek için Apple Events kullanır."
           }
         }
       }
     },
-    "NSCalendarsFullAccessUsageDescription" : {
-      "comment" : "Calendar permission prompt (full access, macOS 14 and later).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar shows your calendar events in the notch. Your events never leave your Mac."
+    "NSCalendarsFullAccessUsageDescription": {
+      "comment": "Calendar permission prompt (full access, macOS 14 and later).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar shows your calendar events in the notch. Your events never leave your Mac."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar, takvim etkinliklerinizi notch'ta gösterir. Etkinlikleriniz Mac'inizden hiç çıkmaz."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, takvim etkinliklerinizi notch'ta gösterir. Etkinlikleriniz Mac'inizden hiç çıkmaz."
           }
         }
       }
     },
-    "NSCalendarsUsageDescription" : {
-      "comment" : "Calendar permission prompt (legacy key, same text as the full-access key).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar shows your calendar events in the notch. Your events never leave your Mac."
+    "NSCalendarsUsageDescription": {
+      "comment": "Calendar permission prompt (legacy key, same text as the full-access key).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar shows your calendar events in the notch. Your events never leave your Mac."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar, takvim etkinliklerinizi notch'ta gösterir. Etkinlikleriniz Mac'inizden hiç çıkmaz."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, takvim etkinliklerinizi notch'ta gösterir. Etkinlikleriniz Mac'inizden hiç çıkmaz."
           }
         }
       }
     },
-    "NSRemindersFullAccessUsageDescription" : {
-      "comment" : "Reminders permission prompt (full access). Must say umbar also writes completion (AC-6R.7).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar lists your reminders next to your events in the notch. When you check a reminder off there, or uncheck it, umbar saves that change to Reminders. Your reminders never leave your Mac."
+    "NSRemindersFullAccessUsageDescription": {
+      "comment": "Reminders permission prompt (full access). Must say umbar also writes completion (AC-6R.7).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar lists your reminders next to your events in the notch. When you check a reminder off there, or uncheck it, umbar saves that change to Reminders. Your reminders never leave your Mac."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar, anımsatıcılarınızı notch'ta etkinliklerinizin yanında listeler. Orada bir anımsatıcıyı tamamlandı olarak işaretlediğinizde ya da işareti kaldırdığınızda bu değişikliği Anımsatıcılar'a kaydeder. Anımsatıcılarınız Mac'inizden hiç çıkmaz."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, anımsatıcılarınızı notch'ta etkinliklerinizin yanında listeler. Orada bir anımsatıcıyı tamamlandı olarak işaretlediğinizde ya da işareti kaldırdığınızda bu değişikliği Anımsatıcılar'a kaydeder. Anımsatıcılarınız Mac'inizden hiç çıkmaz."
           }
         }
       }
     },
-    "NSRemindersUsageDescription" : {
-      "comment" : "Reminders permission prompt (legacy key, same text as the full-access key). Must say umbar also writes completion (AC-6R.7).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar lists your reminders next to your events in the notch. When you check a reminder off there, or uncheck it, umbar saves that change to Reminders. Your reminders never leave your Mac."
+    "NSRemindersUsageDescription": {
+      "comment": "Reminders permission prompt (legacy key, same text as the full-access key). Must say umbar also writes completion (AC-6R.7).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar lists your reminders next to your events in the notch. When you check a reminder off there, or uncheck it, umbar saves that change to Reminders. Your reminders never leave your Mac."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "umbar, anımsatıcılarınızı notch'ta etkinliklerinizin yanında listeler. Orada bir anımsatıcıyı tamamlandı olarak işaretlediğinizde ya da işareti kaldırdığınızda bu değişikliği Anımsatıcılar'a kaydeder. Anımsatıcılarınız Mac'inizden hiç çıkmaz."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, anımsatıcılarınızı notch'ta etkinliklerinizin yanında listeler. Orada bir anımsatıcıyı tamamlandı olarak işaretlediğinizde ya da işareti kaldırdığınızda bu değişikliği Anımsatıcılar'a kaydeder. Anımsatıcılarınız Mac'inizden hiç çıkmaz."
+          }
+        }
+      }
+    },
+    "NSBluetoothAlwaysUsageDescription": {
+      "comment": "Bluetooth permission prompt: quick toggles list paired devices.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar lists your paired Bluetooth devices so you can connect headphones from the notch."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, kulaklığınızı notch'tan bağlayabilmeniz için eşlenmiş Bluetooth aygıtlarınızı listeler."
+          }
+        }
+      }
+    },
+    "NSFocusStatusUsageDescription": {
+      "comment": "Focus status permission prompt: quick toggles show whether a Focus is on.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar shows whether a Focus is on in the notch's quick toggles."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, notch'taki hızlı ayarlarda bir Odak modunun açık olup olmadığını gösterir."
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

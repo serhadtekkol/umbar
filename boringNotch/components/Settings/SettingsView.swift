@@ -44,6 +44,9 @@ struct SettingsView: View {
                 NavigationLink(value: "FocusTimer") {
                     Label("Focus timer", systemImage: "timer")
                 }
+                NavigationLink(value: "QuickToggles") {
+                    Label("Quick toggles", systemImage: "switch.2")
+                }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
@@ -86,6 +89,8 @@ struct SettingsView: View {
                     EyeBreakSettings()
                 case "FocusTimer":
                     FocusTimerSettings()
+                case "QuickToggles":
+                    QuickTogglesSettings()
                 case "Battery":
                     Charge()
                 case "Shelf":
