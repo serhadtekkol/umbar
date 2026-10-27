@@ -21,6 +21,11 @@ import Testing
 // MARK: - Helpers
 
 /// A clock that moves only when told to. Sleepers wake in `advance`.
+///
+/// `sleep(until:)` is a nonisolated async method, so (Swift 5 mode, SE-0338)
+/// it runs on the global executor: the test can `advance` on the main actor
+/// between the model reading `now` and the sleeper being registered here.
+/// With an absolute deadline that ordering does not matter.
 final class ManualClock: ShelfUndoClock, @unchecked Sendable {
     private struct Sleeper {
         let id: UUID
@@ -32,16 +37,22 @@ final class ManualClock: ShelfUndoClock, @unchecked Sendable {
     private var current: Duration = .zero
     private var sleepers: [Sleeper] = []
     private var cancelled: Set<UUID> = []
+    /// Runs at the start of every sleep, before the sleeper is registered.
+    private let beforeSleep: @Sendable (ManualClock) -> Void
+
+    init(beforeSleep: @escaping @Sendable (ManualClock) -> Void = { _ in }) {
+        self.beforeSleep = beforeSleep
+    }
 
     var now: Duration { lock.withLock { current } }
 
-    func sleep(for duration: Duration) async throws {
+    func sleep(until deadline: Duration) async throws {
+        beforeSleep(self)
         let id = UUID()
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 let resumeNow: Result<Void, Error>? = lock.withLock {
                     if cancelled.remove(id) != nil { return .failure(CancellationError()) }
-                    let deadline = current + duration
                     if deadline <= current { return .success(()) }
                     sleepers.append(Sleeper(id: id, deadline: deadline, continuation: continuation))
                     return nil
@@ -467,7 +478,7 @@ struct ShelfMoveUndoModelTests {
     @MainActor
     struct Fixture {
         let dir: ScratchDir
-        let clock = ManualClock()
+        let clock: ManualClock
         let model: ShelfMoveUndoModel
         let item: ShelfItem
         let source: ShelfDragSource
@@ -479,7 +490,8 @@ struct ShelfMoveUndoModelTests {
 
         /// A file moved within the scratch volume, its shelf item, and a
         /// model with the manual clock.
-        init(trash: @escaping ShelfMoveUndoer.Trash = trashMustNotBeCalled) throws {
+        init(clock: ManualClock = ManualClock(), trash: @escaping ShelfMoveUndoer.Trash = trashMustNotBeCalled) throws {
+            self.clock = clock
             dir = try ScratchDir()
             original = dir.url.appendingPathComponent("teklif.pdf")
             try Data("teklif".utf8).write(to: original)
@@ -532,6 +544,28 @@ struct ShelfMoveUndoModelTests {
         #expect(f.model.ghosts.isEmpty)
         #expect(f.restored.isEmpty, "expiry does not bring the item back")
         #expect(FileManager.default.fileExists(atPath: f.destination.path), "expiry does not touch the file")
+    }
+
+    /// Regression: the clock moved past the deadline after the model read
+    /// `now` but before the sleep began (the test's `advance` racing the hop
+    /// to the global executor). A sleep for "deadline - now" then waited for
+    /// 16 s, which nothing reached, and the suite hung. The window must still
+    /// end at its deadline.
+    @Test func expiresWhenTheClockMovesBeforeTheSleepBegins() async throws {
+        let jumped = Counter()
+        let clock = ManualClock { clock in
+            if jumped.increment() == 1 { clock.advance(by: .seconds(8)) }
+        }
+        let f = try Fixture(clock: clock)
+        await f.record()
+        // The expiry may already have run while `record` awaited the lookup,
+        // and an ended ghost has no task left to wait for.
+        if let expiry = f.model.expiryTask(for: f.item.id) {
+            await expiry.cancellableValue
+        }
+
+        #expect(f.model.ghosts.isEmpty)
+        #expect(f.clock.now == .seconds(8), "nothing but the jump moved the clock")
     }
 
     @Test func undoPutsTheFileAndTheItemBack() async throws {

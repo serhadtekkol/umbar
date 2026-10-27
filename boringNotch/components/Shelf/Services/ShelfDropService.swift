@@ -862,16 +862,27 @@ struct ShelfMoveUndoer: Sendable {
 }
 
 /// Monotonic time for the Undo window, injectable so tests need no waiting.
+///
+/// The sleep takes an absolute deadline, not a duration. With a duration the
+/// deadline is fixed only when the sleep starts, after the caller has read
+/// `now`; if the clock moves in between, the deadline moves with it. Under
+/// the tests' manual clock, an advance meant to end the window landed in
+/// that gap, the sleeper waited for a time no test reached, and the suite
+/// hung (card #100).
 protocol ShelfUndoClock: Sendable {
     /// Time since an arbitrary, fixed origin.
     var now: Duration { get }
-    func sleep(for duration: Duration) async throws
+    /// Returns once `now >= deadline`, at once if it already is. Throws
+    /// `CancellationError` if the task is cancelled first.
+    func sleep(until deadline: Duration) async throws
 }
 
 struct ShelfUndoSystemClock: ShelfUndoClock {
     private let origin = ContinuousClock.now
     var now: Duration { ContinuousClock.now - origin }
-    func sleep(for duration: Duration) async throws { try await Task.sleep(for: duration) }
+    func sleep(until deadline: Duration) async throws {
+        try await Task.sleep(until: origin + deadline, clock: .continuous)
+    }
 }
 
 /// A shelf item that was moved out of the shelf a moment ago, shown with
@@ -1087,7 +1098,7 @@ final class ShelfMoveUndoModel: ObservableObject {
         records[id]?.expiry = Task { [weak self] in
             // Loop: a clock may wake early; the deadline decides.
             while clock.now < deadline {
-                do { try await clock.sleep(for: deadline - clock.now) } catch { return }
+                do { try await clock.sleep(until: deadline) } catch { return }
             }
             guard !Task.isCancelled else { return }
             self?.expire(id, deadline: deadline)
