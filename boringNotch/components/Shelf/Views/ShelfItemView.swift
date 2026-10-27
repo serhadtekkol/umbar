@@ -228,7 +228,7 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
         private var draggedItems: [ShelfItem] = []
         /// Path and identity of each dragged file at drag start, to confirm a
         /// move before the item leaves the shelf.
-        private var draggedSources: [ShelfItem.ID: (path: String, identity: ShelfFileIdentity)] = [:]
+        private var draggedSources: [ShelfItem.ID: ShelfDragSource] = [:]
         private var draggedSourcesDeletable = true
         /// Where the pointer was at the last mask query, i.e. at the drop.
         private var lastDestination: ShelfDragDestination = .ownApp
@@ -311,7 +311,7 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
             switch item.kind {
             case .file:
                 guard let url = ShelfStateViewModel.shared.resolveAndUpdateBookmark(for: item),
-                      let identity = ShelfFileIdentity(path: url.path) else {
+                      let source = ShelfDragSource(url: url) else {
                     return nil
                 }
 
@@ -321,7 +321,7 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
                     draggedURLs.append(url)
                 }
 
-                draggedSources[item.id] = (url.path, identity)
+                draggedSources[item.id] = source
                 if !FileManager.default.isDeletableFile(atPath: url.path) {
                     draggedSourcesDeletable = false
                 }

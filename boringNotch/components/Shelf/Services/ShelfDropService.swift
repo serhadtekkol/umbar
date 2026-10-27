@@ -159,6 +159,23 @@ struct ShelfFileIdentity: Equatable, Sendable {
     }
 }
 
+/// A dragged shelf item's file as it was when the drag started.
+struct ShelfDragSource: Equatable, Sendable {
+    let path: String
+    let identity: ShelfFileIdentity
+
+    init(path: String, identity: ShelfFileIdentity) {
+        self.path = path
+        self.identity = identity
+    }
+
+    /// Reads the file at `url`, or returns nil if nothing is there.
+    init?(url: URL) {
+        guard let identity = ShelfFileIdentity(path: url.path) else { return nil }
+        self.init(path: url.path, identity: identity)
+    }
+}
+
 /// The pure part of dragging items out of the shelf: which operations to offer
 /// and what to do with the items afterwards. See BR-3.5 in docs/spec.md.
 enum ShelfDragOutPolicy {

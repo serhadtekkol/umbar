@@ -64,7 +64,7 @@ final class ShelfStateViewModel: ObservableObject {
     /// - Parameter sources: the path and identity of each item's file when
     ///   the drag started, used to confirm a move. An item without an entry
     ///   is kept.
-    func handleDragEnd(_ action: ShelfDragEndAction, for dragged: [ShelfItem], sources: [ShelfItem.ID: (path: String, identity: ShelfFileIdentity)]) {
+    func handleDragEnd(_ action: ShelfDragEndAction, for dragged: [ShelfItem], sources: [ShelfItem.ID: ShelfDragSource]) {
         switch action {
         case .keep:
             return
