@@ -41,6 +41,9 @@ struct SettingsView: View {
                 NavigationLink(value: "EyeBreak") {
                     Label("Eye break", systemImage: "eye")
                 }
+                NavigationLink(value: "Network") {
+                    Label(String(localized: "netmonitor.settings.title", defaultValue: "Network"), systemImage: "arrow.up.arrow.down")
+                }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
@@ -81,6 +84,8 @@ struct SettingsView: View {
                     CaffeinateSettings()
                 case "EyeBreak":
                     EyeBreakSettings()
+                case "Network":
+                    NetMonitorSettings()
                 case "Battery":
                     Charge()
                 case "Shelf":
