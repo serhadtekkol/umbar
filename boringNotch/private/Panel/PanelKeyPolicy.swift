@@ -26,15 +26,15 @@ enum PanelOpenSource: Equatable {
     case menu
 }
 
-/// The pages behind ⌘1…⌘5. The numbers are fixed by AC-1.19 even while some
-/// pages are not built yet; a page with no view is a key the panel swallows
-/// and does nothing with, so it never leaks to the app behind the panel.
+/// The pages behind ⌘1…⌘5, in tab order. A number stays with its page when
+/// another page is turned off (AC-1.19); a page that is off is a key the
+/// panel swallows and does nothing with, so it never leaks to the app behind.
 enum PanelPage: Int, CaseIterable {
     case now = 1
     case shelf = 2
-    case clipboard = 3
-    case notes = 4
-    case calendar = 5
+    case calendar = 3
+    case network = 4
+    case tools = 5
 }
 
 /// What the panel shortcut does in a given state (AC-1.18).
@@ -88,7 +88,7 @@ enum PanelKeyPolicy {
     /// characters: on AZERTY the digits need Shift, and Safari, Finder and
     /// Xcode all bind ⌘1… by position on those layouts too.
     static let digitKeyCodes: [UInt16: PanelPage] = [
-        18: .now, 19: .shelf, 20: .clipboard, 21: .notes, 23: .calendar,
+        18: .now, 19: .shelf, 20: .calendar, 21: .network, 23: .tools,
     ]
 
     /// kVK_Escape.

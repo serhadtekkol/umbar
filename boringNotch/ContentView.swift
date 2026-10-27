@@ -370,12 +370,7 @@ struct ContentView: View {
                     } else if hudAccessCard.isShowing {
                         HUDAccessCardView()
                     } else {
-                        switch coordinator.currentView {
-                        case .home:
-                            NotchHomeView(albumArtNamespace: albumArtNamespace)
-                        case .shelf:
-                            ShelfView()
-                        }
+                        PanelPageView(albumArtNamespace: albumArtNamespace)
                     }
                 }
                 .transition(

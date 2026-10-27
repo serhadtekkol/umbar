@@ -51,7 +51,7 @@ struct PanelKeyPolicyTests {
 
     @Test func commandDigitsMapToTheFixedPages() {
         let expected: [(UInt16, PanelPage)] = [
-            (18, .now), (19, .shelf), (20, .clipboard), (21, .notes), (23, .calendar),
+            (18, .now), (19, .shelf), (20, .calendar), (21, .network), (23, .tools),
         ]
         for (code, page) in expected {
             #expect(PanelKeyPolicy.page(forKeyCode: code, commandOnly: true) == page)

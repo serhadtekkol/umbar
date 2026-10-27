@@ -234,6 +234,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        if PanelPageRenderer.runIfRequested() { return }
+        #endif
         EyeBreakManager.shared.start()
         HUDAccessCard.shared.start()
         LiveActivityCenter.shared.start()
@@ -500,19 +503,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         PanelKeyController.shared.open(target, from: source)
     }
 
-    /// ⌘1…⌘5 in a key panel (AC-1.19). Pages without a view yet (Pano,
-    /// Notlar, Takvim) and a turned-off shelf do nothing; the window has
-    /// already consumed the key, so it does not reach the app behind.
+    /// ⌘1…⌘5 in a key panel (AC-1.19). A page whose feature is off does
+    /// nothing; the window has already consumed the key, so it does not
+    /// reach the app behind.
     @MainActor
     private func selectPage(_ page: PanelPage) {
-        switch page {
-        case .now:
-            coordinator.currentView = .home
-        case .shelf where Defaults[.boringShelf]:
-            coordinator.currentView = .shelf
-        case .shelf, .clipboard, .notes, .calendar:
-            break
-        }
+        guard let tab = PanelTab.available.first(where: { $0.page == page }) else { return }
+        coordinator.currentView = tab.view
     }
 
     #if DEBUG

@@ -2,7 +2,7 @@
 //  FocusTimerViews.swift
 //  boringNotch
 //
-//  F18 UI: header control, closed-notch ear, session-end banner.
+//  F18 UI: Araçlar tile, closed-notch ear, session-end banner.
 //  All visual; the timer never makes a sound.
 //
 
@@ -34,30 +34,30 @@ private func phaseTitle(_ phase: FocusPhase?) -> String {
     }
 }
 
-/// Header control, same pattern as CaffeinateControl: idle shows a button that
-/// reveals preset chips inline (no popup, so hover-to-close is undisturbed).
-struct FocusTimerControl: View {
+/// Araçlar tile, same pattern as CaffeinateTile: idle shows the preset
+/// chips; running shows phase, remaining time and pause / skip / stop.
+struct FocusTimerTile: View {
     @ObservedObject private var service = FocusTimerService.shared
-    @Default(.focusTimerEnabled) private var enabled
     @Default(.focusTimerCustomFocusMinutes) private var customFocus
     @Default(.focusTimerCustomBreakMinutes) private var customBreak
-    @State private var showPresets = false
 
     var body: some View {
-        if enabled {
-            HStack(spacing: 4) {
-                if service.state.isIdle {
-                    if showPresets { presetChips }
-                    iconButton("timer", help: String(localized: "focus.help.start", defaultValue: "Start a focus session")) {
-                        showPresets.toggle()
-                    }
-                } else {
-                    Text(phaseTitle(service.state.phase))
-                        .font(.caption2)
-                        .foregroundStyle(.gray)
+        ToolTile(
+            symbol: "timer",
+            title: phaseTitle(nil),
+            status: service.state.isIdle
+                ? String(localized: "focus.help.start", defaultValue: "Start a focus session")
+                : phaseTitle(service.state.phase),
+            active: service.state.isRunning
+        ) {
+            if service.state.isIdle {
+                HStack(spacing: 4) { presetChips }
+            } else {
+                HStack(spacing: 4) {
                     FocusClockText(state: service.state)
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.white)
+                        .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(PageTokens.textPrimary)
+                    Spacer(minLength: 4)
                     if service.state.isPaused {
                         iconButton("play.fill", help: String(localized: "focus.help.resume", defaultValue: "Resume")) { service.resume() }
                     } else {
@@ -67,8 +67,6 @@ struct FocusTimerControl: View {
                     iconButton("stop.fill", help: String(localized: "focus.help.stop", defaultValue: "Stop the focus timer")) { service.stop() }
                 }
             }
-            .animation(.smooth(duration: 0.2), value: showPresets)
-            .onChange(of: service.state.isIdle) { _, _ in showPresets = false }
         }
     }
 
@@ -85,31 +83,17 @@ struct FocusTimerControl: View {
     }
 
     private func chip(_ title: String, a11y: String, action: @escaping () -> Void) -> some View {
-        Button(title) {
-            showPresets = false
-            action()
-        }
-        .buttonStyle(.plain)
-        .font(.caption2.bold())
-        .foregroundStyle(.white)
-        .padding(.horizontal, 6)
-        .frame(height: 20)
-        .background(Capsule().fill(.white.opacity(0.18)))
-        .accessibilityLabel(a11y)
+        Button(title, action: action)
+            .buttonStyle(ToolChipStyle())
+            .accessibilityLabel(a11y)
     }
 
     private func iconButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Capsule()
-                .fill(.black)
-                .frame(width: 30, height: 30)
-                .overlay {
-                    Image(systemName: symbol)
-                        .foregroundColor(service.state.isIdle ? .white : .orange)
-                        .imageScale(.medium)
-                }
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .bold))
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(ToolChipStyle())
         .help(help)
         .accessibilityLabel(help)
     }

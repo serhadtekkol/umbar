@@ -2,7 +2,7 @@
 //  NetMonitorViews.swift
 //  boringNotch
 //
-//  F17 UI: the network column on the Şimdi page and the optional closed-
+//  F17 UI: the Ağ page of the open panel and the optional closed-
 //  notch ear. Colours and type follow docs/design/design-language.md §3:
 //  the island is always black, amber (`island.live`) marks the live
 //  download line and arrow only, and always comes with a shape (the
@@ -20,7 +20,6 @@ private enum NetTokens {
     static let raised = Color(red: 0x1C / 255, green: 0x1C / 255, blue: 0x1E / 255)
     static let track = Color(red: 0x7C / 255, green: 0x7C / 255, blue: 0x80 / 255)
     static let live = Color(red: 0xFF / 255, green: 0xC3 / 255, blue: 0x5C / 255)
-    static let columnWidth: CGFloat = 150
 }
 
 private enum NetStrings {
@@ -48,73 +47,99 @@ private enum NetStrings {
     }
 }
 
-// MARK: - Şimdi column
+// MARK: - Ağ page
 
-/// The network column for the open panel's Şimdi page. Draws nothing when
-/// the feature is off, so it can be dropped into the page's HStack as is.
-struct NetMonitorPanelView: View {
+/// The open panel's Ağ page. Draws nothing when the feature is off (the tab
+/// is gone then too, see `PanelTab`).
+struct NetworkPage: View {
     @Default(.netMonitorEnabled) private var enabled
+    @ObservedObject private var monitor = NetMonitor.shared
 
     var body: some View {
         if enabled {
-            NetMonitorPanelContent()
-                .frame(width: NetTokens.columnWidth)
-                .transition(.opacity)
+            NetworkPageContent(
+                snapshot: NetPageSnapshot(
+                    network: monitor.network, rxRate: monitor.rxRate, txRate: monitor.txRate,
+                    history: monitor.history, session: monitor.session, today: monitor.today, month: monitor.month),
+                onReset: { monitor.resetCurrentNetwork() })
+                .onAppear { monitor.beginObserving() }
+                .onDisappear { monitor.endObserving() }
         }
     }
 }
 
-private struct NetMonitorPanelContent: View {
-    @ObservedObject private var monitor = NetMonitor.shared
+/// What the page shows, as plain values, so the offscreen render can feed it.
+struct NetPageSnapshot {
+    var network: NetMonitor.CurrentNetwork?
+    var rxRate: Double
+    var txRate: Double
+    var history: NetRateHistory
+    var session: NetByteTotals
+    var today: NetByteTotals
+    var month: NetByteTotals
+}
+
+struct NetworkPageContent: View {
+    let snapshot: NetPageSnapshot
+    let onReset: () -> Void
     @State private var confirmReset = false
 
+    static let totalsWidth: CGFloat = 196
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            header
-            speeds
-            NetSparkline(history: monitor.history)
-                .frame(height: 28)
-                .accessibilityHidden(true)
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 10) {
+                header
+                speeds
+                NetSparkline(history: snapshot.history)
+                    .frame(maxWidth: .infinity, minHeight: 40, maxHeight: .infinity)
+                    .accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             totals
+                .frame(width: Self.totalsWidth)
         }
-        .onAppear { monitor.beginObserving() }
-        .onDisappear { monitor.endObserving() }
     }
 
     private var header: some View {
-        HStack(spacing: 4) {
-            Image(systemName: NetStrings.glyph(monitor.network?.kind))
-                .font(.system(size: 11, weight: .medium))
+        HStack(spacing: 6) {
+            Image(systemName: NetStrings.glyph(snapshot.network?.kind))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(NetTokens.textSecondary)
                 .accessibilityHidden(true)
-            Text(NetStrings.networkName(monitor.network))
-                .font(.system(size: 12, weight: .semibold))
+            Text(NetStrings.networkName(snapshot.network))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(NetTokens.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .help(NetStrings.networkName(monitor.network))
+                .help(NetStrings.networkName(snapshot.network))
         }
     }
 
     private var speeds: some View {
-        HStack(spacing: 10) {
-            speed(symbol: "arrow.down", value: monitor.rxRate, tint: NetTokens.live,
+        HStack(alignment: .top, spacing: 28) {
+            speed(symbol: "arrow.down", value: snapshot.rxRate, tint: NetTokens.live,
                   label: String(localized: "netmonitor.download.a11y", defaultValue: "Download"))
-            speed(symbol: "arrow.up", value: monitor.txRate, tint: NetTokens.textPrimary,
+            speed(symbol: "arrow.up", value: snapshot.txRate, tint: NetTokens.textPrimary,
                   label: String(localized: "netmonitor.upload.a11y", defaultValue: "Upload"))
         }
     }
 
     private func speed(symbol: String, value: Double, tint: Color, label: String) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: symbol)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(tint)
-            Text(NetByteFormat.rate(value))
-                .font(.system(size: 12, weight: .medium).monospacedDigit())
-                .foregroundStyle(NetTokens.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Image(systemName: symbol)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(tint)
+                Text(NetByteFormat.rate(value))
+                    .font(.system(size: 20, weight: .medium).monospacedDigit())
+                    .foregroundStyle(NetTokens.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(NetTokens.textSecondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
@@ -122,18 +147,22 @@ private struct NetMonitorPanelContent: View {
     }
 
     private var totals: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            totalRow(String(localized: "netmonitor.total.session", defaultValue: "This session"), monitor.session)
-            totalRow(String(localized: "netmonitor.total.today", defaultValue: "Today"), monitor.today)
-            totalRow(String(localized: "netmonitor.total.month", defaultValue: "This month"), monitor.month)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(String(localized: "netmonitor.totals.title", defaultValue: "Totals on this network"))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(NetTokens.textPrimary)
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
+            totalRow(String(localized: "netmonitor.total.session", defaultValue: "This session"), snapshot.session)
+            totalRow(String(localized: "netmonitor.total.today", defaultValue: "Today"), snapshot.today)
+            totalRow(String(localized: "netmonitor.total.month", defaultValue: "This month"), snapshot.month)
             resetButton
-                .padding(.top, 2)
+                .padding(.top, 4)
         }
     }
 
     /// One figure per row (download + upload together). The split is in
-    /// the tooltip and the VoiceOver value; the row stays one line at
-    /// 150 pt.
+    /// the tooltip and the VoiceOver value.
     private func totalRow(_ title: String, _ totals: NetByteTotals) -> some View {
         let detail = String(
             format: String(localized: "netmonitor.total.detail", defaultValue: "%1$@ down, %2$@ up"),
@@ -146,7 +175,7 @@ private struct NetMonitorPanelContent: View {
                 .monospacedDigit()
                 .foregroundStyle(NetTokens.textPrimary)
         }
-        .font(.system(size: 11))
+        .font(.system(size: 12))
         .lineLimit(1)
         .help(detail)
         .accessibilityElement(children: .ignore)
@@ -161,7 +190,7 @@ private struct NetMonitorPanelContent: View {
             if confirmReset {
                 Button(String(localized: "netmonitor.reset.confirm", defaultValue: "Reset")) {
                     confirmReset = false
-                    monitor.resetCurrentNetwork()
+                    onReset()
                 }
                 .buttonStyle(NetCapsuleButtonStyle(primary: true))
                 Button(String(localized: "netmonitor.reset.cancel", defaultValue: "Cancel")) {
@@ -174,10 +203,10 @@ private struct NetMonitorPanelContent: View {
                 }
                 .buttonStyle(NetCapsuleButtonStyle(primary: false))
                 .help(String(localized: "netmonitor.reset.help", defaultValue: "Forget this network's totals. Stored only on this Mac."))
-                .disabled(monitor.network == nil)
+                .disabled(snapshot.network == nil)
             }
         }
-        .animation(.smooth(duration: 0.15), value: confirmReset)
+        .animation(.easeOut(duration: 0.15), value: confirmReset)
     }
 }
 
@@ -190,8 +219,8 @@ private struct NetCapsuleButtonStyle: ButtonStyle {
         configuration.label
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(primary ? Color.black : NetTokens.textPrimary)
-            .padding(.horizontal, 8)
-            .frame(height: 20)
+            .padding(.horizontal, 10)
+            .frame(height: 24)
             .background(
                 Capsule().fill(primary ? NetTokens.textPrimary : Color(red: 0x2C / 255, green: 0x2C / 255, blue: 0x2E / 255)))
             .opacity(configuration.isPressed ? 0.7 : 1)
