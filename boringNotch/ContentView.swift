@@ -344,6 +344,11 @@ struct ContentView: View {
                               }
                           }
                       }
+
+                      // F19: live activities grow the closed island downward.
+                      if vm.notchState == .closed && !coordinator.sneakPeek.show && !vm.hideOnClosed {
+                          LiveActivityClosedStrip(notchWidth: vm.closedNotchSize.width, notchHeight: vm.effectiveClosedNotchHeight)
+                      }
                   }
               }
               .conditionalModifier((coordinator.sneakPeek.show && (coordinator.sneakPeek.type == .music) && vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard) || (coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed))) { view in

@@ -253,6 +253,8 @@ struct GeneralSettings: View {
             NotchBehaviour()
 
             gestureControls()
+
+            LiveActivitiesSettingsSection()
         }
         .toolbar {
             Button("Quit app") {

@@ -420,6 +420,7 @@ struct NotchHomeView: View {
                     .transition(.opacity)
             }
         }
+        .safeAreaInset(edge: .bottom, spacing: 6) { LiveActivityNowRow() } // F19
         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
         .blur(radius: vm.notchState == .closed ? 30 : 0)
     }

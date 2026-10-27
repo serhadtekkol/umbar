@@ -236,6 +236,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         EyeBreakManager.shared.start()
         HUDAccessCard.shared.start()
+        LiveActivityCenter.shared.start()
         // Spike A2 prototype; inert unless clipboardMonitorEnabled is set.
         ClipboardMonitorController.shared.activate()
 
