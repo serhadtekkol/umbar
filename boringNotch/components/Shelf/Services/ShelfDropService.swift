@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import CoreServices
 import Foundation
 import UniformTypeIdentifiers
 
@@ -140,7 +141,7 @@ struct ShelfDragWindow: Equatable, Sendable {
 
 /// Device and inode of a file, used to tell "the file is still here" from
 /// "something else now has the same name".
-struct ShelfFileIdentity: Equatable, Sendable {
+struct ShelfFileIdentity: Hashable, Sendable {
     let device: UInt64
     let inode: UInt64
 
@@ -156,6 +157,46 @@ struct ShelfFileIdentity: Equatable, Sendable {
     init(device: UInt64, inode: UInt64) {
         self.device = device
         self.inode = inode
+    }
+}
+
+/// A dragged shelf item's file as it was when the drag started.
+///
+/// `identity` confirms a move (`ShelfMoveOutcomeWatcher`); the rest is the
+/// fingerprint that recognises the file after a move to another volume, where
+/// it is a new file with a new identity (`ShelfMoveDestinationLocator`).
+struct ShelfDragSource: Equatable, Sendable {
+    let path: String
+    let identity: ShelfFileIdentity
+    let isDirectory: Bool
+    /// Bytes, for a regular file; 0 for a directory.
+    let size: UInt64
+    /// Content modification time, seconds since 1970.
+    let modificationTime: TimeInterval
+
+    var name: String { (path as NSString).lastPathComponent }
+
+    init(path: String, identity: ShelfFileIdentity, isDirectory: Bool = false, size: UInt64 = 0, modificationTime: TimeInterval = 0) {
+        self.path = path
+        self.identity = identity
+        self.isDirectory = isDirectory
+        self.size = size
+        self.modificationTime = modificationTime
+    }
+
+    /// Reads the file at `url` without following a trailing symlink, or
+    /// returns nil if nothing is there.
+    init?(url: URL) {
+        var info = stat()
+        guard lstat(url.path, &info) == 0 else { return nil }
+        let isDirectory = (info.st_mode & S_IFMT) == S_IFDIR
+        self.init(
+            path: url.path,
+            identity: ShelfFileIdentity(device: UInt64(bitPattern: Int64(info.st_dev)), inode: UInt64(info.st_ino)),
+            isDirectory: isDirectory,
+            size: isDirectory ? 0 : UInt64(max(info.st_size, 0)),
+            modificationTime: TimeInterval(info.st_mtimespec.tv_sec) + TimeInterval(info.st_mtimespec.tv_nsec) / 1e9
+        )
     }
 }
 
@@ -341,5 +382,749 @@ final class ShelfMoveOutcomeWatcher {
         if tasks[id]?.generation == generation {
             tasks[id] = nil
         }
+    }
+}
+
+
+// MARK: - Undoing a move out of the shelf (B2, card #100)
+//
+// After a confirmed move out of the shelf the item stays for a short window
+// as a "ghost" with an Undo (ShelfMoveUndoModel), and Undo puts the file back
+// at its original path. Same constraint as above: this lives here because
+// umbarTests compiles this file (toolbarcakmasi-95).
+//
+// Finding where the file went.
+// - Same volume: Finder's move is a rename and the item's bookmark follows
+//   the file (measured on macOS 27.0.1: resolves, isStale = true). The
+//   resolved path is accepted only if it has the dragged file's device and
+//   inode.
+// - Another volume: Finder copies, then deletes the source. The destination
+//   is a new file and the bookmark no longer resolves (measured: resolution
+//   fails). The drag source is never told the drop folder; NSDraggingSession
+//   reports a screen point and an operation. Asking Finder (AppleScript
+//   "insertion location", its selection) needs the Automation or
+//   Accessibility permission and answers for the front window rather than
+//   the one under the drop, so it is not used. Instead the shelf watches the
+//   other writable volumes with FSEvents from the start of the drag
+//   (ShelfMoveDestinationRecorder) and keeps only created or renamed paths
+//   carrying the dragged name or Finder's "Keep Both" form of it
+//   ("name 2.ext"). Once the move is confirmed, a candidate must also match
+//   type, size and modification time (Finder's copy keeps the time) and be
+//   the only match. Anything else leaves the ghost without Undo; it never
+//   guesses.
+// - Rejected: file promises (NSFilePromiseProvider does tell the source the
+//   drop folder, but umbar would then perform the move itself, and Mail and
+//   upload fields treat promises differently: a redesign of #93, not a
+//   mitigation); Spotlight (external disks are often not indexed, and the
+//   index lags); replaying FSEvents history from an event ID saved at drag
+//   start (measured: a replay 0.5 s and 2 s after a move returned none of
+//   its events, so the stream has to be live before the drop).
+//
+// Putting it back (ShelfMoveUndoer). Same device: renamex_np(RENAME_EXCL),
+// atomic, and it fails rather than replace anything at the original path.
+// Another device: copy to a hidden name next to the original, rename that
+// into place with RENAME_EXCL, then move the destination copy to the Trash.
+// When umbar itself takes a file away it uses FileManager.trashItem, never
+// removeItem (Can B2 fix 1; Muhittin: a permanent delete on another disk is
+// an integrity issue). A mistake stays recoverable from the Trash.
+//
+// Privacy: the FSEvents stream sees every file event on the watched volumes.
+// Only paths with a dragged name are kept, in memory, for one drag, and none
+// is logged.
+
+/// Whether `name` could be what Finder called a dropped file named
+/// `original`: the same name, or Finder's "Keep Both" rename of it ("report
+/// 2.pdf", "Photos 3"). Swift's `==` compares canonically equivalent Unicode
+/// as equal, so an NFC/NFD difference between volumes does not matter.
+enum ShelfMoveDestinationNames {
+    static func isCandidate(_ name: String, for original: String) -> Bool {
+        if name == original { return true }
+        let ext = (original as NSString).pathExtension
+        let stem = (original as NSString).deletingPathExtension
+        guard (name as NSString).pathExtension == ext else { return false }
+        let nameStem = (name as NSString).deletingPathExtension
+        guard nameStem.hasPrefix(stem + " ") else { return false }
+        let number = nameStem.dropFirst(stem.count + 1)
+        guard !number.isEmpty, number.allSatisfy({ $0.isASCII && $0.isNumber }), let n = Int(number) else { return false }
+        return n >= 2
+    }
+}
+
+/// One mounted volume, reduced to what `ShelfMoveDestinationRecorder` needs.
+struct ShelfVolume: Equatable, Sendable {
+    let path: String
+    let device: UInt64
+    let isReadOnly: Bool
+
+    /// The mounted volumes right now.
+    static func mounted() -> [ShelfVolume] {
+        let keys: [URLResourceKey] = [.volumeIsReadOnlyKey]
+        let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: keys, options: []) ?? []
+        return urls.compactMap { url in
+            guard let identity = ShelfFileIdentity(path: url.path) else { return nil }
+            let readOnly = (try? url.resourceValues(forKeys: Set(keys)))?.volumeIsReadOnly ?? true
+            return ShelfVolume(path: url.path, device: identity.device, isReadOnly: readOnly)
+        }
+    }
+}
+
+/// Records, from the start of a drag, paths created or renamed on the other
+/// volumes whose name could be a dragged file's (see the section comment).
+///
+/// Thread safety: `paths` is only touched on `queue`, where FSEvents delivers;
+/// `stream` is guarded by `lock`, which is also held across a flush so `stop`
+/// cannot invalidate the stream underneath it. The callback never takes the
+/// lock, so the flush cannot deadlock on it.
+final class ShelfMoveDestinationRecorder: @unchecked Sendable {
+    /// More than this many matching paths in one drag means something is
+    /// churning names like ours; the extra ones are dropped and the locator
+    /// will find several candidates, i.e. no Undo, which is the safe side.
+    static let maxRecordedPaths = 256
+
+    fileprivate final class Collector: @unchecked Sendable {
+        let names: [String]
+        var paths: Set<String> = []
+
+        init(names: [String]) { self.names = names }
+
+        func receive(_ newPaths: [String], flags: UnsafePointer<FSEventStreamEventFlags>) {
+            let interesting = FSEventStreamEventFlags(kFSEventStreamEventFlagItemCreated | kFSEventStreamEventFlagItemRenamed)
+            for (i, path) in newPaths.enumerated() where flags[i] & interesting != 0 {
+                guard paths.count < ShelfMoveDestinationRecorder.maxRecordedPaths else { return }
+                let name = (path as NSString).lastPathComponent
+                if names.contains(where: { ShelfMoveDestinationNames.isCandidate(name, for: $0) }) {
+                    paths.insert(path)
+                }
+            }
+        }
+    }
+
+    private let queue = DispatchQueue(label: "umbar.shelf.move-destination")
+    private let collector: Collector
+    private let lock = NSLock()
+    private var stream: FSEventStreamRef?
+
+    /// The volumes a move of files on `sourceDevices` could land on: every
+    /// writable volume, except system volumes and the one volume all sources
+    /// share (a move there is a rename, which the bookmark follows).
+    static func watchPaths(volumes: [ShelfVolume], sourceDevices: Set<UInt64>) -> [String] {
+        volumes
+            .filter { !$0.isReadOnly && !$0.path.hasPrefix("/System/Volumes/") }
+            .filter { !(sourceDevices.count == 1 && sourceDevices.contains($0.device)) }
+            .map(\.path)
+    }
+
+    /// Starts recording for a drag of `sources`, or returns nil when there is
+    /// nothing to watch (no other writable volume) or FSEvents refused.
+    static func forDrag(of sources: [ShelfDragSource], volumes: [ShelfVolume] = ShelfVolume.mounted()) -> ShelfMoveDestinationRecorder? {
+        let paths = watchPaths(volumes: volumes, sourceDevices: Set(sources.map(\.identity.device)))
+        return ShelfMoveDestinationRecorder(watching: paths, names: sources.map(\.name))
+    }
+
+    init?(watching paths: [String], names: [String]) {
+        guard !paths.isEmpty, !names.isEmpty else { return nil }
+        let collector = Collector(names: names)
+        self.collector = collector
+        var context = FSEventStreamContext(
+            version: 0,
+            info: Unmanaged.passRetained(collector).toOpaque(),
+            retain: nil,
+            release: { info in
+                guard let info else { return }
+                Unmanaged<ShelfMoveDestinationRecorder.Collector>.fromOpaque(info).release()
+            },
+            copyDescription: nil
+        )
+        let flags = FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagNoDefer)
+        guard let stream = FSEventStreamCreate(
+            kCFAllocatorDefault, shelfMoveDestinationCallback, &context, paths as CFArray,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow), 0.05, flags
+        ) else {
+            // The stream never took ownership of the retained collector.
+            Unmanaged.passUnretained(collector).release()
+            return nil
+        }
+        FSEventStreamSetDispatchQueue(stream, queue)
+        guard FSEventStreamStart(stream) else {
+            FSEventStreamInvalidate(stream)
+            FSEventStreamRelease(stream)
+            return nil
+        }
+        self.stream = stream
+    }
+
+    deinit { stop() }
+
+    /// Delivers the events FSEvents has not handed over yet, then returns the
+    /// paths recorded so far. Blocks briefly; call it off the main thread.
+    func recordedPaths() -> [String] {
+        lock.withLock {
+            if let stream { FSEventStreamFlushSync(stream) }
+        }
+        return queue.sync { Array(collector.paths) }
+    }
+
+    /// Stops recording. Paths recorded so far stay readable.
+    func stop() {
+        lock.withLock {
+            guard let stream else { return }
+            self.stream = nil
+            FSEventStreamStop(stream)
+            FSEventStreamInvalidate(stream)
+            FSEventStreamRelease(stream)
+        }
+    }
+}
+
+private let shelfMoveDestinationCallback: FSEventStreamCallback = { _, info, count, paths, flags, _ in
+    guard let info else { return }
+    let collector = Unmanaged<ShelfMoveDestinationRecorder.Collector>.fromOpaque(info).takeUnretainedValue()
+    // kFSEventStreamCreateFlagUseCFTypes: `paths` is a CFArray of CFString.
+    let list = Unmanaged<CFArray>.fromOpaque(paths).takeUnretainedValue() as? [String] ?? []
+    collector.receive(Array(list.prefix(count)), flags: flags)
+}
+
+/// Where a moved file went, as far as umbar can tell.
+enum ShelfMoveDestination: Equatable, Sendable {
+    /// Found; `identity` is the file's identity there, so Undo can tell it
+    /// is still the same file.
+    case found(URL, identity: ShelfFileIdentity)
+    /// No candidate: the destination is not on a watched volume, the
+    /// recording could not start, or the file is already gone again.
+    case notFound
+    /// More than one file looks like the moved one. Undo would be a guess.
+    case ambiguous(count: Int)
+}
+
+/// Finds where a file went after a confirmed move (see the section comment).
+enum ShelfMoveDestinationLocator {
+    /// Finder keeps the modification time when it copies, but FAT volumes
+    /// store it in 2 s steps.
+    static let modificationTimeTolerance: TimeInterval = 2
+
+    /// - Parameters:
+    ///   - source: the file as it was at drag start.
+    ///   - bookmark: the shelf item's bookmark, which follows a same-volume move.
+    ///   - recordedPaths: candidates from `ShelfMoveDestinationRecorder`.
+    static func locate(source: ShelfDragSource, bookmark: Data?, recordedPaths: [String]) -> ShelfMoveDestination {
+        if let bookmark, let url = resolveWithoutSideEffects(bookmark),
+           url.path != source.path,
+           ShelfFileIdentity(path: url.path) == source.identity {
+            return .found(url, identity: source.identity)
+        }
+
+        var matches: [(URL, ShelfFileIdentity)] = []
+        var seen: Set<ShelfFileIdentity> = []
+        for path in Set(recordedPaths) where path != source.path {
+            let url = URL(fileURLWithPath: path)
+            guard ShelfMoveDestinationNames.isCandidate(url.lastPathComponent, for: source.name),
+                  let candidate = ShelfDragSource(url: url),
+                  candidate.identity.device != source.identity.device,
+                  fingerprintsMatch(candidate, source),
+                  seen.insert(candidate.identity).inserted else { continue }
+            matches.append((url, candidate.identity))
+        }
+        switch matches.count {
+        case 0: return .notFound
+        case 1: return .found(matches[0].0, identity: matches[0].1)
+        default: return .ambiguous(count: matches.count)
+        }
+    }
+
+    /// `locate`, retried while FSEvents may still be delivering the
+    /// destination's creation (it lags the file system by tens of ms, more
+    /// under load).
+    static func locate(
+        source: ShelfDragSource,
+        bookmark: Data?,
+        recordedPaths: @Sendable () -> [String],
+        retries: [Duration] = Array(repeating: .milliseconds(100), count: 5),
+        sleep: @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
+    ) async -> ShelfMoveDestination {
+        var result = locate(source: source, bookmark: bookmark, recordedPaths: recordedPaths())
+        for delay in retries {
+            guard result == .notFound else { break }
+            do { try await sleep(delay) } catch { break }
+            result = locate(source: source, bookmark: bookmark, recordedPaths: recordedPaths())
+        }
+        return result
+    }
+
+    static func fingerprintsMatch(_ candidate: ShelfDragSource, _ source: ShelfDragSource) -> Bool {
+        guard candidate.isDirectory == source.isDirectory else { return false }
+        // A folder's size and times change while Finder fills it; its name
+        // and the "only one candidate" rule have to do.
+        if source.isDirectory { return true }
+        return candidate.size == source.size
+            && abs(candidate.modificationTime - source.modificationTime) <= modificationTimeTolerance
+    }
+
+    /// Resolves without UI and without mounting a volume: a bookmark to an
+    /// unmounted disk must not make umbar mount it.
+    private static func resolveWithoutSideEffects(_ bookmark: Data) -> URL? {
+        var stale = false
+        return try? URL(
+            resolvingBookmarkData: bookmark,
+            options: [.withSecurityScope, .withoutUI, .withoutMounting],
+            relativeTo: nil,
+            bookmarkDataIsStale: &stale
+        )
+    }
+}
+
+/// Why an Undo did not put the file back. In every case nothing was
+/// overwritten and nothing was deleted; the file is where the move left it.
+enum ShelfUndoFailure: Error, Equatable, Sendable {
+    /// The moved file is no longer where it went.
+    case destinationMissing
+    /// Something else is at the destination now (replaced, or edited into a
+    /// new file by an app that saves by replacing).
+    case destinationChanged
+    /// Something is at the original path again.
+    case originalOccupied
+    /// The original folder is gone.
+    case originalFolderMissing
+    /// macOS refused access, typically privacy protection for Desktop,
+    /// Documents, Downloads, removable volumes or the Trash.
+    case permissionDenied
+    /// Copying back to the original volume failed (disk full, ejected).
+    case copyFailed
+    /// Any other error from the file system, as an errno.
+    case fileSystem(errno: Int32)
+
+    /// Stable, machine-readable code for UI copy and logs.
+    var code: String {
+        switch self {
+        case .destinationMissing: "destination_missing"
+        case .destinationChanged: "destination_changed"
+        case .originalOccupied: "original_occupied"
+        case .originalFolderMissing: "original_folder_missing"
+        case .permissionDenied: "permission_denied"
+        case .copyFailed: "copy_failed"
+        case .fileSystem: "file_system_error"
+        }
+    }
+}
+
+/// What a successful Undo did.
+enum ShelfUndoOutcome: Equatable, Sendable {
+    /// The file is back at its original path and nowhere else.
+    case restored
+    /// The file is back at its original path, but its copy at the
+    /// destination (another volume) could not be moved to the Trash and is
+    /// still there.
+    case restoredLeavingCopy(URL)
+}
+
+/// Moves a file back to where it was before a move out of the shelf, without
+/// ever replacing or permanently deleting anything (see the section comment).
+///
+/// Synchronous and blocking (a cross-volume Undo copies the file); call it off
+/// the main actor.
+struct ShelfMoveUndoer: Sendable {
+    typealias Trash = @Sendable (URL) throws -> Void
+    typealias Copy = @Sendable (URL, URL) throws -> Void
+
+    /// The only way umbar takes a file away: recoverable from the Trash.
+    static let systemTrash: Trash = { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) }
+    static let systemCopy: Copy = { try FileManager.default.copyItem(at: $0, to: $1) }
+
+    private let trash: Trash
+    private let copy: Copy
+
+    init(trash: @escaping Trash = ShelfMoveUndoer.systemTrash, copy: @escaping Copy = ShelfMoveUndoer.systemCopy) {
+        self.trash = trash
+        self.copy = copy
+    }
+
+    /// Puts the file at `destination` back at `originalPath`.
+    ///
+    /// - Parameters:
+    ///   - destination: where the move left the file.
+    ///   - identity: the file's identity at `destination` when it was found
+    ///     there; anything else at that path is not touched.
+    ///   - originalPath: where the file was before the drag. Must be free.
+    func undo(from destination: URL, expecting identity: ShelfFileIdentity, to originalPath: String) -> Result<ShelfUndoOutcome, ShelfUndoFailure> {
+        switch Self.identity(at: destination.path) {
+        case .failure(let failure): return .failure(failure)
+        case .success(nil): return .failure(.destinationMissing)
+        case .success(let found?) where found != identity: return .failure(.destinationChanged)
+        case .success: break
+        }
+        let original = URL(fileURLWithPath: originalPath)
+        let folder = original.deletingLastPathComponent()
+        let folderIdentity: ShelfFileIdentity
+        switch Self.identity(at: folder.path) {
+        case .failure(let failure): return .failure(failure)
+        case .success(nil): return .failure(.originalFolderMissing)
+        case .success(let found?): folderIdentity = found
+        }
+        switch Self.identity(at: originalPath) {
+        case .failure(let failure): return .failure(failure)
+        case .success(.some): return .failure(.originalOccupied)
+        case .success(nil): break
+        }
+
+        if folderIdentity.device == identity.device {
+            switch Self.renameExclusive(from: destination.path, to: originalPath) {
+            case .success: return .success(.restored)
+            case .failure(.fileSystem(errno: EXDEV)): break // a mount point in between; copy instead
+            case .failure(let failure): return .failure(failure)
+            }
+        }
+        return copyBack(from: destination, expecting: identity, to: original, in: folder)
+    }
+
+    private func copyBack(from destination: URL, expecting identity: ShelfFileIdentity, to original: URL, in folder: URL) -> Result<ShelfUndoOutcome, ShelfUndoFailure> {
+        // Hidden and unique, so a half-written copy is never mistaken for the
+        // file and never collides with one.
+        let staging = folder.appendingPathComponent(".umbar-undo-\(UUID().uuidString)-\(original.lastPathComponent)")
+        do {
+            try copy(destination, staging)
+        } catch {
+            discardStaging(staging)
+            return .failure(Self.isPermissionError(error) ? .permissionDenied : .copyFailed)
+        }
+        switch Self.renameExclusive(from: staging.path, to: original.path) {
+        case .success: break
+        case .failure(let failure):
+            discardStaging(staging)
+            return .failure(failure)
+        }
+        // The copy is in place. The destination goes to the Trash only if it
+        // is still the file that was copied.
+        guard ShelfFileIdentity(path: destination.path) == identity else {
+            return .success(.restoredLeavingCopy(destination))
+        }
+        do {
+            try trash(destination)
+            return .success(.restored)
+        } catch {
+            return .success(.restoredLeavingCopy(destination))
+        }
+    }
+
+    /// A staging copy that did not make it into place is umbar's own file,
+    /// but it still goes through the Trash, so there is exactly one way files
+    /// leave in this code. If even that fails it stays, hidden, next to the
+    /// original.
+    private func discardStaging(_ staging: URL) {
+        guard ShelfFileIdentity(path: staging.path) != nil else { return }
+        try? trash(staging)
+    }
+
+    /// lstat, with "nothing there" as `nil` and access errors as failures.
+    private static func identity(at path: String) -> Result<ShelfFileIdentity?, ShelfUndoFailure> {
+        var info = stat()
+        if lstat(path, &info) == 0 {
+            return .success(ShelfFileIdentity(device: UInt64(bitPattern: Int64(info.st_dev)), inode: UInt64(info.st_ino)))
+        }
+        switch errno {
+        case ENOENT, ENOTDIR: return .success(nil)
+        case EACCES, EPERM: return .failure(.permissionDenied)
+        case let code: return .failure(.fileSystem(errno: code))
+        }
+    }
+
+    /// rename(2) that fails instead of replacing anything at `to`.
+    private static func renameExclusive(from: String, to: String) -> Result<Void, ShelfUndoFailure> {
+        if renamex_np(from, to, UInt32(RENAME_EXCL)) == 0 { return .success(()) }
+        let code = errno
+        if code == ENOTSUP || code == EINVAL {
+            // Some file systems (exFAT, SMB) lack RENAME_EXCL. FileManager's
+            // move refuses an existing target too, with a check-then-rename
+            // gap of microseconds; the original path was free a moment ago.
+            do {
+                try FileManager.default.moveItem(atPath: from, toPath: to)
+                return .success(())
+            } catch {
+                return .failure(isPermissionError(error) ? .permissionDenied : .originalOccupied)
+            }
+        }
+        return .failure(failure(forErrno: code))
+    }
+
+    private static func failure(forErrno code: Int32) -> ShelfUndoFailure {
+        switch code {
+        case EEXIST, ENOTEMPTY: .originalOccupied
+        case EACCES, EPERM: .permissionDenied
+        case ENOENT: .destinationMissing
+        default: .fileSystem(errno: code)
+        }
+    }
+
+    private static func isPermissionError(_ error: Error) -> Bool {
+        let ns = error as NSError
+        if ns.domain == NSCocoaErrorDomain, ns.code == NSFileWriteNoPermissionError || ns.code == NSFileReadNoPermissionError { return true }
+        if ns.domain == NSPOSIXErrorDomain, ns.code == Int(EACCES) || ns.code == Int(EPERM) { return true }
+        return ns.underlyingErrors.contains(where: isPermissionError)
+    }
+}
+
+/// Monotonic time for the Undo window, injectable so tests need no waiting.
+protocol ShelfUndoClock: Sendable {
+    /// Time since an arbitrary, fixed origin.
+    var now: Duration { get }
+    func sleep(for duration: Duration) async throws
+}
+
+struct ShelfUndoSystemClock: ShelfUndoClock {
+    private let origin = ContinuousClock.now
+    var now: Duration { ContinuousClock.now - origin }
+    func sleep(for duration: Duration) async throws { try await Task.sleep(for: duration) }
+}
+
+/// A shelf item that was moved out of the shelf a moment ago, shown with
+/// "Taşındı: <name> · Geri al" until its window runs out (card #101).
+struct ShelfMoveGhost: Identifiable, Equatable, Sendable {
+    enum Status: Equatable, Sendable {
+        /// Moments after the move, while the destination is looked up
+        /// (usually well under 100 ms). Undo is not available yet.
+        case locating
+        /// Undo is available.
+        case ready
+        /// The destination could not be told for certain (not on a watched
+        /// volume, or several look-alikes). The chip says the file moved;
+        /// there is no Undo.
+        case undoUnavailable
+        /// Undo is running. A cross-volume Undo copies the file back, which
+        /// takes as long as the move did.
+        case undoing
+        /// Undo failed; nothing was changed. Stays until `dismiss`, so the
+        /// user can sort it out by hand (`destination` says where the file is).
+        case failed(ShelfUndoFailure)
+        /// Undo put the file back and the item is on the shelf again, but the
+        /// copy at `destination` could not be moved to the Trash.
+        case restoredLeavingCopy
+    }
+
+    /// The shelf item's ID. A restored item keeps it.
+    let id: UUID
+    /// The file's name when it was dragged, for "Taşındı: <name>".
+    let name: String
+    /// Where the item was on the shelf, so Undo puts it back in place.
+    let index: Int
+    /// Where the file was before the drag.
+    let originalPath: String
+    /// Where the file is now, once known.
+    var destination: URL?
+    var status: Status
+
+    var canUndo: Bool { status == .ready }
+
+    /// The file went to a Trash (the Dock's Trash, AC-3.21), not a folder.
+    var wentToTrash: Bool {
+        guard let components = destination?.pathComponents else { return false }
+        return components.contains(".Trash") || components.contains(".Trashes")
+    }
+}
+
+/// The ghosts of items moved out of the shelf, their Undo, and their expiry
+/// (Can B2 fix 2, card #100; the chip UI is card #101).
+///
+/// Lifecycle: `recordMove` adds a ghost as `.locating` and starts its window;
+/// the destination lookup turns it `.ready` or `.undoUnavailable`. `undo`
+/// moves the file back and, on success, hands the item to `onRestore` and
+/// drops the ghost. The window ends a ghost in any state but `.undoing` and
+/// `.failed`; a failed ghost waits for `dismiss`. When a ghost ends without
+/// Undo the item stays off the shelf, as after any move (BR-3.5).
+///
+/// Ghosts are not persisted: quitting umbar inside the window ends them.
+@MainActor
+final class ShelfMoveUndoModel: ObservableObject {
+    /// How long Undo stays offered. The approved range is 6–8 s.
+    nonisolated static let defaultWindow: Duration = .seconds(8)
+
+    @Published private(set) var ghosts: [ShelfMoveGhost] = []
+
+    /// Puts a restored item back on the shelf at the given index (clamped by
+    /// the receiver). Set by the shelf's view model.
+    var onRestore: ((ShelfItem, Int) -> Void)?
+
+    let window: Duration
+    private let clock: any ShelfUndoClock
+    private let undoer: ShelfMoveUndoer
+
+    private struct Record {
+        let item: ShelfItem
+        var identity: ShelfFileIdentity?
+        /// Clock time at which the ghost expires; nil while paused or not
+        /// expiring.
+        var deadline: Duration?
+        /// Window left when paused.
+        var remainingWhenPaused: Duration?
+        var expiry: Task<Void, Never>?
+        var locate: Task<Void, Never>?
+    }
+    private var records: [UUID: Record] = [:]
+
+    init(window: Duration = ShelfMoveUndoModel.defaultWindow, clock: any ShelfUndoClock = ShelfUndoSystemClock(), undoer: ShelfMoveUndoer = ShelfMoveUndoer()) {
+        self.window = window
+        self.clock = clock
+        self.undoer = undoer
+    }
+
+    func ghost(_ id: UUID) -> ShelfMoveGhost? { ghosts.first { $0.id == id } }
+
+    /// Adds a ghost for `item`, which has just left the shelf because its file
+    /// was moved away.
+    ///
+    /// - Parameters:
+    ///   - index: the item's position on the shelf before it left.
+    ///   - source: the file at drag start.
+    ///   - locate: finds the destination; runs off the main actor.
+    /// - Returns: the lookup task, so callers (and tests) can await it.
+    @discardableResult
+    func recordMove(of item: ShelfItem, at index: Int, source: ShelfDragSource, locate: @escaping @Sendable () async -> ShelfMoveDestination) -> Task<Void, Never> {
+        // An item that is off the shelf cannot be dragged again, so a second
+        // ghost for one ID only happens if a caller gets this wrong.
+        guard ghost(item.id)?.status != .undoing else { return Task {} }
+        drop(item.id)
+        ghosts.append(ShelfMoveGhost(id: item.id, name: source.name, index: index, originalPath: source.path, destination: nil, status: .locating))
+        records[item.id] = Record(item: item)
+        startExpiry(item.id, after: window)
+        let id = item.id
+        let task = Task { [weak self] in
+            let found = await Task.detached(operation: locate).value
+            self?.located(id, found)
+        }
+        records[id]?.locate = task
+        return task
+    }
+
+    /// Moves the ghost's file back to its original path and, on success, puts
+    /// the item back on the shelf.
+    ///
+    /// - Returns: nil when the ghost is unknown or Undo is not available
+    ///   (`canUndo` is false), otherwise the result. A failure leaves the file
+    ///   untouched and the ghost `.failed`.
+    @discardableResult
+    func undo(_ id: UUID) async -> Result<ShelfUndoOutcome, ShelfUndoFailure>? {
+        guard let i = index(id), ghosts[i].canUndo,
+              let destination = ghosts[i].destination,
+              let identity = records[id]?.identity else { return nil }
+        stopExpiry(id)
+        ghosts[i].status = .undoing
+        let undoer = self.undoer, originalPath = ghosts[i].originalPath
+        let result = await Task.detached { undoer.undo(from: destination, expecting: identity, to: originalPath) }.value
+
+        // `dismiss` and `end` leave an undoing ghost alone, so it is still here.
+        guard let j = index(id), let record = records[id] else { return result }
+        switch result {
+        case .success(let outcome):
+            onRestore?(Self.restoredItem(record.item, at: originalPath), ghosts[j].index)
+            if case .restoredLeavingCopy = outcome {
+                ghosts[j].status = .restoredLeavingCopy
+                startExpiry(id, after: window)
+            } else {
+                drop(id)
+            }
+        case .failure(let failure):
+            ghosts[j].status = .failed(failure)
+        }
+        return result
+    }
+
+    /// Ends a ghost without Undo (the chip's close button, or done handling a
+    /// failure by hand). Ignored while Undo runs.
+    func dismiss(_ id: UUID) {
+        guard ghost(id)?.status != .undoing else { return }
+        end(id)
+    }
+
+    /// Holds the window while the pointer or VoiceOver focus is on the chip,
+    /// so reading it cannot run the time out (WCAG 2.2 SC 2.2.1). Resuming
+    /// gives back the time that was left.
+    func setExpiryPaused(_ paused: Bool, for id: UUID) {
+        guard var record = records[id], let ghost = ghost(id), Self.expires(ghost.status) else { return }
+        if paused {
+            guard let deadline = record.deadline else { return }
+            record.expiry?.cancel()
+            record.expiry = nil
+            record.deadline = nil
+            record.remainingWhenPaused = max(deadline - clock.now, .zero)
+            records[id] = record
+        } else if let remaining = record.remainingWhenPaused {
+            record.remainingWhenPaused = nil
+            records[id] = record
+            startExpiry(id, after: remaining)
+        }
+    }
+
+    /// The pending expiry, for tests.
+    func expiryTask(for id: UUID) -> Task<Void, Never>? { records[id]?.expiry }
+
+    /// The pending destination lookup, for tests and for the shelf, which
+    /// keeps the FSEvents recording alive until it is done.
+    func locateTask(for id: UUID) -> Task<Void, Never>? { records[id]?.locate }
+
+    // MARK: Private
+
+    private func located(_ id: UUID, _ found: ShelfMoveDestination) {
+        records[id]?.locate = nil
+        guard let i = index(id), ghosts[i].status == .locating else { return }
+        if case .found(let url, let identity) = found {
+            ghosts[i].destination = url
+            ghosts[i].status = .ready
+            records[id]?.identity = identity
+        } else {
+            ghosts[i].status = .undoUnavailable
+        }
+    }
+
+    private static func expires(_ status: ShelfMoveGhost.Status) -> Bool {
+        switch status {
+        case .undoing, .failed: false
+        case .locating, .ready, .undoUnavailable, .restoredLeavingCopy: true
+        }
+    }
+
+    private func startExpiry(_ id: UUID, after duration: Duration) {
+        stopExpiry(id)
+        let deadline = clock.now + duration
+        records[id]?.deadline = deadline
+        let clock = self.clock
+        records[id]?.expiry = Task { [weak self] in
+            // Loop: a clock may wake early; the deadline decides.
+            while clock.now < deadline {
+                do { try await clock.sleep(for: deadline - clock.now) } catch { return }
+            }
+            guard !Task.isCancelled else { return }
+            self?.expire(id, deadline: deadline)
+        }
+    }
+
+    private func stopExpiry(_ id: UUID) {
+        records[id]?.expiry?.cancel()
+        records[id]?.expiry = nil
+        records[id]?.deadline = nil
+        records[id]?.remainingWhenPaused = nil
+    }
+
+    private func expire(_ id: UUID, deadline: Duration) {
+        guard records[id]?.deadline == deadline, let ghost = ghost(id), Self.expires(ghost.status) else { return }
+        end(id)
+    }
+
+    /// Ends a ghost unless its Undo is running.
+    private func end(_ id: UUID) {
+        guard ghost(id)?.status != .undoing else { return }
+        drop(id)
+    }
+
+    private func drop(_ id: UUID) {
+        records[id]?.expiry?.cancel()
+        records[id] = nil
+        ghosts.removeAll { $0.id == id }
+    }
+
+    private func index(_ id: UUID) -> Int? { ghosts.firstIndex { $0.id == id } }
+
+    /// The item as it goes back on the shelf: same ID, a fresh bookmark for
+    /// the original path (after a cross-volume Undo the file is a new file,
+    /// which the old bookmark cannot find).
+    private static func restoredItem(_ item: ShelfItem, at path: String) -> ShelfItem {
+        guard let bookmark = try? Bookmark(url: URL(fileURLWithPath: path)) else { return item }
+        return ShelfItem(id: item.id, kind: .file(bookmark: bookmark.data), isTemporary: item.isTemporary)
     }
 }

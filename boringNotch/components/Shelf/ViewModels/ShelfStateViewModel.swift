@@ -26,8 +26,13 @@ final class ShelfStateViewModel: ObservableObject {
     /// Confirms moves out of the shelf before their items are removed.
     private let moveWatcher = ShelfMoveOutcomeWatcher()
 
+    /// Items moved out of the shelf a moment ago, with their Undo (card #100).
+    /// The "Taşındı · Geri al" chip (card #101) observes this.
+    let moveUndo = ShelfMoveUndoModel()
+
     private init() {
         items = ShelfPersistenceService.shared.load()
+        moveUndo.onRestore = { [weak self] item, index in self?.restore(item, at: index) }
     }
 
 
@@ -61,25 +66,64 @@ final class ShelfStateViewModel: ObservableObject {
     /// file stays in $TMPDIR, which macOS purges of long-unused files on its
     /// own. After a move the file is no longer ours to delete.
     ///
-    /// - Parameter sources: the path and identity of each item's file when
-    ///   the drag started, used to confirm a move. An item without an entry
-    ///   is kept.
-    func handleDragEnd(_ action: ShelfDragEndAction, for dragged: [ShelfItem], sources: [ShelfItem.ID: (path: String, identity: ShelfFileIdentity)]) {
+    /// After a confirmed move the item leaves the shelf and becomes a ghost
+    /// in `moveUndo`, which offers Undo for a few seconds (card #100).
+    ///
+    /// - Parameters:
+    ///   - sources: each item's file when the drag started, used to confirm a
+    ///     move and to find where it went. An item without an entry is kept.
+    ///   - recorder: the drag's FSEvents recording of the other volumes, if
+    ///     one could start. Stopped here once nothing needs it any more.
+    func handleDragEnd(_ action: ShelfDragEndAction, for dragged: [ShelfItem], sources: [ShelfItem.ID: ShelfDragSource], recorder: ShelfMoveDestinationRecorder?) {
         switch action {
         case .keep:
-            return
+            recorder?.stop()
         case .remove:
+            recorder?.stop()
             let ids = Set(dragged.map(\.id))
             ids.forEach(moveWatcher.cancel)
             items.removeAll { ids.contains($0.id) }
         case .removeOnceSourceLeaves:
+            var watches: [Task<Void, Never>] = []
             for item in dragged {
                 guard let source = sources[item.id] else { continue }
-                moveWatcher.watch(id: item.id, path: source.path, original: source.identity) { [weak self] in
-                    self?.items.removeAll { $0.id == item.id }
-                }
+                watches.append(moveWatcher.watch(id: item.id, path: source.path, original: source.identity) { [weak self] in
+                    self?.moveConfirmed(item, source: source, recorder: recorder)
+                })
+            }
+            guard let recorder else { return }
+            let ids = dragged.map(\.id)
+            Task { [weak self] in
+                for watch in watches { await watch.value }
+                for id in ids { await self?.moveUndo.locateTask(for: id)?.value }
+                recorder.stop()
             }
         }
+    }
+
+    /// The file of `item` has left its path: take the item off the shelf and
+    /// leave a ghost that can undo the move.
+    private func moveConfirmed(_ item: ShelfItem, source: ShelfDragSource, recorder: ShelfMoveDestinationRecorder?) {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        let current = items[index]
+        items.remove(at: index)
+        var bookmark: Data?
+        if case .file(let data) = current.kind { bookmark = data }
+        moveUndo.recordMove(of: current, at: index, source: source) { [bookmark] in
+            await ShelfMoveDestinationLocator.locate(
+                source: source,
+                bookmark: bookmark,
+                recordedPaths: { recorder?.recordedPaths() ?? [] }
+            )
+        }
+    }
+
+    /// Puts an item back after Undo, at its old position or the end. An item
+    /// for the same file that was added again in the meantime wins.
+    private func restore(_ item: ShelfItem, at index: Int) {
+        let key = item.identityKey
+        guard !items.contains(where: { $0.id == item.id || $0.identityKey == key }) else { return }
+        items.insert(item, at: min(max(index, 0), items.count))
     }
 
     func updateBookmark(for item: ShelfItem, bookmark: Data) {
