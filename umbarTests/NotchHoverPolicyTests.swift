@@ -12,7 +12,7 @@ import CoreGraphics
 import Foundation
 import Testing
 
-@Suite("NotchHoverGeometry")
+@Suite("NotchHoverGeometry", .timeLimit(.minutes(1)))
 struct NotchHoverGeometryTests {
     // The Air's notch window as logged during the bug: 640x210 at the top
     // of a 1332 pt tall screen.
@@ -62,7 +62,7 @@ struct NotchHoverGeometryTests {
     }
 }
 
-@Suite("NotchHoverTracker")
+@Suite("NotchHoverTracker", .timeLimit(.minutes(1)))
 struct NotchHoverTrackerTests {
     /// Feeds (inside, time) samples in order and returns each answer.
     private func feed(_ tracker: inout NotchHoverTracker, _ samples: [(Bool, TimeInterval)]) -> [Bool] {
