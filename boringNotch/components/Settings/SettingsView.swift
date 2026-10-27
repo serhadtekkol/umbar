@@ -47,6 +47,9 @@ struct SettingsView: View {
                 NavigationLink(value: "QuickToggles") {
                     Label("Quick toggles", systemImage: "switch.2")
                 }
+                NavigationLink(value: "Network") {
+                    Label(String(localized: "netmonitor.settings.title", defaultValue: "Network"), systemImage: "arrow.up.arrow.down")
+                }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
@@ -91,6 +94,8 @@ struct SettingsView: View {
                     FocusTimerSettings()
                 case "QuickToggles":
                     QuickTogglesSettings()
+                case "Network":
+                    NetMonitorSettings()
                 case "Battery":
                     Charge()
                 case "Shelf":

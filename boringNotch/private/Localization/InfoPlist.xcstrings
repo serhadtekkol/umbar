@@ -126,6 +126,42 @@
           }
         }
       }
+    },
+    "NSLocationUsageDescription": {
+      "comment": "Location prompt: used only to read the Wi-Fi name for network traffic labels.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar reads the Wi-Fi name to label your network traffic totals. Your location is never used or stored."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, ağ trafiği toplamlarını etiketlemek için Wi-Fi adını okur. Konumunuz hiçbir zaman kullanılmaz ya da saklanmaz."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "comment": "Location prompt: used only to read the Wi-Fi name for network traffic labels.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar reads the Wi-Fi name to label your network traffic totals. Your location is never used or stored."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, ağ trafiği toplamlarını etiketlemek için Wi-Fi adını okur. Konumunuz hiçbir zaman kullanılmaz ya da saklanmaz."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

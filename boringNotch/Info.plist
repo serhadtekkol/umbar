@@ -10,6 +10,10 @@
 	<string>umbar shows whether a Focus is on in the notch's quick toggles.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>umbar lists your reminders next to your events in the notch. When you check a reminder off there, or uncheck it, umbar saves that change to Reminders. Your reminders never leave your Mac.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>umbar reads the Wi-Fi name to label your network traffic totals. Your location is never used or stored.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>umbar reads the Wi-Fi name to label your network traffic totals. Your location is never used or stored.</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>

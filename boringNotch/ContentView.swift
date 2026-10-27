@@ -123,6 +123,7 @@ struct ContentView: View {
                     }
                     .overlay(alignment: .topLeading) {
                         FocusTimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
+                        NetMonitorClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                     }
                 
                 mainLayout

@@ -350,6 +350,8 @@
 				EyeBreak/EyeBreakEngine.swift,
 				FocusTimer/FocusTimerEngine.swift,
 				HUD/HUDAccessCardPolicy.swift,
+				NetMonitor/NetTrafficMath.swift,
+				NetMonitor/NetUsageLedger.swift,
 				LiveActivities/DownloadParsing.swift,
 				LiveActivities/LiveActivityModel.swift,
 				LiveActivities/PowerSourceParsing.swift,

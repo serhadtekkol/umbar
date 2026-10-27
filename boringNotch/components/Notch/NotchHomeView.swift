@@ -431,6 +431,8 @@ struct NotchHomeView: View {
                     .environmentObject(vm)
                     .transition(.opacity)
             }
+
+            NetMonitorPanelView()
         }
     }
 }
