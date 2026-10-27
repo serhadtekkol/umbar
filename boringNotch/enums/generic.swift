@@ -24,9 +24,13 @@ public enum NotchState {
     case open
 }
 
-public enum NotchViews {
+/// The open panel's pages, in tab order (design-language §5.2).
+public enum NotchViews: CaseIterable {
     case home
     case shelf
+    case calendar
+    case network
+    case tools
 }
 
 enum SettingsEnum {

@@ -64,9 +64,10 @@ struct AlbumArtView: View {
                         : MusicPlayerImageSizes.cornerRadiusInset.closed)
             )
             .aspectRatio(1, contentMode: .fit)
-            .scaleEffect(x: 1.3, y: 1.4)
+            // A halo, not a wash: scaled up and blurred 40 pt it spilled over
+            // the tab bar and the page edge.
             .rotationEffect(.degrees(92))
-            .blur(radius: 40)
+            .blur(radius: 18)
             .opacity(musicManager.isPlaying ? 0.5 : 0)
     }
 
@@ -392,9 +393,11 @@ struct VolumeControlView: View {
 
 struct NotchHomeView: View {
     @EnvironmentObject var vm: BoringViewModel
-    @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     let albumArtNamespace: Namespace.ID
+    /// Fixture column for the offscreen page render (PanelPageRenderer);
+    /// nil in the app, which reads the live calendar and activities.
+    var todayFixture: TodayColumnContent? = nil
 
     var body: some View {
         Group {
@@ -406,34 +409,17 @@ struct NotchHomeView: View {
         .transition(.opacity)
     }
 
+    /// Şimdi (design-language §5.2): music on the left, today on the right.
+    /// Everything else lives on its own page, so nothing here competes
+    /// with the music for the panel's 180 pt.
     private var mainContent: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            mediaAndCalendar
-            if Defaults[.quickTogglesEnabled] {
-                QuickTogglesRow()
-            }
-            LiveActivityNowRow() // F19
+        HStack(alignment: .top, spacing: PageTokens.l) {
+            MusicPlayerView(albumArtNamespace: albumArtNamespace)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if let todayFixture { todayFixture } else { TodayColumn() }
         }
         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
         .blur(radius: vm.notchState == .closed ? 30 : 0)
-    }
-
-    private var mediaAndCalendar: some View {
-        HStack(alignment: .top, spacing: 15) {
-            MusicPlayerView(albumArtNamespace: albumArtNamespace)
-
-            if Defaults[.showCalendar] {
-                CalendarView()
-                    .frame(width: 215)
-                    .onHover { isHovering in
-                        vm.isHoveringCalendar = isHovering
-                    }
-                    .environmentObject(vm)
-                    .transition(.opacity)
-            }
-
-            NetMonitorPanelView()
-        }
     }
 }
 

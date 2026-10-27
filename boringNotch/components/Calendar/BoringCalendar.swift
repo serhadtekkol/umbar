@@ -234,7 +234,11 @@ struct CalendarView: View {
                 )
             }
         }
-        .frame(height: 120)
+        // A prompt keeps its own height (text, then the button right under
+        // it) instead of stretching to the page and leaving the button at
+        // the bottom edge.
+        .fixedSize(horizontal: false, vertical: !showsContent)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onChange(of: vm.notchState) { _, _ in
             calendarManager.refreshAuthorizationStatus()
         }
@@ -250,11 +254,13 @@ struct CalendarView: View {
             && !remindersPromptDismissed
     }
 
+    /// Takvim page: the day picker on the left, the chosen day's list on
+    /// the right, each with the page's full height.
     private var calendarContent: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment: .leading) {
-                    Text(selectedDate.formatted(.dateTime.month(.abbreviated)))
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(selectedDate.formatted(.dateTime.month(.wide)))
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
@@ -263,7 +269,9 @@ struct CalendarView: View {
                         .fontWeight(.light)
                         .foregroundColor(Color(white: 0.65))
                 }
-
+                Text(selectedDate.formatted(.dateTime.weekday(.wide).day()))
+                    .font(.subheadline)
+                    .foregroundColor(Color(white: 0.65))
                 ZStack(alignment: .top) {
                     WheelPicker(selectedDate: $selectedDate, config: Config())
                     HStack(alignment: .top) {
@@ -277,32 +285,38 @@ struct CalendarView: View {
                         )
                         .frame(width: 20)
                     }
+                    .allowsHitTesting(false)
+                }
+                .frame(height: 58)
+            }
+            .frame(width: 250, alignment: .leading)
+
+            VStack(spacing: 0) {
+                let filteredEvents = EventListView.filteredEvents(
+                    events: calendarManager.events
+                )
+                if filteredEvents.isEmpty {
+                    EmptyEventsView(selectedDate: selectedDate)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    EventListView(events: calendarManager.events)
+                }
+
+                if showsReminderBanner {
+                    NotchPermissionBanner(
+                        state: calendarManager.reminderPermission,
+                        systemImage: "checklist",
+                        reason: "Allow Reminders access to list your reminders here.",
+                        deniedMessage: "Reminders access is off.",
+                        pane: .reminders,
+                        onAllow: {
+                            Task { await calendarManager.requestReminderAccess() }
+                        },
+                        onDismiss: { remindersPromptDismissed = true }
+                    )
                 }
             }
-
-            let filteredEvents = EventListView.filteredEvents(
-                events: calendarManager.events
-            )
-            if filteredEvents.isEmpty {
-                EmptyEventsView(selectedDate: selectedDate)
-                Spacer(minLength: 0)
-            } else {
-                EventListView(events: calendarManager.events)
-            }
-
-            if showsReminderBanner {
-                NotchPermissionBanner(
-                    state: calendarManager.reminderPermission,
-                    systemImage: "checklist",
-                    reason: "Allow Reminders access to list your reminders here.",
-                    deniedMessage: "Reminders access is off.",
-                    pane: .reminders,
-                    onAllow: {
-                        Task { await calendarManager.requestReminderAccess() }
-                    },
-                    onDismiss: { remindersPromptDismissed = true }
-                )
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .listRowBackground(Color.clear)
         .onChange(of: selectedDate) {

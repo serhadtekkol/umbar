@@ -6,7 +6,7 @@
 //  - `LiveActivityClosedStrip`: the closed island grows *downward* by one
 //    strip and never sideways past the closed-activity width
 //    (design-language §1 rule 2, §4).
-//  - `LiveActivityNowRow`: one row on the open panel's "Şimdi" page.
+//  - `LiveActivityList`: the lines under Today on the open panel's Şimdi page.
 //
 //  Self-contained on purpose (no shared island components yet): colours are
 //  the design-language §3.1 token values, spelled out until UmbarTokens lands.
@@ -135,30 +135,24 @@ struct LiveActivityClosedStrip: View {
 
 /// A one-line list of what is live, below the music and calendar columns.
 /// Draws nothing when nothing is live.
-struct LiveActivityNowRow: View {
-    @ObservedObject private var center = LiveActivityCenter.shared
+struct LiveActivityList: View {
+    let items: [LiveActivity]
+    let limit: Int
 
     var body: some View {
-        if !center.panelItems.isEmpty {
-            HStack(spacing: 8) {
-                // Three fit the 640 pt panel without truncating a typical file
-                // name; the count of the rest goes on the last chip.
-                ForEach(center.panelItems.prefix(3)) { item in
-                    LiveActivityLine(activity: item, extraCount: 0, compact: false)
-                        .padding(.horizontal, 8)
-                        .frame(height: 22)
-                        .background(LiveTokens.raised, in: Capsule())
-                }
-                if center.panelItems.count > 3 {
-                    Text(verbatim: "+\(center.panelItems.count - 3)")
-                        .font(.system(size: 11).monospacedDigit())
-                        .foregroundStyle(LiveTokens.textSecondary)
-                }
-                Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 6) {
+            let shown = Array(items.prefix(limit))
+            ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
+                // The count of the ones that did not fit goes on the last line.
+                LiveActivityLine(activity: item, extraCount: index == shown.count - 1 ? items.count - shown.count : 0, compact: false)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .frame(height: 24)
+                    .background(LiveTokens.raised, in: Capsule())
             }
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(String(localized: "liveActivity.row.label", defaultValue: "Live activities"))
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "liveActivity.row.label", defaultValue: "Live activities"))
     }
 }
 

@@ -2,73 +2,50 @@
 //  CaffeinateControl.swift
 //  boringNotch
 //
-//  F11 UI: the open-panel control and the always-visible closed badge.
+//  F11 UI: the Araçlar tile and the always-visible closed badge.
 //
 
 import SwiftUI
 
-/// Header control. Off: a cup button that reveals the duration chips inline
-/// (no popup, so the notch's hover-to-close logic is not disturbed).
-/// On: filled cup plus remaining time; one tap turns it off.
-struct CaffeinateControl: View {
+/// Araçlar tile. Off: the duration chips, one tap starts. On: remaining
+/// time and "Turn off". Inline only, no popup, so the notch's
+/// hover-to-close logic is not disturbed.
+struct CaffeinateTile: View {
     @ObservedObject private var service = CaffeinateService.shared
-    @State private var showDurations = false
 
     var body: some View {
-        HStack(spacing: 4) {
-            if let notice = service.notice {
-                Text(notice)
-                    .font(.caption2)
-                    .lineLimit(1)
-                    .foregroundStyle(.orange)
-            }
+        ToolTile(
+            symbol: service.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
+            title: String(localized: "Caffeinate"),
+            status: status,
+            statusTint: service.notice == nil ? PageTokens.textSecondary : Color(red: 0xFF / 255, green: 0x7B / 255, blue: 0x72 / 255),
+            active: service.isActive
+        ) {
             if service.isActive {
-                if let remaining = service.remaining {
-                    Text(CaffeinatePolicy.remainingLabel(remaining))
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.white)
-                }
-                cupButton(filled: true)
+                Button(String(localized: "tools.turnOff", defaultValue: "Turn off")) { service.stop() }
+                    .buttonStyle(ToolChipStyle())
+                    .help(String(localized: "caffeinate.help.on", defaultValue: "Keeping the Mac awake. Click to turn off."))
             } else {
-                if showDurations {
+                HStack(spacing: 4) {
                     ForEach(CaffeinateDuration.allCases, id: \.self) { duration in
-                        Button(Self.label(for: duration)) {
-                            showDurations = false
-                            service.start(duration)
-                        }
-                        .buttonStyle(.plain)
-                        .font(.caption2.bold())
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .frame(height: 20)
-                        .background(Capsule().fill(.white.opacity(0.18)))
-                        .accessibilityLabel(Self.accessibilityLabel(for: duration))
+                        Button(Self.label(for: duration)) { service.start(duration) }
+                            .buttonStyle(ToolChipStyle())
+                            .accessibilityLabel(Self.accessibilityLabel(for: duration))
                     }
                 }
-                cupButton(filled: false)
             }
         }
-        .animation(.smooth(duration: 0.2), value: showDurations)
-        .onChange(of: service.isActive) { _, _ in showDurations = false }
     }
 
-    private func cupButton(filled: Bool) -> some View {
-        Button {
-            if service.isActive { service.stop() } else { showDurations.toggle() }
-        } label: {
-            Capsule()
-                .fill(.black)
-                .frame(width: 30, height: 30)
-                .overlay {
-                    Image(systemName: filled ? "cup.and.saucer.fill" : "cup.and.saucer")
-                        .foregroundColor(filled ? .orange : .white)
-                        .imageScale(.medium)
-                }
+    private var status: String {
+        if let notice = service.notice { return notice }
+        guard service.isActive else {
+            return String(localized: "caffeinate.help.off", defaultValue: "Keep the Mac awake")
         }
-        .buttonStyle(PlainButtonStyle())
-        .help(filled
-            ? String(localized: "caffeinate.help.on", defaultValue: "Keeping the Mac awake. Click to turn off.")
-            : String(localized: "caffeinate.help.off", defaultValue: "Keep the Mac awake"))
+        if let remaining = service.remaining {
+            return String(format: String(localized: "tools.remaining", defaultValue: "%@ left"), CaffeinatePolicy.remainingLabel(remaining))
+        }
+        return String(localized: "caffeinate.duration.indefinite.a11y", defaultValue: "Until turned off")
     }
 
     private static func label(for duration: CaffeinateDuration) -> String {
