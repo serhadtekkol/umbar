@@ -230,6 +230,10 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
         /// move before the item leaves the shelf.
         private var draggedSources: [ShelfItem.ID: ShelfDragSource] = [:]
         private var draggedSourcesDeletable = true
+        /// Watches the other volumes for where a cross-volume move lands, so
+        /// the move can be undone (card #100). Started before the session,
+        /// because the destination file appears as soon as Finder accepts.
+        private var draggedRecorder: ShelfMoveDestinationRecorder?
         /// Where the pointer was at the last mask query, i.e. at the drop.
         private var lastDestination: ShelfDragDestination = .ownApp
         
@@ -301,6 +305,12 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
 
             guard !draggingItems.isEmpty else { return }
 
+            // With the setting off no item leaves the shelf, so there is
+            // nothing to undo and nothing to record.
+            draggedRecorder?.stop()
+            draggedRecorder = Defaults[.autoRemoveShelfItems]
+                ? ShelfMoveDestinationRecorder.forDrag(of: Array(draggedSources.values))
+                : nil
             beginDraggingSession(with: draggingItems, event: event, source: self)
         }
         
@@ -384,9 +394,10 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
                 autoRemove: Defaults[.autoRemoveShelfItems]
             )
             shelfDragLog.debug("drag ended: operation=\(operation.rawValue, privacy: .public) destination=\(String(describing: self.lastDestination), privacy: .public) action=\(String(describing: action), privacy: .public) items=\(self.draggedItems.count, privacy: .public)")
-            ShelfStateViewModel.shared.handleDragEnd(action, for: draggedItems, sources: draggedSources)
+            ShelfStateViewModel.shared.handleDragEnd(action, for: draggedItems, sources: draggedSources, recorder: draggedRecorder)
             draggedItems.removeAll()
             draggedSources.removeAll()
+            draggedRecorder = nil
         }
         
         func ignoreModifierKeys(for session: NSDraggingSession) -> Bool {
