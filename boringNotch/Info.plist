@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationUsageDescription</key>
+	<string>umbar reads the Wi-Fi name to label your network traffic totals. Your location is never used or stored.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>umbar reads the Wi-Fi name to label your network traffic totals. Your location is never used or stored.</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>
