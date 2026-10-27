@@ -10,6 +10,7 @@ import AVFoundation
 import Combine
 import Defaults
 import KeyboardShortcuts
+import os
 import SwiftUI
 import SwiftUIIntrospect
 
@@ -27,6 +28,14 @@ struct ContentView: View {
     @ObservedObject var hudAccessCard = HUDAccessCard.shared
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
+    /// Folds a hover-opened panel once the pointer has left it (AC-1.4 (R1.2)).
+    /// Runs only while the panel is open; see startPointerWatch().
+    @State private var pointerWatch: Task<Void, Never>?
+    @State private var hoverTracker = NotchHoverTracker()
+    /// The closed island's hit area in the window's SwiftUI global space,
+    /// recorded whenever the notch is closed. Live activities and badges
+    /// change it, so it is measured rather than computed.
+    @State private var closedHoverFrame: CGRect = .zero
     @State private var anyDropDebounceTask: Task<Void, Never>?
 
     @State private var gestureProgress: CGFloat = .zero
@@ -44,6 +53,8 @@ struct ContentView: View {
 
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
+
+    private let hoverLog = Logger(subsystem: "umbar", category: "Hover")
 
     private var topCornerRadius: CGFloat {
        ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
@@ -128,6 +139,9 @@ struct ContentView: View {
                 
                 mainLayout
                     .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                        if vm.notchState == .closed { closedHoverFrame = frame }
+                    }
                     .conditionalModifier(true) { view in
                         let openAnimation = Animation.spring(response: 0.42, dampingFraction: 0.8, blendDuration: 0)
                         let closeAnimation = Animation.spring(response: 0.45, dampingFraction: 1.0, blendDuration: 0)
@@ -172,8 +186,10 @@ struct ContentView: View {
                     .onChange(of: vm.notchState) { _, newState in
                         if newState == .open {
                             hudAccessCard.notchDidOpen()
+                            startPointerWatch()
                         } else {
                             hudAccessCard.notchDidClose()
+                            stopPointerWatch()
                         }
                         if newState == .closed && isHovering {
                             withAnimation {
@@ -559,53 +575,119 @@ struct ContentView: View {
     }
 
     private func handleHover(_ hovering: Bool) {
+        // SwiftUI reports exits with the pointer standing still on the
+        // notch (NotchHoverPolicy.swift), so neither event decides anything
+        // on its own: the pending open checks the pointer when it fires, and
+        // an open panel folds only through the pointer watch.
+        hoverLog.debug("onHover \(hovering, privacy: .public) state=\(String(describing: vm.notchState), privacy: .public)")
         if coordinator.firstLaunch { return }
-        hoverTask?.cancel()
-        
+
         if hovering {
+            let wasHovering = isHovering
             withAnimation(animationSpring) {
                 isHovering = true
             }
-            
-            if vm.notchState == .closed && Defaults[.enableHaptics] {
+            guard vm.notchState == .closed else { return }
+
+            if !wasHovering && Defaults[.enableHaptics] {
                 haptics.toggle()
             }
-            
-            guard vm.notchState == .closed,
-                  !coordinator.sneakPeek.show,
+
+            guard !coordinator.sneakPeek.show,
                   Defaults[.openNotchOnHover] else { return }
-            
+
+            hoverTask?.cancel()
             hoverTask = Task {
                 try? await Task.sleep(for: .seconds(Defaults[.minimumHoverDuration]))
                 guard !Task.isCancelled else { return }
-                
+
                 await MainActor.run {
                     guard self.vm.notchState == .closed,
-                          self.isHovering,
-                          !self.coordinator.sneakPeek.show else { return }
-                    
+                          !self.coordinator.sneakPeek.show,
+                          self.pointerIsOnClosedNotch() else { return }
+                    self.hoverLog.debug("open: pointer rested on the closed notch")
                     self.doOpen()
                 }
             }
-        } else {
-            hoverTask = Task {
-                try? await Task.sleep(for: .milliseconds(100))
-                guard !Task.isCancelled else { return }
-                
-                await MainActor.run {
-                    withAnimation(animationSpring) {
-                        self.isHovering = false
-                    }
-                    
-                    // A key panel ignores the pointer leaving (AC-1.4 R1.2
-                    // exception): it closes on Esc, an outside click or the
-                    // shortcut again, through PanelKeyController.
-                    if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose && !self.eyeBreak.isPromptingInPanel && !self.focusTimer.isShowingBanner && self.pointerMayClose {
-                        self.vm.close()
-                    }
-                }
+        } else if vm.notchState == .closed, !pointerIsOnClosedNotch() {
+            // A real exit before the open delay ran out: a pass-over, not a rest.
+            hoverTask?.cancel()
+            withAnimation(animationSpring) {
+                isHovering = false
             }
         }
+    }
+
+    // MARK: - Pointer geometry
+
+    private var notchWindow: NSWindow? {
+        NSApp.windows.first { ($0 as? BoringNotchSkyLightWindow)?.viewModel === vm }
+    }
+
+    private var closedNotchScreenRect: CGRect? {
+        guard let window = notchWindow, !closedHoverFrame.isEmpty else { return nil }
+        return NotchHoverGeometry.screenRect(ofViewFrame: closedHoverFrame, inWindowFrame: window.frame)
+    }
+
+    private func pointerIsOnClosedNotch() -> Bool {
+        guard let rect = closedNotchScreenRect else { return vm.isMouseHovering() }
+        return NotchHoverGeometry.contains(rect, NSEvent.mouseLocation)
+    }
+
+    private func pointerIsOnOpenPanel() -> Bool {
+        guard let window = notchWindow else { return vm.isMouseHovering() }
+        let rect = NotchHoverGeometry.openRect(
+            windowFrame: window.frame,
+            closedRect: closedNotchScreenRect ?? .null
+        )
+        return NotchHoverGeometry.contains(rect, NSEvent.mouseLocation)
+    }
+
+    /// Everything that holds a pointer-exit fold back. The tracker keeps
+    /// asking, so the fold happens once the hold is gone and the pointer is
+    /// still away.
+    private var pointerExitMayClose: Bool {
+        !vm.isBatteryPopoverActive
+            && !SharingStateManager.shared.preventNotchClose
+            && !eyeBreak.isPromptingInPanel
+            && !focusTimer.isShowingBanner
+            // A key panel ignores the pointer leaving (AC-1.4 R1.2
+            // exception): it closes on Esc, an outside click or the
+            // shortcut again, through PanelKeyController.
+            && pointerMayClose
+    }
+
+    /// Samples the pointer while the panel is open and folds it after
+    /// NotchHoverTracker.closeDelay outside the open rect.
+    ///
+    /// Polling instead of tracking-area events is the point of the fix: the
+    /// events are what lie (NotchHoverPolicy.swift). 20 Hz keeps the fold
+    /// within 50 ms of the 500 ms deadline; the loop exists only while the
+    /// panel is open and reads two values per turn.
+    private func startPointerWatch() {
+        pointerWatch?.cancel()
+        hoverTracker.reset()
+        pointerWatch = Task { @MainActor in
+            while !Task.isCancelled, vm.notchState == .open {
+                let inside = pointerIsOnOpenPanel()
+                if inside != isHovering {
+                    withAnimation(animationSpring) { isHovering = inside }
+                }
+                let due = hoverTracker.sample(isInside: inside, at: ProcessInfo.processInfo.systemUptime)
+                if due && pointerExitMayClose {
+                    hoverLog.debug("close: pointer outside the open panel for \(NotchHoverTracker.closeDelay, privacy: .public)s")
+                    vm.close()
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+        }
+    }
+
+    private func stopPointerWatch() {
+        pointerWatch?.cancel()
+        pointerWatch = nil
+        hoverTracker.reset()
     }
 
     // MARK: - Gesture Handling
