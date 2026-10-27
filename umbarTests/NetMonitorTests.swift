@@ -18,7 +18,7 @@ private func snap(_ rx: UInt64, _ tx: UInt64, at time: TimeInterval) -> NetCount
 
 private let posix = Locale(identifier: "en_US_POSIX")
 
-@Suite("NetCounterMath")
+@Suite("NetCounterMath", .timeLimit(.minutes(1)))
 struct NetCounterMathTests {
     @Test func deltaIsTheDifferenceOverTheInterval() throws {
         let delta = try #require(NetCounterMath.delta(from: snap(1_000, 500, at: 10), to: snap(3_000, 900, at: 12)))
@@ -50,7 +50,7 @@ struct NetCounterMathTests {
     }
 }
 
-@Suite("NetRateSmoother")
+@Suite("NetRateSmoother", .timeLimit(.minutes(1)))
 struct NetRateSmootherTests {
     @Test func firstSampleIsTakenAsIs() {
         var smoother = NetRateSmoother()
@@ -85,7 +85,7 @@ struct NetRateSmootherTests {
     }
 }
 
-@Suite("NetRateHistory")
+@Suite("NetRateHistory", .timeLimit(.minutes(1)))
 struct NetRateHistoryTests {
     @Test func keepsOnlyTheLastWindowOfSeconds() {
         var history = NetRateHistory()
@@ -111,7 +111,7 @@ struct NetRateHistoryTests {
     }
 }
 
-@Suite("NetByteFormat")
+@Suite("NetByteFormat", .timeLimit(.minutes(1)))
 struct NetByteFormatTests {
     @Test func ratesUseDecimalUnits() {
         #expect(NetByteFormat.rate(0, locale: posix) == "0 B/s")
@@ -154,7 +154,7 @@ struct NetByteFormatTests {
     }
 }
 
-@Suite("NetUsageLedger")
+@Suite("NetUsageLedger", .timeLimit(.minutes(1)))
 struct NetUsageLedgerTests {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
@@ -248,7 +248,7 @@ struct NetUsageLedgerTests {
     }
 }
 
-@Suite("NetNetworkKey")
+@Suite("NetNetworkKey", .timeLimit(.minutes(1)))
 struct NetNetworkKeyTests {
     @Test func sameSignatureSameKeyRegardlessOfCase() {
         let a = NetNetworkKey.make(.systemSignature("IPv4.Router=192.168.1.1;IPv4.RouterHardwareAddress=AA:BB:CC:DD:EE:FF"), kind: .wifi)
@@ -273,7 +273,7 @@ struct NetNetworkKeyTests {
     }
 }
 
-@Suite("NetUsageFile")
+@Suite("NetUsageFile", .timeLimit(.minutes(1)))
 struct NetUsageFileTests {
     private func temporaryURL() -> URL {
         FileManager.default.temporaryDirectory

@@ -48,7 +48,7 @@ private func prompted() -> EyeBreakEngine {
     return engine
 }
 
-@Suite("EyeBreakEngine")
+@Suite("EyeBreakEngine", .timeLimit(.minutes(1)))
 struct EyeBreakEngineTests {
     @Test func promptsWhenTwentyMinutesOfUseAreReached() {          // AC-14.1
         var engine = freshEngine()

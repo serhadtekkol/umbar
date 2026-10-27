@@ -108,7 +108,7 @@ private func isUnsupportedType<T>(_ result: Result<T, Decoder.Rejection>) -> Boo
     return false
 }
 
-@Suite("ArtworkImageDecoder")
+@Suite("ArtworkImageDecoder", .timeLimit(.minutes(1)))
 struct ArtworkImageDecoderTests {
     @Test(arguments: [UTType.png, .jpeg, .heic])
     func allowedTypesAreAcceptedWithTheirBytesUnchanged(_ type: UTType) async throws {

@@ -29,7 +29,7 @@ private func diskUsage(_ dir: URL) -> Int {
     return urls.reduce(0) { $0 + ((try? $1.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) }
 }
 
-@Suite("ArtworkDiskCache")
+@Suite("ArtworkDiskCache", .timeLimit(.minutes(1)))
 struct ArtworkDiskCacheTests {
     private let mb = 1024 * 1024
 

@@ -11,7 +11,7 @@
 import Foundation
 import Testing
 
-@Suite("TemporaryFileStorageService.createZip argument handling")
+@Suite("TemporaryFileStorageService.createZip argument handling", .timeLimit(.minutes(1)))
 struct ShelfZipArgumentTests {
     /// Names of the archive's entries, via `zipinfo -1`.
     private static func entries(of archive: URL) throws -> [String] {

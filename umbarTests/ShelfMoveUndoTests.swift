@@ -112,7 +112,7 @@ private func realPath(_ url: URL) -> String { url.resolvingSymlinksInPath().path
 
 // MARK: - Names
 
-@Suite("ShelfMoveDestinationNames")
+@Suite("ShelfMoveDestinationNames", .timeLimit(.minutes(1)))
 struct ShelfMoveDestinationNamesTests {
     typealias Names = ShelfMoveDestinationNames
 
@@ -144,7 +144,7 @@ struct ShelfMoveDestinationNamesTests {
 
 // MARK: - Which volumes are watched
 
-@Suite("ShelfMoveDestinationRecorder.watchPaths")
+@Suite("ShelfMoveDestinationRecorder.watchPaths", .timeLimit(.minutes(1)))
 struct ShelfMoveWatchPathsTests {
     static let volumes = [
         ShelfVolume(path: "/", device: 1, isReadOnly: false),
@@ -176,7 +176,7 @@ struct ShelfMoveWatchPathsTests {
 // MARK: - Locating the destination
 
 @MainActor
-@Suite("ShelfMoveDestinationLocator")
+@Suite("ShelfMoveDestinationLocator", .timeLimit(.minutes(1)))
 struct ShelfMoveDestinationLocatorTests {
     /// Same volume: Finder renames, the bookmark follows, the inode is the
     /// dragged one.
@@ -311,6 +311,19 @@ struct ShelfMoveDestinationLocatorTests {
     }
 }
 
+extension Task where Success == Void, Failure == Never {
+    /// Awaits the task, cancelling it if the waiting test is cancelled.
+    ///
+    /// A plain `await task.value` ignores the waiter's cancellation, so when
+    /// the suite's time limit cancels a test stuck on an expiry that never
+    /// comes, the wait goes on and the run hangs instead of failing. Passing
+    /// the cancellation on wakes the task's clock sleep, the task returns,
+    /// and the test's expectations report what went wrong.
+    var cancellableValue: Void {
+        get async { await withTaskCancellationHandler { await value } onCancel: { cancel() } }
+    }
+}
+
 final class Counter: @unchecked Sendable {
     private let lock = NSLock()
     private var n = 0
@@ -321,7 +334,7 @@ final class Counter: @unchecked Sendable {
 
 // MARK: - Putting the file back (same volume)
 
-@Suite("ShelfMoveUndoer on one volume")
+@Suite("ShelfMoveUndoer on one volume", .timeLimit(.minutes(1)))
 struct ShelfMoveUndoerTests {
     /// Moves `name` from the scratch root into "Yedek", as Finder would on
     /// the same disk, and returns (original, destination, identity).
@@ -449,7 +462,7 @@ struct ShelfMoveUndoerTests {
 // MARK: - The ghost and its window
 
 @MainActor
-@Suite("ShelfMoveUndoModel")
+@Suite("ShelfMoveUndoModel", .timeLimit(.minutes(1)))
 struct ShelfMoveUndoModelTests {
     @MainActor
     struct Fixture {
@@ -484,7 +497,7 @@ struct ShelfMoveUndoModelTests {
 
         func record(_ result: ShelfMoveDestination? = nil, index: Int = 3) async {
             let found = result ?? .found(destination, identity: identity)
-            await model.recordMove(of: item, at: index, source: source) { found }.value
+            await model.recordMove(of: item, at: index, source: source) { found }.cancellableValue
         }
     }
 
@@ -515,7 +528,7 @@ struct ShelfMoveUndoModelTests {
         #expect(f.model.ghost(f.item.id) != nil)
 
         f.clock.advance(by: .milliseconds(1))
-        await expiry.value
+        await expiry.cancellableValue
         #expect(f.model.ghosts.isEmpty)
         #expect(f.restored.isEmpty, "expiry does not bring the item back")
         #expect(FileManager.default.fileExists(atPath: f.destination.path), "expiry does not touch the file")
@@ -590,7 +603,7 @@ struct ShelfMoveUndoModelTests {
 
         let expiry = try #require(f.model.expiryTask(for: f.item.id))
         f.clock.advance(by: .seconds(8))
-        await expiry.value
+        await expiry.cancellableValue
         #expect(f.model.ghosts.isEmpty)
     }
 
@@ -612,7 +625,7 @@ struct ShelfMoveUndoModelTests {
         await Task.yield()
         #expect(f.model.ghost(f.item.id) != nil)
         f.clock.advance(by: .milliseconds(1))
-        await expiry.value
+        await expiry.cancellableValue
         #expect(f.model.ghosts.isEmpty)
     }
 
@@ -643,7 +656,7 @@ struct ShelfMoveUndoModelTests {
 /// file-promise leftovers), never a file the user put on the shelf. A new
 /// call anywhere, or another call in those files, fails this test and needs
 /// a decision; it is not a matter of updating the numbers.
-@Suite("Deletion rule")
+@Suite("Deletion rule", .timeLimit(.minutes(1)))
 struct ShelfDeletionRuleTests {
     static let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
 

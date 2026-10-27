@@ -26,7 +26,7 @@ private enum Volumes {
 }
 
 @MainActor
-@Suite("ShelfDragOut on real volumes", .enabled(if: Volumes.readWrite != nil && Volumes.readOnly != nil, "run scripts/shelf-move-check.sh"))
+@Suite("ShelfDragOut on real volumes", .enabled(if: Volumes.readWrite != nil && Volumes.readOnly != nil, "run scripts/shelf-move-check.sh"), .timeLimit(.minutes(1)))
 struct ShelfDragOutVolumeTests {
     // AC-3.20: a file on a read-only image is not deletable, so Finder is
     // offered a copy.

@@ -15,7 +15,7 @@ private let epoch = Date(timeIntervalSince1970: 1000)
 private func at(_ seconds: TimeInterval) -> Date { epoch.addingTimeInterval(seconds) }
 private func arbiter() -> PlayerArbiter { PlayerArbiter(priority: [music, spotify]) }
 
-@Suite("PlayerArbiter")
+@Suite("PlayerArbiter", .timeLimit(.minutes(1)))
 struct PlayerArbiterTests {
     @Test func nothingReportedSelectsNothing() {
         var a = arbiter()

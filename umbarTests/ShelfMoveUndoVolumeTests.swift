@@ -19,7 +19,7 @@ import Testing
 
 private let otherVolume = ProcessInfo.processInfo.environment["UMBAR_SHELF_RW_VOLUME"].map { URL(fileURLWithPath: $0, isDirectory: true) }
 
-@Suite("ShelfMoveUndo across volumes", .enabled(if: otherVolume != nil, "run scripts/shelf-move-check.sh"))
+@Suite("ShelfMoveUndo across volumes", .enabled(if: otherVolume != nil, "run scripts/shelf-move-check.sh"), .timeLimit(.minutes(1)))
 struct ShelfMoveUndoVolumeTests {
     struct Moved {
         let original: URL

@@ -12,7 +12,7 @@ import Testing
 import UniformTypeIdentifiers
 
 @MainActor
-@Suite("ShelfDropService")
+@Suite("ShelfDropService", .timeLimit(.minutes(1)))
 struct ShelfDropServiceTests {
     /// A provider that offers only raw bytes of one type, like a drag from an
     /// app that publishes no plain-text or file flavor.

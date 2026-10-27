@@ -16,7 +16,7 @@ private func at(_ s: TimeInterval) -> Date { epoch.addingTimeInterval(s) }
 
 // MARK: - Partial download names
 
-@Suite("PartialDownloadName")
+@Suite("PartialDownloadName", .timeLimit(.minutes(1)))
 struct PartialDownloadNameTests {
     @Test func safariBundle() {
         let p = PartialDownloadName(fileName: "Report Q3.pdf.download")
@@ -59,7 +59,7 @@ struct PartialDownloadNameTests {
 
 // MARK: - Safari Info.plist
 
-@Suite("SafariDownloadProgress")
+@Suite("SafariDownloadProgress", .timeLimit(.minutes(1)))
 struct SafariDownloadProgressTests {
     @Test func knownTotal() throws {
         let p = try #require(SafariDownloadProgress.parse([
@@ -125,7 +125,7 @@ struct SafariDownloadProgressTests {
 
 // MARK: - Transfer rate
 
-@Suite("TransferRateEstimator")
+@Suite("TransferRateEstimator", .timeLimit(.minutes(1)))
 struct TransferRateEstimatorTests {
     @Test func needsTwoSamplesHalfASecondApart() {
         var r = TransferRateEstimator()
@@ -180,7 +180,7 @@ struct TransferRateEstimatorTests {
 
 // MARK: - Listing diff
 
-@Suite("DownloadsListingChange")
+@Suite("DownloadsListingChange", .timeLimit(.minutes(1)))
 struct DownloadsListingChangeTests {
     @Test func listingSplitsPartialsAndIgnoresHidden() {
         let l = DownloadsListing(entryNames: ["a.zip.download", "b.pdf", ".DS_Store", ".com.google.Chrome.x"])
@@ -248,7 +248,7 @@ struct DownloadsListingChangeTests {
 
 // MARK: - Quarantine
 
-@Suite("QuarantineRecord")
+@Suite("QuarantineRecord", .timeLimit(.minutes(1)))
 struct QuarantineRecordTests {
     @Test func airDropBySharingd() throws {
         let r = try #require(QuarantineRecord.parse("0082;6720f1a0;sharingd;8F7E6D5C-0000-4000-8000-000000000001"))
@@ -298,7 +298,7 @@ struct QuarantineRecordTests {
 
 // MARK: - Power source
 
-@Suite("PowerSourceParser")
+@Suite("PowerSourceParser", .timeLimit(.minutes(1)))
 struct PowerSourceParserTests {
     /// The keys and value types IOPSGetPowerSourceDescription returns for an
     /// Apple laptop battery.
@@ -366,7 +366,7 @@ struct PowerSourceParserTests {
 
 // MARK: - Time Machine
 
-@Suite("TimeMachinePlistParser")
+@Suite("TimeMachinePlistParser", .timeLimit(.minutes(1)))
 struct TimeMachinePlistParserTests {
     @Test func notConfigured() {
         // What both test Macs have on macOS 27.0.1.
@@ -406,7 +406,7 @@ struct TimeMachinePlistParserTests {
 
 // MARK: - Ranking
 
-@Suite("LiveActivityRanking")
+@Suite("LiveActivityRanking", .timeLimit(.minutes(1)))
 struct LiveActivityRankingTests {
     private func item(
         _ id: String, _ kind: LiveActivityKind, _ phase: LiveActivity.Phase = .running,

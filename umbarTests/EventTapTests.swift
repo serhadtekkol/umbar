@@ -9,7 +9,7 @@
 import CoreGraphics
 import Testing
 
-@Suite("EventTap")
+@Suite("EventTap", .timeLimit(.minutes(1)))
 struct EventTapTests {
     @Test func passThroughReturnsTheSameEventWithoutRetainingIt() throws {
         let event = try #require(CGEvent(source: nil))

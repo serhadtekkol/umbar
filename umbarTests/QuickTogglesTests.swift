@@ -102,7 +102,7 @@ private struct SomeError: Error {}
 
 // MARK: - Policy
 
-@Suite("QuickTogglesPolicy")
+@Suite("QuickTogglesPolicy", .timeLimit(.minutes(1)))
 struct QuickTogglesPolicyTests {
     @Test func wifiOnAndOffToggle() {
         #expect(QuickTogglesPolicy.wifi(power: .on, busy: false, error: nil) == QuickTile(state: .on, action: .toggle))
@@ -179,7 +179,7 @@ struct QuickTogglesPolicyTests {
 
 // MARK: - Parsing and ordering
 
-@Suite("QuickToggles parsing")
+@Suite("QuickToggles parsing", .timeLimit(.minutes(1)))
 struct QuickTogglesParsingTests {
     @Test func addressesFromBothSourcesMatch() {
         #expect(QuickBluetoothAddress.normalize("aa-bb-cc-01-02-03") == "AABBCC010203")
@@ -241,7 +241,7 @@ struct QuickTogglesParsingTests {
 
 // MARK: - Store
 
-@Suite("QuickTogglesStore")
+@Suite("QuickTogglesStore", .timeLimit(.minutes(1)))
 @MainActor
 struct QuickTogglesStoreTests {
     private func makeStore(_ backend: FakeBackend, shortcut: String = "DND") -> QuickTogglesStore {

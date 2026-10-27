@@ -11,7 +11,7 @@ import Testing
 
 private func bytes(_ string: String) -> Data { Data(string.utf8) }
 
-@Suite("AdapterLineBuffer")
+@Suite("AdapterLineBuffer", .timeLimit(.minutes(1)))
 struct AdapterLineBufferTests {
     @Test func defaultLimitIsEightMegabytes() {
         #expect(AdapterLineBuffer.defaultLimit == 8 * 1024 * 1024)

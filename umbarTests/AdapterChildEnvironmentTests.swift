@@ -20,7 +20,7 @@ private func deniedKeys(in environment: [String: String]) -> [String] {
     environment.keys.filter { key in deniedPrefixes.contains { key.hasPrefix($0) } }.sorted()
 }
 
-@Suite("AdapterChildEnvironment")
+@Suite("AdapterChildEnvironment", .timeLimit(.minutes(1)))
 struct AdapterChildEnvironmentTests {
     @Test func makeReturnsExactlyTheAllowlistWithTheGivenValues() {
         let env = AdapterChildEnvironment.make(

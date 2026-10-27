@@ -29,7 +29,7 @@ private func started() -> Supervisor {
     return supervisor
 }
 
-@Suite("NowPlayingSupervisor")
+@Suite("NowPlayingSupervisor", .timeLimit(.minutes(1)))
 struct NowPlayingSupervisorTests {
     @Test func unavailableAdapterFallsBackAndNeverRetries() {
         var s = Supervisor()

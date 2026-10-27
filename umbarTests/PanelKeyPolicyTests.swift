@@ -8,7 +8,7 @@
 
 import Testing
 
-@Suite("PanelKeyPolicy")
+@Suite("PanelKeyPolicy", .timeLimit(.minutes(1)))
 struct PanelKeyPolicyTests {
     @Test(arguments: [PanelOpenSource.shortcut, .menu])
     func keyboardOpeningsTakeTheKeyboard(_ source: PanelOpenSource) {

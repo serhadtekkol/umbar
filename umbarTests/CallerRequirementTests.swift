@@ -11,7 +11,7 @@ import Foundation
 import Security
 import Testing
 
-@Suite("CallerRequirement")
+@Suite("CallerRequirement", .timeLimit(.minutes(1)))
 struct CallerRequirementTests {
     private static let cdhash = Data((0..<20).map(UInt8.init))
     private static let cdhashHex = "000102030405060708090a0b0c0d0e0f10111213"

@@ -8,7 +8,7 @@
 import Foundation
 import Testing
 
-@Suite("AppIdentity")
+@Suite("AppIdentity", .timeLimit(.minutes(1)))
 struct AppIdentityTests {
     @Test func helperServiceNameIsHostIDPlusXPCHelper() {
         #expect(AppIdentity.helperServiceName(hostBundleID: "com.serhadbahadir.umbar")

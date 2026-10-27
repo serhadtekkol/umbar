@@ -16,7 +16,7 @@ import CryptoKit
 import Foundation
 import Testing
 
-@Suite("ShelfDragOutPolicy.operationMask")
+@Suite("ShelfDragOutPolicy.operationMask", .timeLimit(.minutes(1)))
 struct ShelfDragOutMaskTests {
     typealias Policy = ShelfDragOutPolicy
 
@@ -62,7 +62,7 @@ struct ShelfDragOutMaskTests {
     }
 }
 
-@Suite("ShelfDragOutPolicy.endAction")
+@Suite("ShelfDragOutPolicy.endAction", .timeLimit(.minutes(1)))
 struct ShelfDragOutEndActionTests {
     typealias Policy = ShelfDragOutPolicy
 
@@ -101,7 +101,7 @@ struct ShelfDragOutEndActionTests {
     }
 }
 
-@Suite("ShelfDragOutPolicy.destination")
+@Suite("ShelfDragOutPolicy.destination", .timeLimit(.minutes(1)))
 struct ShelfDragDestinationTests {
     typealias Policy = ShelfDragOutPolicy
     static let ownPID: pid_t = 4242
@@ -165,7 +165,7 @@ struct ShelfDragDestinationTests {
     }
 }
 
-@Suite("ShelfFileIdentity")
+@Suite("ShelfFileIdentity", .timeLimit(.minutes(1)))
 struct ShelfFileIdentityTests {
     @Test func renameCopyAndRecreate() throws {
         let dir = try ScratchDir()
@@ -210,7 +210,7 @@ final class ScriptedProbe: @unchecked Sendable {
 }
 
 @MainActor
-@Suite("ShelfMoveOutcomeWatcher")
+@Suite("ShelfMoveOutcomeWatcher", .timeLimit(.minutes(1)))
 struct ShelfMoveOutcomeWatcherTests {
     nonisolated static let original = ShelfFileIdentity(device: 1, inode: 7)
     static let noSleep: ShelfMoveOutcomeWatcher.Sleep = { _ in }

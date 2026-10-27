@@ -13,7 +13,7 @@ import Testing
 private let epoch = Date(timeIntervalSince1970: 1_000_000)
 private func at(_ seconds: TimeInterval) -> Date { epoch.addingTimeInterval(seconds) }
 
-@Suite("CaffeinatePolicy")
+@Suite("CaffeinatePolicy", .timeLimit(.minutes(1)))
 struct CaffeinatePolicyTests {
     @Test func durationsMatchTheOffer() {
         #expect(CaffeinateDuration.indefinite.interval == nil)

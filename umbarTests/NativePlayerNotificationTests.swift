@@ -29,7 +29,7 @@ private func actionsAfterPlayingFromMusic(isRunning: (String) -> Bool) -> [NowPl
     return supervisor.tick(now: epoch.addingTimeInterval(20))
 }
 
-@Suite("NativePlayerNotification")
+@Suite("NativePlayerNotification", .timeLimit(.minutes(1)))
 struct NativePlayerNotificationTests {
     @Test func playingFromAPlayerThatIsNotRunningIsIgnored() {
         #expect(!NativePlayerNotification.isTrusted(bundleID: music, isPlaying: true, isRunning: nothingRuns))

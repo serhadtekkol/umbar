@@ -13,7 +13,7 @@ private let epoch = Date(timeIntervalSince1970: 2_000_000)
 private func at(_ seconds: TimeInterval) -> Date { epoch.addingTimeInterval(seconds) }
 private let min = 60.0
 
-@Suite("FocusTimerEngine")
+@Suite("FocusTimerEngine", .timeLimit(.minutes(1)))
 struct FocusTimerEngineTests {
     private func started(_ preset: FocusPreset = .classic) -> FocusTimerEngine {
         var e = FocusTimerEngine()

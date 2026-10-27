@@ -8,7 +8,7 @@
 import Foundation
 import Testing
 
-@Suite("ArtworkHostPolicy")
+@Suite("ArtworkHostPolicy", .timeLimit(.minutes(1)))
 struct ArtworkHostPolicyTests {
     @Test(arguments: [
         "https://i.scdn.co/image/ab67616d0000b273",

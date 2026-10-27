@@ -41,7 +41,7 @@ private final class FakePasteboard: PasteboardSource {
 }
 
 @MainActor
-@Suite("ClipboardMonitor")
+@Suite("ClipboardMonitor", .timeLimit(.minutes(1)))
 struct ClipboardMonitorTests {
     @Test func sensitivityMarkers() {
         #expect(ClipboardMonitor.sensitivityMarker(in: [.string, .rtf]) == nil)

@@ -8,7 +8,7 @@
 
 import Testing
 
-@Suite("HUDAccessCardPolicy")
+@Suite("HUDAccessCardPolicy", .timeLimit(.minutes(1)))
 struct HUDAccessCardPolicyTests {
     @Test func offeredOnceTheHUDIsWantedButBlocked() {
         #expect(HUDAccessCardPolicy.shouldOffer(hudOn: true, authorized: false, alreadyShown: false, onboardingDone: true))

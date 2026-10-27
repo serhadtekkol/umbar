@@ -9,7 +9,7 @@
 import Foundation
 import Testing
 
-@Suite("DefaultsMigration")
+@Suite("DefaultsMigration", .timeLimit(.minutes(1)))
 struct DefaultsMigrationTests {
     private let version = DefaultsMigration.versionKey
 
