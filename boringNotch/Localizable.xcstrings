@@ -8422,13 +8422,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passwords and items apps mark as private are never saved."
+            "value" : "Items apps mark as private and copies from known password managers are not saved."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Parolalar ve uygulamaların gizli olarak işaretlediği öğeler hiç kaydedilmez."
+            "value" : "Uygulamaların gizli olarak işaretlediği öğeler ve bilinen parola yöneticilerinden yapılan kopyalar kaydedilmez."
           }
         }
       }

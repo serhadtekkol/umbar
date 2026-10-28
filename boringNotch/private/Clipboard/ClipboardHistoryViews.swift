@@ -178,7 +178,7 @@ struct ClipboardHistoryStrip: View {
             Text(String(localized: "clipboard.empty.title", defaultValue: "What you copy shows up here"))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(PageTokens.textPrimary)
-            Text(String(localized: "clipboard.empty.detail", defaultValue: "Passwords and items apps mark as private are never saved."))
+            Text(String(localized: "clipboard.empty.detail", defaultValue: "Items apps mark as private and copies from known password managers are not saved."))
                 .font(.system(size: 11))
                 .foregroundStyle(PageTokens.textSecondary)
         }
