@@ -30,7 +30,7 @@ enum MotionFrameRenderer {
         guard let dir = UserDefaults.standard.string(forKey: "UmbarRenderMotion") else { return false }
         let out = URL(fileURLWithPath: dir, isDirectory: true)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-        for notch in [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32)] {
+        for notch in [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)] {
             renderTabSwitches(notch: notch, out: out)
             renderIsland(notch: notch, out: out)
         }

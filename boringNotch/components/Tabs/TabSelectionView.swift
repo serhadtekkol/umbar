@@ -40,23 +40,15 @@ struct TabSelectionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        // No gap between tabs: the icon-only tabs already carry their own
-        // 7 pt inset, and the room goes to the selected tab's padding.
-        HStack(spacing: 0) {
-            ForEach(tabs) { tab in
-                TabButton(tab: tab, selected: tab.view == shownView) {
-                    select(tab.view)
-                }
-            }
+        // A wide notch (a scaled "More Space" display: 254 pt on the 13"
+        // Air) leaves too little room left of it for a named selected tab;
+        // then the tabs tighten, and only as a last resort the selected tab
+        // drops its label and keeps the capsule.
+        ViewThatFits(in: .horizontal) {
+            bar(showsLabel: true, compact: false)
+            bar(showsLabel: true, compact: true)
+            bar(showsLabel: false, compact: true)
         }
-        // Any change of the selected tab moves the capsule, widens the new
-        // tab and slides the neighbours on one spring, including the ⌘1…⌘5
-        // shortcuts, which set the page without an animation of their own.
-        .animation(UmbarMotion.tab(reduce: reduceMotion), value: shownView)
-        .padding(.vertical, Self.inset)
-        // Never squeezed by the header: a compressed bar ate the selected
-        // tab's padding on narrow notch halves.
-        .fixedSize()
         // System focus ring (design-language §3.1 `island.focus`), not a drawn one.
         .focusable()
         .focused($tabGroupFocused)
@@ -73,6 +65,25 @@ struct TabSelectionView: View {
             guard (note.object as? BoringViewModel) === vm else { return }
             tabGroupFocused = true
         }
+    }
+
+    private func bar(showsLabel: Bool, compact: Bool) -> some View {
+        // No gap between tabs: the icon-only tabs already carry their own
+        // 7 pt inset, and the room goes to the selected tab's padding.
+        HStack(spacing: 0) {
+            ForEach(tabs) { tab in
+                TabButton(tab: tab, selected: tab.view == shownView, showsLabel: showsLabel, compact: compact) {
+                    select(tab.view)
+                }
+            }
+        }
+        // Any change of the selected tab moves the capsule, widens the new
+        // tab and slides the neighbours on one spring, including the ⌘1…⌘5
+        // shortcuts, which set the page without an animation of their own.
+        .animation(UmbarMotion.tab(reduce: reduceMotion), value: shownView)
+        .padding(.vertical, Self.inset)
+        // Never squeezed: a compressed bar ate the selected tab's padding.
+        .fixedSize()
     }
 
     private func select(_ view: NotchViews) {

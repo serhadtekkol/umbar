@@ -14,6 +14,11 @@ import SwiftUI
 struct TabButton: View {
     let tab: PanelTab
     let selected: Bool
+    /// False when the bar has no room for the selected tab's name (wide
+    /// notch); the name stays in the tooltip and for VoiceOver.
+    var showsLabel = true
+    /// Tighter insets for a narrow bar; the tab stays 28 pt tall.
+    var compact = false
     let onClick: () -> Void
 
     /// Every tab is this tall, selected or not, so the capsule never changes
@@ -31,7 +36,7 @@ struct TabButton: View {
             HStack(spacing: 5) {
                 icon
                     .frame(width: 14, height: 14)
-                if selected {
+                if selected && showsLabel {
                     Text(tab.label)
                         .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
@@ -39,11 +44,11 @@ struct TabButton: View {
                         .transition(labelTransition)
                 }
             }
-            .padding(.horizontal, selected ? Self.labelledPadding : Self.iconOnlyPadding)
+            .padding(.horizontal, selected && showsLabel ? (compact ? 8 : Self.labelledPadding) : (compact ? 5 : Self.iconOnlyPadding))
             // A fixed height (not minHeight): the capsule wraps exactly the
             // glyph + label + padding of whichever tab it sits on.
             .frame(height: Self.height)
-            .frame(minWidth: Self.height)
+            .frame(minWidth: compact ? 24 : Self.height)
             // The capsule is the tab's own background, not a shared one that
             // travels: it widens with the label on the same layout spring, so
             // label and capsule never come apart mid-switch.
