@@ -42,6 +42,8 @@ enum LiveActivityText {
             return String(localized: "liveActivity.timeMachine.title", defaultValue: "Time Machine")
         case .charging:
             return String(localized: "liveActivity.charging.title", defaultValue: "Charging")
+        case .bluetooth:
+            return a.title
         }
     }
 
@@ -72,6 +74,11 @@ enum LiveActivityText {
             }
             let duration = Self.duration.string(from: TimeInterval(minutes * 60)) ?? ""
             return String(localized: "liveActivity.charging.timeToFull", defaultValue: "\(percent) · full in \(duration)")
+        case (.bluetooth, _):
+            guard let battery = a.battery else {
+                return String(localized: "liveActivity.bluetooth.connected", defaultValue: "Connected")
+            }
+            return BTBatteryText.levels(battery, includeCase: false)
         }
     }
 
@@ -82,6 +89,7 @@ enum LiveActivityText {
         case (.airDrop, _): return "dot.radiowaves.left.and.right"
         case (.timeMachine, _): return "clock.arrow.circlepath"
         case (.charging, _): return "bolt.fill"
+        case (.bluetooth, _): return BTBatteryText.symbol(a.title, battery: a.battery)
         }
     }
 

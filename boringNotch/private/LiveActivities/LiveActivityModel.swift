@@ -15,6 +15,8 @@ enum LiveActivityKind: String, CaseIterable, Sendable {
     case airDrop
     case timeMachine
     case charging
+    /// F24: a Bluetooth device just connected (name and battery, ~3 s).
+    case bluetooth
 }
 
 /// One thing that is happening (or just happened) worth a glance.
@@ -46,6 +48,8 @@ struct LiveActivity: Identifiable, Equatable, Sendable {
     var stripUntil: Date?
     /// When it leaves the panel row too. Nil = for as long as it runs.
     var expiresAt: Date?
+    /// Bluetooth only: the levels the device reported on connect.
+    var battery: QuickBattery? = nil
 }
 
 enum LiveActivityRanking {
@@ -64,6 +68,9 @@ enum LiveActivityRanking {
     /// Lower sorts first.
     static func priority(_ a: LiveActivity) -> Int {
         switch (a.kind, a.phase) {
+        // A connect glance lasts 3 s and answers "did it connect, how full
+        // is it" right as the user puts AirPods in; a download can wait.
+        case (.bluetooth, _): return -1
         case (.download, .running): return 0
         case (.airDrop, _): return 1
         case (.download, .finished): return 2

@@ -15,11 +15,23 @@ struct ToolsPage: View {
     @Default(.caffeinateEnabled) private var caffeinateOn
     @Default(.focusTimerEnabled) private var focusOn
     @Default(.eyeBreakEnabled) private var eyeBreakOn
+    @Default(.btBatteryEnabled) private var btBatteryOn
+    #if DEBUG
+    /// The frame renderer's Bluetooth devices; nil reads the monitor.
+    private var btFixture: [BTBatteryDevice]?
+
+    init(btFixture: [BTBatteryDevice]? = nil) { self.btFixture = btFixture }
+    #endif
 
     var body: some View {
         VStack(alignment: .leading, spacing: PageTokens.m) {
-            if togglesOn {
-                QuickTogglesRow()
+            if togglesOn || btBatteryOn {
+                // F24 batteries sit with the Bluetooth tile they belong to,
+                // tighter than the gap to the tool tiles below.
+                VStack(alignment: .leading, spacing: 6) {
+                    if togglesOn { QuickTogglesRow() }
+                    if btBatteryOn { btBatteryStrip }
+                }
             }
             HStack(alignment: .top, spacing: PageTokens.s) {
                 if caffeinateOn { CaffeinateTile() }
@@ -28,6 +40,17 @@ struct ToolsPage: View {
             }
             .frame(maxHeight: .infinity)
         }
+    }
+}
+
+extension ToolsPage {
+    @ViewBuilder
+    private var btBatteryStrip: some View {
+        #if DEBUG
+        if let btFixture { BTBatteryStrip(fixture: btFixture) } else { BTBatteryStrip() }
+        #else
+        BTBatteryStrip()
+        #endif
     }
 }
 

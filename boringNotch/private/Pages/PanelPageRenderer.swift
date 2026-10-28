@@ -50,6 +50,8 @@ enum PanelPageRenderer {
                    to: out.appendingPathComponent("page-home-noaccess-\(tag).png"))
             render(nowPage(agenda: .off, live: []), selected: .home, notch: notch,
                    to: out.appendingPathComponent("page-home-musiconly-\(tag).png"))
+            render(ToolsPage(btFixture: btBatteryFixture()), selected: .tools, notch: notch,
+                   to: out.appendingPathComponent("page-tools-btbattery-\(tag).png"))
             for (state, ghosts) in undoChipFixtures() {
                 render(ShelfView(undoChipFixture: ghosts), selected: .shelf, notch: notch,
                        to: out.appendingPathComponent("page-shelf-undo-\(state)-\(tag).png"))
@@ -281,6 +283,19 @@ enum PanelPageRenderer {
                          fraction: nil, bytesSoFar: nil, bytesPerSecond: nil,
                          percent: 64, minutesRemaining: 48, fileURL: nil, startedAt: Date(),
                          stripUntil: nil, expiresAt: nil),
+        ]
+    }
+
+    /// F24: AirPods with per-ear and case levels, a low Magic Mouse, a
+    /// keyboard, and a long name, so truncation and the low state show.
+    static func btBatteryFixture() -> [BTBatteryDevice] {
+        [
+            BTBatteryDevice(id: "A1", name: "Serhad Bahadır (AirPods Pro)", kind: .headphones,
+                            battery: QuickBattery(left: 80, right: 75, caseLevel: 60)),
+            BTBatteryDevice(id: "B2", name: "Magic Mouse", kind: .mouse, battery: QuickBattery(single: 12)),
+            BTBatteryDevice(id: "C3", name: "Magic Keyboard with Touch ID and Numeric Keypad", kind: .keyboard,
+                            battery: QuickBattery(single: 64)),
+            BTBatteryDevice(id: "D4", name: "Magic Trackpad", kind: .trackpad, battery: QuickBattery(single: 100)),
         ]
     }
 
