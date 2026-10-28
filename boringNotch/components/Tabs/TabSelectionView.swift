@@ -11,7 +11,6 @@ import SwiftUI
 struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @EnvironmentObject var vm: BoringViewModel
-    @Namespace var animation
     /// Keyboard focus on the tab group. A keyboard opening (shortcut, menu)
     /// puts it here so the selected tab is the first thing the keyboard and
     /// VoiceOver reach (AC-1.18, AC-1.21). ←/→ move between tabs (AC-1.19).
@@ -43,7 +42,7 @@ struct TabSelectionView: View {
     var body: some View {
         HStack(spacing: 2) {
             ForEach(tabs) { tab in
-                TabButton(tab: tab, selected: tab.view == shownView, capsuleNamespace: animation) {
+                TabButton(tab: tab, selected: tab.view == shownView) {
                     select(tab.view)
                 }
             }

@@ -10,13 +10,10 @@ import SwiftUI
 /// One page tab. Unselected: icon only, the label in the tooltip and for
 /// VoiceOver. Selected: icon plus label on a `raisedStrong` capsule, so the
 /// page you are on is named in words, not only by a glyph (Can's review).
-/// The capsule is drawn inside the tab's own frame and shared across tabs
-/// with matchedGeometryEffect, so it slides and resizes with the label.
+/// The capsule is the tab's own background, so it resizes with the label.
 struct TabButton: View {
     let tab: PanelTab
     let selected: Bool
-    /// The tab bar's namespace: one capsule travels between the tabs.
-    let capsuleNamespace: Namespace.ID
     let onClick: () -> Void
 
     /// Every tab is this tall, selected or not, so the capsule never changes
@@ -47,18 +44,17 @@ struct TabButton: View {
             // glyph + label + padding of whichever tab it sits on.
             .frame(height: Self.height)
             .frame(minWidth: Self.height)
-            // The label is clipped to its tab's own (animating) frame, so a
-            // label arriving at its final place never draws over the
-            // neighbour that is still sliding out of the way. The capsule
-            // below is outside the clip: it travels from the old tab.
-            .clipShape(Capsule())
+            // The capsule is the tab's own background, not a shared one that
+            // travels: it widens with the label on the same layout spring, so
+            // label and capsule never come apart mid-switch.
             .background {
-                if selected {
-                    Capsule()
-                        .fill(PageTokens.raisedStrong)
-                        .matchedGeometryEffect(id: "selectedTab", in: capsuleNamespace)
-                }
+                Capsule()
+                    .fill(PageTokens.raisedStrong)
+                    .opacity(selected ? 1 : 0)
             }
+            // Label and capsule are clipped together to the widening tab, so
+            // the label never draws past its own capsule.
+            .clipShape(Capsule())
             .foregroundStyle(selected ? PageTokens.textPrimary : PageTokens.textSecondary)
             .contentShape(Capsule())
         }
@@ -73,8 +69,8 @@ struct TabButton: View {
     private var labelTransition: AnyTransition {
         if reduceMotion { return .opacity }
         return .asymmetric(
-            insertion: .opacity.combined(with: .scale(scale: 0.85, anchor: .leading)),
-            removal: .opacity.animation(.easeIn(duration: 0.08))
+            insertion: .opacity.animation(.easeOut(duration: 0.16).delay(0.06)),
+            removal: .opacity.animation(.easeIn(duration: 0.06))
         )
     }
 
