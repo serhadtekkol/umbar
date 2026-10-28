@@ -34,6 +34,16 @@ enum PanelPageRenderer {
                 render(fixture, selected: .calendar, notch: notch,
                        to: out.appendingPathComponent("page-calendar-\(name)-\(tag).png"))
             }
+            // F22 states: pressure + heat warnings with a long app name, the
+            // first half second after opening, and traffic turned off.
+            render(NetworkPageStack { NetworkPageContent(snapshot: fixtureNetwork(), onReset: {}) }
+                       system: { SysStatsRow(snapshot: fixtureSystemStressed()) },
+                   selected: .network, notch: notch, to: out.appendingPathComponent("page-network-stressed-\(tag).png"))
+            render(NetworkPageStack { NetworkPageContent(snapshot: fixtureNetwork(), onReset: {}) }
+                       system: { SysStatsRow(snapshot: SysSnapshot(cpu: nil, memory: nil, thermal: .nominal, topApps: [])) },
+                   selected: .network, notch: notch, to: out.appendingPathComponent("page-network-firstread-\(tag).png"))
+            render(NetworkPageStack { EmptyView() } system: { SysStatsRow(snapshot: fixtureSystem()) },
+                   selected: .network, notch: notch, to: out.appendingPathComponent("page-network-systemonly-\(tag).png"))
             render(nowPage(agenda: .items([]), live: []), selected: .home, notch: notch,
                    to: out.appendingPathComponent("page-home-empty-\(tag).png"))
             render(nowPage(agenda: .needsAccess, live: []), selected: .home, notch: notch,
@@ -56,7 +66,9 @@ enum PanelPageRenderer {
         case .home: nowPage(agenda: .items(fixtureEvents()), live: fixtureLive())
         case .shelf: ShelfView()
         case .calendar: CalendarPage()
-        case .network: NetworkPageContent(snapshot: fixtureNetwork(), onReset: {})
+        case .network:
+            NetworkPageStack { NetworkPageContent(snapshot: fixtureNetwork(), onReset: {}) }
+                system: { SysStatsRow(snapshot: fixtureSystem()) }
         case .tools: ToolsPage()
         }
     }
@@ -306,6 +318,21 @@ enum PanelPageRenderer {
         guard let image = renderer.nsImage, let tiff = image.tiffRepresentation,
               let rep = NSBitmapImageRep(data: tiff) else { return }
         try? rep.representation(using: .png, properties: [:])?.write(to: url)
+    }
+
+    private static func fixtureSystem() -> SysSnapshot {
+        SysSnapshot(cpu: 0.23,
+                    memory: SysMemory(usedBytes: 12_990_000_000, totalBytes: 17_179_869_184, pressure: .normal),
+                    thermal: .nominal,
+                    topApps: [SysAppUsage(name: "Xcode", cpu: 0.84), SysAppUsage(name: "Safari", cpu: 0.12)])
+    }
+
+    private static func fixtureSystemStressed() -> SysSnapshot {
+        SysSnapshot(cpu: 0.97,
+                    memory: SysMemory(usedBytes: 15_700_000_000, totalBytes: 17_179_869_184, pressure: .critical),
+                    thermal: .serious,
+                    topApps: [SysAppUsage(name: "Adobe Premiere Pro 2026 (Beta)", cpu: 6.12),
+                              SysAppUsage(name: "Google Chrome", cpu: 1.48)])
     }
 
     private static func fixtureNetwork() -> NetPageSnapshot {
