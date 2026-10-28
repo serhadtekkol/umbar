@@ -63,21 +63,21 @@ enum PanelPageRenderer {
     }
 
     private static func render(_ page: some View, selected: NotchViews, notch: CGSize, seedCalendar: Bool = false, to url: URL) {
-        let vm = BoringViewModel()
+        let vm = MotionFrameRenderer.fixtureViewModel(notch: notch)
         vm.open()
-        vm.closedNotchSize = notch
         BoringViewCoordinator.shared.currentView = selected
 
         // Mirrors ContentView.NotchLayout for the open state: header the
         // notch's height, the page under it, the same insets.
-        let root = VStack(alignment: .leading) {
+        let root = VStack(alignment: .leading, spacing: PanelLayout.headerSpacing) {
             BoringHeader()
-                .frame(height: max(24, notch.height))
+                .frame(height: PanelLayout.headerHeight(notchHeight: notch.height))
             page
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .topLeading)
+                .background { OverflowProbe(page: page, name: url.lastPathComponent) }
         }
-        .padding(.horizontal, cornerRadiusInsets.opened.top)
-        .padding([.horizontal, .bottom], 12)
+        .padding(.horizontal, cornerRadiusInsets.opened.top + PanelLayout.sideInset)
+        .padding(.bottom, PanelLayout.bottomInset)
         .frame(width: openNotchSize.width, height: openNotchSize.height, alignment: .top)
         .background(.black)
         .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: cornerRadiusInsets.opened.bottom,
@@ -108,6 +108,30 @@ enum PanelPageRenderer {
         guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
         host.cacheDisplay(in: host.bounds, to: rep)
         try? rep.representation(using: .png, properties: [:])?.write(to: url)
+    }
+
+    /// Says on stderr when a page needs more height than the panel gives it
+    /// (it would be cut off by the island's bottom edge), so a render run
+    /// catches it without anyone measuring the PNG.
+    private struct OverflowProbe<Page: View>: View {
+        let page: Page
+        let name: String
+
+        var body: some View {
+            GeometryReader { proxy in
+                page.fixedSize(horizontal: false, vertical: true)
+                    .frame(width: proxy.size.width)
+                    .hidden()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { needed in
+                        let given = proxy.size.height
+                        if needed > given + 0.5 {
+                            FileHandle.standardError.write(Data("\(name): page needs \(Int(needed.rounded())) pt, panel gives \(Int(given))\n".utf8))
+                        }
+                    }
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
     }
 
     // MARK: Fixtures

@@ -20,6 +20,30 @@ let openNotchSize: CGSize = .init(width: 680, height: 236)
 let windowSize: CGSize = .init(width: openNotchSize.width, height: openNotchSize.height + shadowPadding)
 let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 19, bottom: 24), closed: (top: 6, bottom: 14))
 
+/// The open panel's vertical rhythm inside `openNotchSize`: the header
+/// (tab bar) on top, then the page, then the bottom inset. The page gets
+/// what is left and never more: a page taller than that is clipped at the
+/// island's bottom instead of pushing the header up (ContentView centres an
+/// oversized island in its fixed frame, so overflow used to move the tab
+/// bar and cut off the top of the selected capsule).
+enum PanelLayout {
+    /// Between the header and the page.
+    static let headerSpacing: CGFloat = 8
+    /// Left and right, on top of the corner-radius inset.
+    static let sideInset: CGFloat = 12
+    /// Under the page. More than the sides: the 24 pt bottom corners make
+    /// a 12 pt gap read as touching the edge (Ağ's graph baseline).
+    static let bottomInset: CGFloat = 16
+
+    /// As tall as the notch, so the tab bar sits beside it, but never
+    /// shorter than the tab bar itself: on a screen without a notch (or a
+    /// hidden one) the notch height is 0 or the 24 pt menu bar, and a 28 pt
+    /// capsule in a 24 pt row is cut off at the top of the screen.
+    static func headerHeight(notchHeight: CGFloat) -> CGFloat {
+        max(TabSelectionView.height, notchHeight)
+    }
+}
+
 enum MusicPlayerImageSizes {
     static let cornerRadiusInset: (opened: CGFloat, closed: CGFloat) = (opened: 13.0, closed: 4.0)
     static let size = (opened: CGSize(width: 90, height: 90), closed: CGSize(width: 20, height: 20))

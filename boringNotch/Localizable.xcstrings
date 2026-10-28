@@ -5910,13 +5910,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow…"
+            "value" : "Allow"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "İzin ver…"
+            "value" : "İzin ver"
           }
         }
       }
@@ -5942,13 +5942,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Set up…"
+            "value" : "Set up"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ayarla…"
+            "value" : "Ayarla"
           }
         }
       }

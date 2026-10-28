@@ -11,7 +11,6 @@ import SwiftUI
 struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @EnvironmentObject var vm: BoringViewModel
-    @Namespace var animation
     /// Keyboard focus on the tab group. A keyboard opening (shortcut, menu)
     /// puts it here so the selected tab is the first thing the keyboard and
     /// VoiceOver reach (AC-1.18, AC-1.21). ←/→ move between tabs (AC-1.19).
@@ -29,6 +28,10 @@ struct TabSelectionView: View {
 
     private var tabs: [PanelTab] { PanelTab.available }
 
+    private static let inset: CGFloat = 2
+    /// The bar's own height: a tab plus the inset around the row.
+    static let height: CGFloat = TabButton.height + 2 * inset
+
     /// The page actually shown: Şimdi stands in for a page that was turned off.
     private var shownView: NotchViews {
         PanelTab.isOn(coordinator.currentView) ? coordinator.currentView : .home
@@ -39,7 +42,7 @@ struct TabSelectionView: View {
     var body: some View {
         HStack(spacing: 2) {
             ForEach(tabs) { tab in
-                TabButton(tab: tab, selected: tab.view == shownView, capsuleNamespace: animation) {
+                TabButton(tab: tab, selected: tab.view == shownView) {
                     select(tab.view)
                 }
             }
@@ -48,7 +51,7 @@ struct TabSelectionView: View {
         // tab and slides the neighbours on one spring, including the ⌘1…⌘5
         // shortcuts, which set the page without an animation of their own.
         .animation(UmbarMotion.tab(reduce: reduceMotion), value: shownView)
-        .padding(2)
+        .padding(Self.inset)
         // System focus ring (design-language §3.1 `island.focus`), not a drawn one.
         .focusable()
         .focused($tabGroupFocused)
