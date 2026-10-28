@@ -700,6 +700,9 @@ struct ShelfDeletionRuleTests {
         // umbar's own artwork cache under ~/Library/Caches/<bundle id>/Artwork (#79)
         "boringNotch/private/ArtworkCache/ArtworkDiskCache.swift": 4,
         "boringNotch/private/ArtworkCache/ArtworkCacheLocation.swift": 1,
+        // F21 clipboard history: only inside its own Application Support
+        // directory, through one guarded helper (removeOwnFile).
+        "boringNotch/private/Clipboard/ClipboardHistoryStore.swift": 1,
     ]
 
     static func appSources() throws -> [String: String] {

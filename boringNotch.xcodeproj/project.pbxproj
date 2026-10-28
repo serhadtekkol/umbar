@@ -346,6 +346,8 @@
 				ArtworkCache/ArtworkCacheLocation.swift,
 				ArtworkCache/ArtworkDiskCache.swift,
 				Caffeinate/CaffeinatePolicy.swift,
+				Clipboard/ClipboardHistoryCore.swift,
+				Clipboard/ClipboardHistoryStore.swift,
 				Clipboard/ClipboardMonitor.swift,
 				EyeBreak/EyeBreakEngine.swift,
 				FocusTimer/FocusTimerEngine.swift,
