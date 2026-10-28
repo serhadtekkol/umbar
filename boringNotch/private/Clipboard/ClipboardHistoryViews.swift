@@ -177,6 +177,8 @@ struct ClipboardHistoryStrip: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // L5: the history must not reach a screen share or a recording.
+        .excludedFromScreenCapture()
     }
 
     private var empty: some View {
