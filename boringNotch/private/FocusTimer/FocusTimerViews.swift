@@ -36,19 +36,25 @@ private func phaseTitle(_ phase: FocusPhase?) -> String {
 
 /// Araçlar tile, same pattern as CaffeinateTile: idle shows the preset
 /// chips; running shows phase, remaining time and pause / skip / stop.
+///
+/// Inside the F25 time card `modeSwitch` sits in the title row, and the
+/// title shortens to "Focus" to leave it room.
 struct FocusTimerTile: View {
     @ObservedObject private var service = FocusTimerService.shared
     @Default(.focusTimerCustomFocusMinutes) private var customFocus
     @Default(.focusTimerCustomBreakMinutes) private var customBreak
+    var modeSwitch: AnyView?
 
     var body: some View {
         ToolTile(
             symbol: "timer",
-            title: phaseTitle(nil),
+            title: modeSwitch == nil ? phaseTitle(nil) : phaseTitle(.focus),
             status: service.state.isIdle
                 ? String(localized: "focus.help.start", defaultValue: "Start a focus session")
                 : phaseTitle(service.state.phase),
-            active: service.state.isRunning
+            active: service.state.isRunning,
+            accessory: { if let modeSwitch { modeSwitch } },
+            statusView: { EmptyView() }
         ) {
             if service.state.isIdle {
                 HStack(spacing: 4) { presetChips }
@@ -100,21 +106,32 @@ struct FocusTimerTile: View {
 }
 
 /// Closed-notch ear on the leading edge (Caffeinate's tab is on the trailing
-/// edge). Amber while a phase is counting down, gray while paused.
+/// edge). Amber while a phase is counting down, gray while paused. It shares
+/// the edge with the F25 timer's ear and steps aside when that one has
+/// priority (LeadingTimeEarPolicy), so the two never draw over each other.
 struct FocusTimerClosedBadge: View {
     @ObservedObject private var service = FocusTimerService.shared
+    @ObservedObject private var timer = TimerService.shared
+    @Default(.timerEnabled) private var timerEnabled
     let isClosed: Bool
     let height: CGFloat
 
-    private let width: CGFloat = 48
+    static let width: CGFloat = 48
+    private var width: CGFloat { Self.width }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var shown: Bool {
+        isClosed && LeadingTimeEarPolicy.owner(
+            focusActive: !service.state.isIdle, timer: timer.state,
+            alerting: timer.isAlerting, timerEnabled: timerEnabled) == .focus
+    }
+
     var body: some View {
         ZStack {
-            if isClosed && !service.state.isIdle { badge }
+            if shown { badge }
         }
-        .animation(UmbarMotion.ear(reduce: reduceMotion), value: isClosed && !service.state.isIdle)
+        .animation(UmbarMotion.ear(reduce: reduceMotion), value: shown)
     }
 
     private var badge: some View {

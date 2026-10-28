@@ -193,6 +193,22 @@
         }
       }
     },
+    "A countdown and a stopwatch on the Tools page, in the same card as the focus timer. The time shows next to the notch while it runs." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A countdown and a stopwatch on the Tools page, in the same card as the focus timer. The time shows next to the notch while it runs."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Araçlar sayfasında, odak zamanlayıcısıyla aynı kartta bir geri sayım ve bir kronometre. Çalışırken süre çentiğin yanında görünür."
+          }
+        }
+      }
+    },
     "Accessibility access is not on yet. Turn on umbar in System Settings; the HUD switches on as soon as access is granted." : {
       "localizations" : {
         "en" : {
@@ -705,6 +721,22 @@
         }
       }
     },
+    "Custom length" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom length"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Özel süre"
+          }
+        }
+      }
+    },
     "Dismiss" : {
       "localizations" : {
         "en" : {
@@ -1105,6 +1137,22 @@
         }
       }
     },
+    "Play a sound when the timer ends" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play a sound when the timer ends"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamanlayıcı bitince ses çal"
+          }
+        }
+      }
+    },
     "Remind every" : {
       "localizations" : {
         "en" : {
@@ -1233,6 +1281,22 @@
         }
       }
     },
+    "Send a notification when the timer ends" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a notification when the timer ends"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamanlayıcı bitince bildirim gönder"
+          }
+        }
+      }
+    },
     "Show Caffeinate in the notch" : {
       "localizations" : {
         "en" : {
@@ -1329,6 +1393,134 @@
         }
       }
     },
+    "stopwatch.help.lap" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lap"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tur"
+          }
+        }
+      }
+    },
+    "stopwatch.idle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Measure elapsed time"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geçen süreyi ölç"
+          }
+        }
+      }
+    },
+    "stopwatch.lap" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lap %1$lld: %2$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tur %1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "stopwatch.running" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışıyor"
+          }
+        }
+      }
+    },
+    "stopwatch.start" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başlat"
+          }
+        }
+      }
+    },
+    "stopwatch.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopwatch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kronometre"
+          }
+        }
+      }
+    },
+    "The 1, 5, 10 and 25 minute presets are fixed. The custom length can also be changed on the card." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The 1, 5, 10 and 25 minute presets are fixed. The custom length can also be changed on the card."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1, 5, 10 ve 25 dakikalık hazır süreler sabittir. Özel süre kartın üzerinden de değiştirilebilir."
+          }
+        }
+      }
+    },
+    "The notch always shows the end. The notification needs umbar to be allowed in System Settings > Notifications; umbar does not ask for it here. The sound is off by default." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The notch always shows the end. The notification needs umbar to be allowed in System Settings > Notifications; umbar does not ask for it here. The sound is off by default."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitiş her zaman çentikte gösterilir. Bildirim için umbar'a Sistem Ayarları > Bildirimler'de izin verilmiş olmalı; umbar bunu burada istemez. Ses varsayılan olarak kapalıdır."
+          }
+        }
+      }
+    },
     "Time away from the keyboard and mouse counts as a break, and so does a locked or sleeping Mac." : {
       "localizations" : {
         "en" : {
@@ -1341,6 +1533,246 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Klavye ve fareden uzak geçen süre mola sayılır; Mac'in kilitli ya da uykuda olması da öyle."
+          }
+        }
+      }
+    },
+    "Timer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamanlayıcı"
+          }
+        }
+      }
+    },
+    "Timer and stopwatch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer and stopwatch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamanlayıcı ve kronometre"
+          }
+        }
+      }
+    },
+    "timer.again" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Again"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekrar"
+          }
+        }
+      }
+    },
+    "timer.alert.ok" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamam"
+          }
+        }
+      }
+    },
+    "timer.alert.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time's up"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Süre doldu"
+          }
+        }
+      }
+    },
+    "timer.custom.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom length"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Özel süre"
+          }
+        }
+      }
+    },
+    "timer.help.longer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Longer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzat"
+          }
+        }
+      }
+    },
+    "timer.help.reset" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıfırla"
+          }
+        }
+      }
+    },
+    "timer.help.shorter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shorter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kısalt"
+          }
+        }
+      }
+    },
+    "timer.minutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld dk"
+          }
+        }
+      }
+    },
+    "timer.notification.body" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your timer has finished."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamanlayıcın bitti."
+          }
+        }
+      }
+    },
+    "timer.paused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duraklatıldı"
+          }
+        }
+      }
+    },
+    "timer.preset.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a %lld-minute timer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld dakikalık zamanlayıcı başlat"
+          }
+        }
+      }
+    },
+    "timer.running" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ timer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ zamanlayıcı"
+          }
+        }
+      }
+    },
+    "timer.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamanlayıcı"
           }
         }
       }
@@ -1997,6 +2429,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "umbar neler yapar"
+          }
+        }
+      }
+    },
+    "When time is up" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When time is up"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Süre dolunca"
           }
         }
       }

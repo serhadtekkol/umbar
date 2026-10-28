@@ -156,7 +156,9 @@ struct ContentView: View {
                         CaffeinateClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                     }
                     .background(alignment: .topLeading) {
+                        // One time slot: LeadingTimeEarPolicy lets only one of these two draw.
                         FocusTimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
+                        TimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                         NetMonitorClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                     }
                 
