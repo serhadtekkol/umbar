@@ -114,13 +114,19 @@ class CalendarService: CalendarServiceProviding {
         }
     }
     
-    func setReminderCompleted(reminderID: String, completed: Bool) async {
-        guard let reminder = store.calendarItem(withIdentifier: reminderID) as? EKReminder else { return }
+    /// False when the reminder is gone or the save failed (a read-only
+    /// shared list, say), so the row can say so (AC-6R.6).
+    @discardableResult
+    func setReminderCompleted(reminderID: String, completed: Bool) async -> Bool {
+        guard let reminder = store.calendarItem(withIdentifier: reminderID) as? EKReminder else { return false }
         reminder.isCompleted = completed
         do {
             try store.save(reminder, commit: true)
+            return true
         } catch {
+            reminder.isCompleted = !completed
             print("Failed to update reminder completion: \(error)")
+            return false
         }
     }
 }

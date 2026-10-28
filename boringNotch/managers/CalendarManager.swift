@@ -18,6 +18,8 @@ class CalendarManager: ObservableObject {
 
     @Published var currentWeekStartDate: Date
     @Published var events: [EventModel] = []
+    /// Everything in the month grid's 6 weeks, for its "has events" dots.
+    @Published var monthEvents: [EventModel] = []
     @Published var allCalendars: [CalendarModel] = []
     @Published var eventCalendars: [CalendarModel] = []
     @Published var reminderLists: [CalendarModel] = []
@@ -25,6 +27,7 @@ class CalendarManager: ObservableObject {
     @Published var calendarAuthorizationStatus: EKAuthorizationStatus = .notDetermined
     @Published var reminderAuthorizationStatus: EKAuthorizationStatus = .notDetermined
     private var selectedCalendars: [CalendarModel] = []
+    private var monthInterval: DateInterval?
     private let calendarService = CalendarService()
 
     private var eventStoreChangedObserver: NSObjectProtocol?
@@ -167,12 +170,23 @@ class CalendarManager: ObservableObject {
         self.events = eventsResult
     }
     
-    func setReminderCompleted(reminderID: String, completed: Bool) async {
-        await calendarService.setReminderCompleted(reminderID: reminderID, completed: completed)
+    /// Takvim's 6 weeks: the grid's dots and the selected day's list both
+    /// read `monthEvents`, so picking another day needs no fetch.
+    func updateMonth(_ interval: DateInterval) async {
+        monthInterval = interval
+        monthEvents = await calendarService.events(
+            from: interval.start, to: interval.end, calendars: selectedCalendars.map { $0.id })
+    }
+
+    @discardableResult
+    func setReminderCompleted(reminderID: String, completed: Bool) async -> Bool {
+        let saved = await calendarService.setReminderCompleted(reminderID: reminderID, completed: completed)
         // Refresh events after updating
         events = await calendarService.events(
             from: currentWeekStartDate,
             to: Calendar.current.date(byAdding: .day, value: 1, to: currentWeekStartDate)!,
             calendars: selectedCalendars.map { $0.id })
+        if let monthInterval { await updateMonth(monthInterval) }
+        return saved
     }
 }
