@@ -12,8 +12,11 @@ import Defaults
 import SwiftUI
 
 struct QuickTogglesRow: View {
-    @ObservedObject private var store = QuickTogglesStore.shared
+    @ObservedObject private var store: QuickTogglesStore
     @Default(.quickTogglesFocusShortcut) private var focusShortcut
+
+    /// `store` is injectable for the Debug frame renderer's fixture.
+    init(store: QuickTogglesStore = .shared) { self.store = store }
 
     /// Row height; the "Now" page has ~150 pt under the header and the music
     /// block needs 128 of it, so the row stays one line.
@@ -33,8 +36,21 @@ struct QuickTogglesRow: View {
             Spacer(minLength: 0)
         }
         .frame(height: Self.height)
+        // Deliberately no animation on `wifiOffArmed`: the Wi-Fi tile widens
+        // and its neighbours slid under it mid-transition (seen in the frame
+        // renderer). The instant swap is the tap's feedback.
         .animation(.smooth(duration: 0.2), value: store.showingDevices)
         .onAppear { store.refresh() }
+        // Panel closed or another page: a pending "turn off?" must not
+        // survive to the next time the row is seen.
+        .onDisappear { store.disarmWiFiOff() }
+        .onChange(of: store.wifiOffArmed) { _, armed in
+            guard armed else { return }
+            AccessibilityNotification.Announcement(String(
+                localized: "quickToggles.wifi.confirmOff.announcement",
+                defaultValue: "Turn off Wi-Fi? Click again to confirm."
+            )).post()
+        }
         // The store reads the Shortcut name through a closure, which SwiftUI
         // cannot observe; keying on it re-renders the Focus tile when the
         // name is chosen in Settings while the panel is open.
@@ -104,7 +120,7 @@ private struct QuickToggleTile: View {
             .foregroundStyle(foreground)
             .background(Capsule().fill(background))
             .overlay {
-                if tile.state == .denied || tile.state == .failed {
+                if isWarning {
                     Capsule().strokeBorder(.orange.opacity(0.8), lineWidth: 1)
                 }
             }
@@ -121,9 +137,12 @@ private struct QuickToggleTile: View {
     }
 
     private var isOn: Bool { tile.state == .on }
+    /// The orange outline and text: something needs the user's attention
+    /// before the tile does its usual thing. The caption always says what.
+    private var isWarning: Bool { [.denied, .failed, .confirmingOff].contains(tile.state) }
     private var foreground: Color {
         if isOn { return .black }
-        if tile.state == .denied || tile.state == .failed { return .orange }
+        if isWarning { return .orange }
         return .white
     }
     private var background: Color { isOn ? .white.opacity(0.92) : .white.opacity(0.12) }
@@ -136,7 +155,12 @@ private struct QuickToggleTile: View {
                 .stroke(style: StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
                 .frame(width: 6, height: 10)
                 .frame(width: 12)
-        case .wifi: symbol(tile.state == .off ? "wifi.slash" : "wifi")
+        case .wifi:
+            switch tile.state {
+            case .off: symbol("wifi.slash")
+            case .confirmingOff: symbol("wifi.exclamationmark")
+            default: symbol("wifi")
+            }
         case .focus: symbol("moon.fill")
         case .appearance: symbol("circle.lefthalf.filled")
         }
@@ -166,6 +190,7 @@ private struct QuickToggleTile: View {
         case .denied: return String(localized: "quickToggles.state.denied", defaultValue: "Not allowed")
         case .needsSetup: return String(localized: "quickToggles.state.setUp", defaultValue: "Set up")
         case .failed: return String(localized: "quickToggles.state.retry", defaultValue: "Retry")
+        case .confirmingOff: return String(localized: "quickToggles.state.confirmOff", defaultValue: "Turn off?")
         }
     }
 
@@ -180,13 +205,18 @@ private struct QuickToggleTile: View {
         case .needsSetup: return String(localized: "quickToggles.value.needsSetup", defaultValue: "Not set up")
         case .unavailable: return String(localized: "quickToggles.value.unavailable", defaultValue: "Unavailable")
         case .failed: return String(localized: "quickToggles.value.failed", defaultValue: "Last change failed")
+        case .confirmingOff: return String(localized: "quickToggles.value.confirmingOff", defaultValue: "On, waiting for confirmation to turn off")
         }
     }
 
     private var hint: String {
         switch tile.action {
+        case .toggle where tile.state == .confirmingOff:
+            return String(localized: "quickToggles.hint.confirmOff", defaultValue: "Click again to turn off Wi-Fi")
         case .toggle:
             return String(localized: "quickToggles.hint.toggle", defaultValue: "Click to switch on or off")
+        case .armOff:
+            return String(localized: "quickToggles.hint.armOff", defaultValue: "Click to turn off. You will be asked to click again.")
         case .requestPermission:
             return String(localized: "quickToggles.hint.requestBluetooth", defaultValue: "Click to allow umbar to use Bluetooth and list your devices")
         case .openSettings(let pane):

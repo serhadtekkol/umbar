@@ -13,6 +13,9 @@
 //    open-<notch>-<ms>.png       the whole island opening, music playing
 //    close-<notch>-<ms>.png      and closing again
 //    page-<notch>-<ms>.png       the open panel going Şimdi → Takvim
+//    wifi-arm-<ms>.png           the quick toggles row, first tap on Wi-Fi
+//    wifi-off-<ms>.png           and the confirming second tap
+//    wifi-on-<ms>.png            and the one-tap turn back on
 //
 
 #if DEBUG
@@ -31,6 +34,7 @@ enum MotionFrameRenderer {
             renderTabSwitches(notch: notch, out: out)
             renderIsland(notch: notch, out: out)
         }
+        renderWiFiConfirm(out: out)
         exit(0)
     }
 
@@ -90,6 +94,50 @@ enum MotionFrameRenderer {
             vm.notchSize = notch
         }, name: { out.appendingPathComponent("close-\(tag)-\($0).png") })
         session.close()
+    }
+
+    // MARK: Wi-Fi off confirmation
+
+    /// The row on a fake backend, so the render never switches this Mac's
+    /// Wi-Fi and every tile has a fixed state.
+    private static func renderWiFiConfirm(out: URL) {
+        let store = QuickTogglesStore(backend: FixtureToggles(), focusShortcut: { "Rahatsız Etme" })
+        let root = QuickTogglesRow(store: store)
+            .padding(12)
+            .frame(width: openNotchSize.width - 40, alignment: .leading)
+            .background(.black)
+            .environment(\.colorScheme, .dark)
+        let session = Session(root, size: NSSize(width: openNotchSize.width - 40, height: QuickTogglesRow.height + 24))
+        for name in ["arm", "off", "on"] {
+            session.play(change: { Task { await store.activate(.wifi) } }, name: {
+                out.appendingPathComponent("wifi-\(name)-\($0).png")
+            })
+        }
+        session.close()
+    }
+
+    private final class FixtureToggles: QuickTogglesBackend {
+        var onChange: (() -> Void)?
+        private var wifi = WiFiPower.on
+        func wifiPower() -> WiFiPower { wifi }
+        func setWiFiPower(_ on: Bool) throws { wifi = on ? .on : .off }
+        var bluetoothConfigured: Bool { true }
+        func bluetoothPermission() -> QuickPermission { .granted }
+        func requestBluetoothPermission() async -> QuickPermission { .granted }
+        func bluetoothPowered() -> Bool? { true }
+        func bluetoothDevices() async -> [QuickBluetoothDevice] { [] }
+        func connect(deviceID: String) async -> Bool { true }
+        func disconnect(deviceID: String) async -> Bool { true }
+        var focusConfigured: Bool { true }
+        func focusPermission() -> QuickPermission { .granted }
+        func requestFocusPermission() async -> QuickPermission { .granted }
+        func focusIsActive() -> Bool? { false }
+        func runShortcut(named name: String) async throws {}
+        func shortcutNames() async -> [String] { [] }
+        func isDarkMode() -> Bool { true }
+        func setDarkMode(_ dark: Bool) async throws {}
+        func open(_ pane: QuickSettingsPane) {}
+        func openAppSettings() {}
     }
 
     /// A view model for an off-screen window. It has no screen, so
