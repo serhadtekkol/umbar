@@ -353,6 +353,7 @@
 				NetMonitor/NetTrafficMath.swift,
 				MenuBarGeometry/MenuBarCollision.swift,
 				NetMonitor/NetUsageLedger.swift,
+				Pages/CalendarMonth.swift,
 				LiveActivities/DownloadParsing.swift,
 				LiveActivities/LiveActivityModel.swift,
 				LiveActivities/PowerSourceParsing.swift,

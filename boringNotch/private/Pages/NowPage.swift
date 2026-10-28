@@ -50,7 +50,7 @@ enum TodayAgenda: Equatable {
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: now)
         guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return [] }
-        return EventListView.filteredEvents(events: events)
+        return CalendarFilter.visible(events)
             .filter { event in
                 if case .reminder(let completed) = event.type {
                     return !completed && event.start < dayEnd

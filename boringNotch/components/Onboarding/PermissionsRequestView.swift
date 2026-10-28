@@ -15,11 +15,15 @@ import AppKit
 import EventKit
 import SwiftUI
 
-/// The three states a permission prompt distinguishes.
+/// The states a permission prompt distinguishes (§5 permission rule): never
+/// asked, granted, turned off by the user, and blocked by an administrator.
 enum PermissionState: Equatable {
     case notDetermined
     case granted
     case denied
+    /// Screen Time or a configuration profile; the user cannot change it, so
+    /// the prompt offers no button (design-language §7).
+    case restricted
 
     init(_ status: EKAuthorizationStatus) {
         switch status {
@@ -27,10 +31,36 @@ enum PermissionState: Equatable {
             self = .granted
         case .notDetermined:
             self = .notDetermined
+        case .restricted:
+            self = .restricted
         default:
             // .writeOnly cannot read events, so for umbar it is as good as
-            // .denied; .restricted can only be changed in System Settings.
+            // .denied: the user can turn full access on in System Settings.
             self = .denied
+        }
+    }
+
+    /// Asked and not granted: no system prompt will appear again.
+    var isBlocked: Bool { self == .denied || self == .restricted }
+}
+
+/// One sentence for the restricted state, shared by every prompt.
+let permissionRestrictedMessage: LocalizedStringKey = "An administrator has turned off this access on this Mac. Only they can change it."
+
+extension PermissionState {
+    func glyph(_ feature: String) -> String {
+        switch self {
+        case .denied: "exclamationmark.circle"
+        case .restricted: "lock"
+        case .notDetermined, .granted: feature
+        }
+    }
+
+    func message(reason: LocalizedStringKey, denied: LocalizedStringKey) -> LocalizedStringKey {
+        switch self {
+        case .denied: denied
+        case .restricted: permissionRestrictedMessage
+        case .notDetermined, .granted: reason
         }
     }
 }
@@ -71,14 +101,14 @@ struct PermissionPrompt: View {
     var body: some View {
         if state != .granted {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Image(systemName: state == .denied ? "exclamationmark.circle" : systemImage)
-                    .foregroundStyle(state == .denied ? AnyShapeStyle(.primary) : AnyShapeStyle(Color.effectiveAccent))
+                Image(systemName: state.glyph(systemImage))
+                    .foregroundStyle(state.isBlocked ? AnyShapeStyle(.primary) : AnyShapeStyle(Color.effectiveAccent))
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(title)
                         .font(.headline)
-                    Text(state == .denied ? deniedMessage : reason)
+                    Text(state.message(reason: reason, denied: deniedMessage))
                         .font(.subheadline)
                         .foregroundStyle(permissionMutedText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -86,7 +116,7 @@ struct PermissionPrompt: View {
                     HStack(spacing: 8) {
                         if state == .denied {
                             Button("Open System Settings") { pane.open() }
-                        } else {
+                        } else if state == .notDetermined {
                             Button("Allow Access", action: onAllow)
                         }
                         if let onNotNow {
@@ -152,13 +182,13 @@ struct NotchPermissionPrompt: View {
             Label {
                 Text(title)
             } icon: {
-                Image(systemName: state == .denied ? "exclamationmark.circle" : systemImage)
+                Image(systemName: state.glyph(systemImage))
                     .accessibilityHidden(true)
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white)
 
-            Text(state == .denied ? deniedMessage : reason)
+            Text(state.message(reason: reason, denied: deniedMessage))
                 .font(.caption)
                 .foregroundStyle(Color(white: 0.65))
                 .fixedSize(horizontal: false, vertical: true)
@@ -168,7 +198,7 @@ struct NotchPermissionPrompt: View {
             Group {
                 if state == .denied {
                     Button("Open System Settings") { pane.open() }
-                } else {
+                } else if state == .notDetermined {
                     Button("Allow Access", action: onAllow)
                 }
             }
@@ -196,12 +226,12 @@ struct NotchPermissionBanner: View {
         // in either language.
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Image(systemName: state == .denied ? "exclamationmark.circle" : systemImage)
+                Image(systemName: state.glyph(systemImage))
                     .font(.caption)
                     .foregroundStyle(.white)
                     .accessibilityHidden(true)
 
-                Text(state == .denied ? deniedMessage : reason)
+                Text(state.message(reason: reason, denied: deniedMessage))
                     .font(.caption2)
                     .foregroundStyle(Color(white: 0.65))
                     .fixedSize(horizontal: false, vertical: true)
@@ -222,7 +252,7 @@ struct NotchPermissionBanner: View {
             Group {
                 if state == .denied {
                     Button("Open System Settings") { pane.open() }
-                } else {
+                } else if state == .notDetermined {
                     Button("Allow Access", action: onAllow)
                 }
             }

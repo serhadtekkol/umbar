@@ -21,6 +21,8 @@ enum PageTokens {
     static let raisedStrong = Color(red: 0x2C / 255, green: 0x2C / 255, blue: 0x2E / 255)
     /// Amber means "live" only, and always comes with a shape.
     static let live = Color(red: 0xFF / 255, green: 0xC3 / 255, blue: 0x5C / 255)
+    /// Errors and "overdue" only, always with a glyph: 8.3:1 on black.
+    static let danger = Color(red: 0xFF / 255, green: 0x7B / 255, blue: 0x72 / 255)
 
     static let s: CGFloat = 8
     static let m: CGFloat = 12
