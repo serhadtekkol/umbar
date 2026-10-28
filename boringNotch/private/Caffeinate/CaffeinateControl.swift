@@ -76,7 +76,9 @@ struct CaffeinateClosedBadge: View {
     let isClosed: Bool
     let height: CGFloat
 
-    private var side: CGFloat { max(16, height - 8) }
+    /// How far the ear reaches out past the island's trailing edge, so a
+    /// neighbouring trailing ear can sit beyond it instead of on top of it.
+    static func width(height: CGFloat) -> CGFloat { max(16, height - 8) + 6 }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -84,21 +86,30 @@ struct CaffeinateClosedBadge: View {
         // The container stays so the ear's insertion and removal animate on
         // their own spring, whatever transaction flipped the service state.
         ZStack {
-            if isClosed && service.isActive { badge }
+            if isClosed && service.isActive {
+                CaffeinateClosedEar(height: height)
+                    // Slides out from under the island's trailing edge.
+                    .transition(.ear(inward: -Self.width(height: height), reduce: reduceMotion))
+            }
         }
         .animation(UmbarMotion.ear(reduce: reduceMotion), value: isClosed && service.isActive)
     }
+}
 
-    private var badge: some View {
-            Image(systemName: "cup.and.saucer.fill")
-                .font(.system(size: max(9, side - 8)))
-                .foregroundStyle(.orange)
-                .frame(width: side + 6, height: height)
-                .background(.black, in: UnevenRoundedRectangle(bottomTrailingRadius: 8, topTrailingRadius: 0))
-                .offset(x: side + 6)
-                .allowsHitTesting(false)
-                .accessibilityLabel(String(localized: "caffeinate.badge.a11y", defaultValue: "Caffeinate is on"))
-                // Slides out from under the island's trailing edge.
-                .transition(.ear(inward: -(side + 6), reduce: reduceMotion))
+/// The tab itself, without the service: the off-screen renderers draw it
+/// without starting a power assertion.
+struct CaffeinateClosedEar: View {
+    let height: CGFloat
+
+    var body: some View {
+        let width = CaffeinateClosedBadge.width(height: height)
+        Image(systemName: "cup.and.saucer.fill")
+            .font(.system(size: max(9, width - 14)))
+            .foregroundStyle(.orange)
+            .frame(width: width, height: height)
+            .background(.black, in: UnevenRoundedRectangle(bottomTrailingRadius: 8, topTrailingRadius: 0))
+            .offset(x: width)
+            .allowsHitTesting(false)
+            .accessibilityLabel(String(localized: "caffeinate.badge.a11y", defaultValue: "Caffeinate is on"))
     }
 }

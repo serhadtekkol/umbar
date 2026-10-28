@@ -364,6 +364,7 @@
 				LiveActivities/TimeMachineParsing.swift,
 				Panel/NotchHoverPolicy.swift,
 				Panel/PanelKeyPolicy.swift,
+				PrivacyIndicator/PrivacyIndicatorCore.swift,
 				QuickToggles/QuickTogglesCore.swift,
 				Settings/DefaultsMigration.swift,
 				ScreenshotShelf/ScreenshotShelfPolicy.swift,
