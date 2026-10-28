@@ -38,6 +38,7 @@ enum MotionFrameRenderer {
         }
         renderWiFiConfirm(out: out)
         renderUndoChip(out: out)
+        EyeBreakBannerRenderer.renderMotion(to: out)
         exit(0)
     }
 

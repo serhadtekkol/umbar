@@ -46,6 +46,7 @@ enum PanelPageRenderer {
             }
         }
         renderDragPreview(to: out.appendingPathComponent("shelf-drag-preview.png"))
+        EyeBreakBannerRenderer.renderPages(to: out)
         exit(0)
     }
 
