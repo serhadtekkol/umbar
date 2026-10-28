@@ -6,6 +6,7 @@
 
 import Foundation
 import AppKit
+import SwiftUI
 
 @MainActor
 final class ShelfStateViewModel: ObservableObject {
@@ -29,6 +30,9 @@ final class ShelfStateViewModel: ObservableObject {
     /// Items moved out of the shelf a moment ago, with their Undo (card #100).
     /// The "Taşındı · Geri al" chip (card #101) observes this.
     let moveUndo = ShelfMoveUndoModel()
+
+    private var pendingMoveNames: [String] = []
+    private var moveAnnouncement: Task<Void, Never>?
 
     private init() {
         items = ShelfPersistenceService.shared.load()
@@ -109,12 +113,35 @@ final class ShelfStateViewModel: ObservableObject {
         items.remove(at: index)
         var bookmark: Data?
         if case .file(let data) = current.kind { bookmark = data }
+        announceMove(source.name)
         moveUndo.recordMove(of: current, at: index, source: source) { [bookmark] in
             await ShelfMoveDestinationLocator.locate(
                 source: source,
                 bookmark: bookmark,
                 recordedPaths: { recorder?.recordedPaths() ?? [] }
             )
+        }
+    }
+
+    /// Says "Taşındı: …" once per drag, whether or not the Raf page is on
+    /// screen (the panel often closes as the pointer reaches Finder). A
+    /// multi-item move confirms item by item, so names arriving within a
+    /// moment of each other are said together.
+    private func announceMove(_ name: String) {
+        pendingMoveNames.append(name)
+        moveAnnouncement?.cancel()
+        moveAnnouncement = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard let self, !Task.isCancelled else { return }
+            let names = self.pendingMoveNames
+            self.pendingMoveNames = []
+            let subject = names.count == 1
+                ? names[0]
+                : String(localized: "shelf.undo.items", defaultValue: "\(names.count) items")
+            AccessibilityNotification.Announcement(String(
+                localized: "shelf.undo.moved.announcement",
+                defaultValue: "Moved: \(subject). Undo is on the Shelf page."
+            )).post()
         }
     }
 
