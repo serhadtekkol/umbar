@@ -41,20 +41,20 @@ enum MotionFrameRenderer {
         let tabs = PanelTab.available
         for (index, tab) in tabs.enumerated() {
             let from = tabs[index == 0 ? 1 : index - 1].view
-            let vm = BoringViewModel()
+            let vm = fixtureViewModel(notch: notch)
             vm.open()
-            vm.closedNotchSize = notch
             BoringViewCoordinator.shared.currentView = from
 
+            let header = PanelLayout.headerHeight(notchHeight: notch.height)
             let root = BoringHeader()
-                .frame(height: max(24, notch.height))
-                .padding(.horizontal, cornerRadiusInsets.opened.top + 12)
+                .frame(height: header)
+                .padding(.horizontal, cornerRadiusInsets.opened.top + PanelLayout.sideInset)
                 .frame(width: openNotchSize.width, alignment: .top)
                 .background(.black)
                 .environmentObject(vm)
                 .environment(\.colorScheme, .dark)
 
-            play(root, size: NSSize(width: openNotchSize.width, height: max(24, notch.height)), change: {
+            play(root, size: NSSize(width: openNotchSize.width, height: header), change: {
                 withAnimation(UmbarMotion.tab()) { BoringViewCoordinator.shared.currentView = tab.view }
             }, name: { ms in out.appendingPathComponent("tab-\(tab.view)-\(tag)-\(ms).png") })
         }
@@ -65,8 +65,7 @@ enum MotionFrameRenderer {
     private static func renderIsland(notch: CGSize, out: URL) {
         let tag = "\(Int(notch.width))x\(Int(notch.height))"
         seedMusic()
-        let vm = BoringViewModel()
-        vm.closedNotchSize = notch
+        let vm = fixtureViewModel(notch: notch)
         vm.notchSize = notch
         BoringViewCoordinator.shared.currentView = .home
 
@@ -91,6 +90,17 @@ enum MotionFrameRenderer {
             vm.notchSize = notch
         }, name: { out.appendingPathComponent("close-\(tag)-\($0).png") })
         session.close()
+    }
+
+    /// A view model for an off-screen window. It has no screen, so
+    /// `hideOnClosed` (true until the fullscreen detector reports) would make
+    /// `effectiveClosedNotchHeight` 0: a 24 pt header and a 10 pt shorter
+    /// island than any Mac with a notch shows. Pin it to the fixture notch.
+    static func fixtureViewModel(notch: CGSize) -> BoringViewModel {
+        let vm = BoringViewModel()
+        vm.hideOnClosed = false
+        vm.closedNotchSize = notch
+        return vm
     }
 
     private static func seedMusic() {

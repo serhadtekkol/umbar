@@ -125,7 +125,8 @@ struct ContentView: View {
                         ? (cornerRadiusInsets.opened.top) : (cornerRadiusInsets.opened.bottom)
                         : cornerRadiusInsets.closed.bottom
                     )
-                    .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
+                    .padding(.horizontal, vm.notchState == .open ? PanelLayout.sideInset : 0)
+                    .padding(.bottom, vm.notchState == .open ? PanelLayout.bottomInset : 0)
                     // Content is clipped by the shape as it grows, so the
                     // panel is revealed by the island rather than faded over it.
                     .clipShape(currentNotchShape)
@@ -300,7 +301,7 @@ struct ContentView: View {
 
     @ViewBuilder
     func NotchLayout() -> some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: PanelLayout.headerSpacing) {
             VStack(alignment: .leading) {
                 if coordinator.helloAnimationRunning {
                     Spacer()
@@ -353,7 +354,7 @@ struct ContentView: View {
                               .transition(.closedContent(reduce: reduceMotion))
                        } else if vm.notchState == .open {
                            BoringHeader()
-                               .frame(height: max(24, vm.effectiveClosedNotchHeight))
+                               .frame(height: PanelLayout.headerHeight(notchHeight: vm.effectiveClosedNotchHeight))
                                .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
                                .transition(.islandContent(delay: UmbarMotion.headerDelay, reduce: reduceMotion))
                        } else {
@@ -419,6 +420,11 @@ struct ContentView: View {
                         PanelPageView(albumArtNamespace: albumArtNamespace)
                     }
                 }
+                // minHeight 0: the page takes what the header leaves and no
+                // more. Without it a frame reports its content's height, a
+                // tall page grows the island past its fixed size, and the
+                // island is centred in that size: the header moves up.
+                .frame(minHeight: 0, maxHeight: .infinity, alignment: .topLeading)
                 .transition(.islandContent(delay: UmbarMotion.pageDelay, reduce: reduceMotion))
                 .zIndex(1)
                 .allowsHitTesting(vm.notchState == .open)

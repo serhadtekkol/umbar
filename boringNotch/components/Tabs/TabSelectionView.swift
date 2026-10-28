@@ -29,6 +29,10 @@ struct TabSelectionView: View {
 
     private var tabs: [PanelTab] { PanelTab.available }
 
+    private static let inset: CGFloat = 2
+    /// The bar's own height: a tab plus the inset around the row.
+    static let height: CGFloat = TabButton.height + 2 * inset
+
     /// The page actually shown: Şimdi stands in for a page that was turned off.
     private var shownView: NotchViews {
         PanelTab.isOn(coordinator.currentView) ? coordinator.currentView : .home
@@ -48,7 +52,7 @@ struct TabSelectionView: View {
         // tab and slides the neighbours on one spring, including the ⌘1…⌘5
         // shortcuts, which set the page without an animation of their own.
         .animation(UmbarMotion.tab(reduce: reduceMotion), value: shownView)
-        .padding(2)
+        .padding(Self.inset)
         // System focus ring (design-language §3.1 `island.focus`), not a drawn one.
         .focusable()
         .focused($tabGroupFocused)

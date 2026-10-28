@@ -85,12 +85,19 @@ private struct QuickToggleTile: View {
                 if tile.state == .working {
                     ProgressView().controlSize(.mini)
                 } else {
-                    Image(systemName: symbol)
-                        .font(.caption.weight(.semibold))
+                    glyph
                 }
-                Text(caption)
+                Text(name)
                     .font(.caption2.weight(.medium))
                     .lineLimit(1)
+                    .fixedSize()
+                if let actionCaption {
+                    Text(actionCaption)
+                        .font(.caption2)
+                        .opacity(0.75)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
             }
             .padding(.horizontal, 8)
             .frame(height: QuickTogglesRow.height)
@@ -121,13 +128,22 @@ private struct QuickToggleTile: View {
     }
     private var background: Color { isOn ? .white.opacity(0.92) : .white.opacity(0.12) }
 
-    private var symbol: String {
+    @ViewBuilder private var glyph: some View {
         switch kind {
-        case .wifi: return tile.state == .off ? "wifi.slash" : "wifi"
-        case .bluetooth: return "bluetooth"
-        case .focus: return "moon.fill"
-        case .appearance: return "circle.lefthalf.filled"
+        case .bluetooth:
+            // SF Symbols has no Bluetooth rune (`bluetooth` drew nothing).
+            BluetoothGlyph()
+                .stroke(style: StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
+                .frame(width: 6, height: 10)
+                .frame(width: 12)
+        case .wifi: symbol(tile.state == .off ? "wifi.slash" : "wifi")
+        case .focus: symbol("moon.fill")
+        case .appearance: symbol("circle.lefthalf.filled")
         }
+    }
+
+    private func symbol(_ name: String) -> some View {
+        Image(systemName: name).font(.caption.weight(.semibold))
     }
 
     private var name: String {
@@ -139,14 +155,16 @@ private struct QuickToggleTile: View {
         }
     }
 
-    /// Short text inside the tile. On/off tiles show their name; other states
-    /// replace it with what a tap will do, so the state is never colour-only.
-    private var caption: String {
+    /// Said after the name when the tile is not a plain on/off switch: what a
+    /// tap will do, so the state is never colour-only. After the name, not in
+    /// its place: "İzin ver…" alone did not say which toggle it was, and its
+    /// ellipsis read as a truncated label.
+    private var actionCaption: String? {
         switch tile.state {
-        case .on, .off, .unknown, .working, .unavailable: return name
-        case .askPermission: return String(localized: "quickToggles.state.allow", defaultValue: "Allow…")
+        case .on, .off, .unknown, .working, .unavailable: return nil
+        case .askPermission: return String(localized: "quickToggles.state.allow", defaultValue: "Allow")
         case .denied: return String(localized: "quickToggles.state.denied", defaultValue: "Not allowed")
-        case .needsSetup: return String(localized: "quickToggles.state.setUp", defaultValue: "Set up…")
+        case .needsSetup: return String(localized: "quickToggles.state.setUp", defaultValue: "Set up")
         case .failed: return String(localized: "quickToggles.state.retry", defaultValue: "Retry")
         }
     }
@@ -191,6 +209,23 @@ private struct QuickToggleTile: View {
         case .none:
             return ""
         }
+    }
+}
+
+/// The Bluetooth rune, drawn to stroke at caption size.
+private struct BluetoothGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * rect.width, y: rect.minY + y * rect.height)
+        }
+        var path = Path()
+        path.move(to: p(0, 0.27))
+        path.addLine(to: p(1, 0.73))
+        path.addLine(to: p(0.5, 1))
+        path.addLine(to: p(0.5, 0))
+        path.addLine(to: p(1, 0.27))
+        path.addLine(to: p(0, 0.73))
+        return path
     }
 }
 

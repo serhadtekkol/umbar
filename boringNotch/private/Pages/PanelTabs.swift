@@ -107,7 +107,7 @@ struct PanelPageView: View {
                 .id(page)
                 .transition(.page(direction: direction, reduce: reduceMotion))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .topLeading)
         .onChange(of: selected) { old, new in
             // close() puts the selection back on Şimdi; the page that is
             // folding away keeps showing what it showed.
