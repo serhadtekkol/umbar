@@ -79,8 +79,10 @@ enum MotionFrameRenderer {
         let session = Session(root, size: size)
         session.play(change: { withAnimation(UmbarMotion.open()) { vm.open() } },
                      name: { out.appendingPathComponent("open-\(tag)-\($0).png") })
-        session.play(change: { withAnimation(UmbarMotion.tab()) { BoringViewCoordinator.shared.currentView = .calendar } },
-                     name: { out.appendingPathComponent("page-\(tag)-\($0).png") })
+        for tab in PanelTab.available where tab.view != .home {
+            session.play(change: { withAnimation(UmbarMotion.tab()) { BoringViewCoordinator.shared.currentView = tab.view } },
+                         name: { out.appendingPathComponent("page-\(tab.view)-\(tag)-\($0).png") })
+        }
         session.play(change: {
             BoringViewCoordinator.shared.currentView = .home
             vm.close()
