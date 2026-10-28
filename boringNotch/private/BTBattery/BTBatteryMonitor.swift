@@ -257,8 +257,15 @@ final class BTBatteryMonitor: NSObject, ObservableObject {
         let hasAudio = connected.contains(where: \.isAudio)
         if BTProfilerPolicy.shouldRun(hasConnectedAudio: hasAudio, lastRun: lastProfilerRun, now: now, forced: forceProfiler) {
             lastProfilerRun = now
-            profilerCache = await Self.readProfiler()
+            // Cancellation (a newer refresh) stops system_profiler too, so
+            // the result is only kept when this refresh is still current;
+            // a stopped run would otherwise blank every battery.
+            let fresh = await Self.readProfiler()
             guard !Task.isCancelled, enabled else { return }
+            profilerCache = fresh
+        } else if forceProfiler,
+                  let delay = BTProfilerPolicy.forcedRetryDelay(hasConnectedAudio: hasAudio, lastRun: lastProfilerRun, now: now) {
+            scheduleRefresh(after: .milliseconds(Int(delay * 1000) + 50), forceProfiler: true)
         }
 
         devices = BTBatteryMerge.merge(connected: connected, profiler: profilerCache, hid: hid)
