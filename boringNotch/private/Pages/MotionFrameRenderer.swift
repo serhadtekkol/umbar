@@ -18,6 +18,9 @@
 //    wifi-on-<ms>.png            and the one-tap turn back on
 //    undo-chip-in-<ms>.png       the Raf "Taşındı · Geri al" chip arriving
 //    undo-chip-out-<ms>.png      and leaving on its close button
+//    privacy-<state>-<notch>-<ms>.png  the camera/mic ear arriving on the
+//                                closed island (state: both, camera, mic)
+//    privacy-caffeinate-<notch>.png    that ear beside Caffeinate's ear
 //
 
 #if DEBUG
@@ -35,6 +38,7 @@ enum MotionFrameRenderer {
         for notch in [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)] {
             renderTabSwitches(notch: notch, out: out)
             renderIsland(notch: notch, out: out)
+            renderPrivacyEar(notch: notch, out: out)
         }
         renderWiFiConfirm(out: out)
         renderUndoChip(out: out)
@@ -97,6 +101,52 @@ enum MotionFrameRenderer {
             vm.notchSize = notch
         }, name: { out.appendingPathComponent("close-\(tag)-\($0).png") })
         session.close()
+    }
+
+    // MARK: Camera / microphone ear
+
+    /// The real closed island with a fixture usage; nothing is listening to
+    /// the hardware in a render run, so the fixture is all it shows.
+    private static func renderPrivacyEar(notch: CGSize, out: URL) {
+        let tag = "\(Int(notch.width))x\(Int(notch.height))"
+        let monitor = PrivacyIndicatorMonitor.shared
+        let states: [(String, PrivacyUsage)] = [
+            ("both", PrivacyUsage(camera: true, microphone: true, microphoneApps: ["FaceTime"])),
+            ("camera", PrivacyUsage(camera: true, microphone: false, microphoneApps: [])),
+            ("mic", PrivacyUsage(camera: false, microphone: true, microphoneApps: [])),
+        ]
+        let vm = fixtureViewModel(notch: notch)
+        vm.notchSize = notch
+        let root = ContentView()
+            .environmentObject(vm)
+            .frame(width: windowSize.width, height: 80, alignment: .top)
+            .background(Color(white: 0.85))
+        let session = Session(root, size: NSSize(width: windowSize.width, height: 80))
+        for (state, usage) in states {
+            session.play(change: { monitor.showFixture(usage) },
+                         name: { out.appendingPathComponent("privacy-\(state)-\(tag)-\($0).png") })
+            // Back to no ear between states, so each one is seen arriving.
+            monitor.showFixture(.idle)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+        }
+        session.close()
+
+        // Caffeinate's ear drawn without CaffeinateService, so the render
+        // never takes a power assertion.
+        let both = states[0].1
+        let pair = UnevenRoundedRectangle(bottomLeadingRadius: 10, bottomTrailingRadius: 10)
+            .fill(.black)
+            .frame(width: notch.width, height: notch.height)
+            .background(alignment: .topTrailing) {
+                PrivacyClosedEar(usage: both, height: notch.height, innerWidth: CaffeinateClosedBadge.width(height: notch.height))
+                CaffeinateClosedEar(height: notch.height)
+            }
+            .frame(width: notch.width + 200, height: notch.height + 20, alignment: .top)
+            .background(Color(white: 0.85))
+            .environment(\.colorScheme, .dark)
+        let still = Session(pair, size: NSSize(width: notch.width + 200, height: notch.height + 20))
+        capture(still.host, to: out.appendingPathComponent("privacy-caffeinate-\(tag).png"))
+        still.close()
     }
 
     // MARK: Wi-Fi off confirmation

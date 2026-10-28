@@ -152,6 +152,7 @@ struct ContentView: View {
                     // Behind the island, so a badge slides out from under the
                     // notch edge instead of fading in on top of it.
                     .background(alignment: .topTrailing) {
+                        PrivacyClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                         CaffeinateClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                     }
                     .background(alignment: .topLeading) {

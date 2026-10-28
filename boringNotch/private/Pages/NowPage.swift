@@ -13,11 +13,12 @@ import SwiftUI
 struct TodayColumn: View {
     @ObservedObject private var calendarManager = CalendarManager.shared
     @ObservedObject private var liveCenter = LiveActivityCenter.shared
+    @ObservedObject private var privacy = PrivacyIndicatorMonitor.shared
     @Default(.showCalendar) private var showCalendar
     @Default(.showReminders) private var showReminders
 
     var body: some View {
-        TodayColumnContent(agenda: agenda, live: liveCenter.panelItems) {
+        TodayColumnContent(agenda: agenda, live: liveCenter.panelItems, privacy: privacy.usage) {
             withAnimation(.easeOut(duration: 0.18)) {
                 BoringViewCoordinator.shared.currentView = .calendar
             }
@@ -75,6 +76,8 @@ enum TodayAgenda: Equatable {
 struct TodayColumnContent: View {
     let agenda: TodayAgenda
     let live: [LiveActivity]
+    /// Camera/microphone in use (F23); a row under the live activities.
+    var privacy: PrivacyUsage = .idle
     let showCalendarPage: () -> Void
 
     static let width: CGFloat = 236
@@ -82,7 +85,7 @@ struct TodayColumnContent: View {
 
     /// Calendar off and nothing live: no column, the music takes the width.
     var body: some View {
-        if agenda != .off || !live.isEmpty { column }
+        if agenda != .off || !live.isEmpty || privacy.isActive { column }
     }
 
     private var column: some View {
@@ -105,9 +108,16 @@ struct TodayColumnContent: View {
                     }
                 }
             }
-            if !live.isEmpty {
-                LiveActivityList(items: live, limit: agenda == .off ? 4 : 2)
-                    .padding(.top, agenda == .off ? 0 : 4)
+            if !live.isEmpty || privacy.isActive {
+                // One list of capsules: the privacy row takes the place of
+                // one live line, at the live lines' own spacing.
+                VStack(alignment: .leading, spacing: 6) {
+                    if !live.isEmpty {
+                        LiveActivityList(items: live, limit: (agenda == .off ? 4 : 2) - (privacy.isActive ? 1 : 0))
+                    }
+                    if privacy.isActive { PrivacyUsageRow(usage: privacy) }
+                }
+                .padding(.top, agenda == .off ? 0 : 4)
             }
         }
         .frame(width: Self.width, alignment: .topLeading)

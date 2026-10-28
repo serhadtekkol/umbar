@@ -270,6 +270,8 @@ struct GeneralSettings: View {
             gestureControls()
 
             LiveActivitiesSettingsSection()
+
+            PrivacyIndicatorSettingsSection()
         }
         .toolbar {
             Button("Quit app") {

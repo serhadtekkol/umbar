@@ -38,6 +38,10 @@ enum PanelPageRenderer {
                    to: out.appendingPathComponent("page-home-noaccess-\(tag).png"))
             render(nowPage(agenda: .off, live: []), selected: .home, notch: notch,
                    to: out.appendingPathComponent("page-home-musiconly-\(tag).png"))
+            for (state, agenda, live, usage) in privacyFixtures() {
+                render(nowPage(agenda: agenda, live: live, privacy: usage), selected: .home, notch: notch,
+                       to: out.appendingPathComponent("page-home-privacy-\(state)-\(tag).png"))
+            }
             for (state, ghosts) in undoChipFixtures() {
                 render(ShelfView(undoChipFixture: ghosts), selected: .shelf, notch: notch,
                        to: out.appendingPathComponent("page-shelf-undo-\(state)-\(tag).png"))
@@ -58,8 +62,25 @@ enum PanelPageRenderer {
         }
     }
 
-    private static func nowPage(agenda: TodayAgenda, live: [LiveActivity]) -> some View {
-        NowFixture(column: TodayColumnContent(agenda: agenda, live: live, showCalendarPage: {}))
+    private static func nowPage(agenda: TodayAgenda, live: [LiveActivity], privacy: PrivacyUsage = .idle) -> some View {
+        NowFixture(column: TodayColumnContent(agenda: agenda, live: live, privacy: privacy, showCalendarPage: {}))
+    }
+
+    /// F23 rows: the fullest column, the column with nothing else in it,
+    /// a microphone nobody could be named for, and a name list that must
+    /// truncate.
+    private static func privacyFixtures() -> [(String, TodayAgenda, [LiveActivity], PrivacyUsage)] {
+        let both = PrivacyUsage(camera: true, microphone: true, microphoneApps: ["FaceTime", "zoom.us"])
+        let camera = PrivacyUsage(camera: true, microphone: false, microphoneApps: [])
+        let unnamed = PrivacyUsage(camera: false, microphone: true, microphoneApps: [])
+        let many = PrivacyUsage(camera: false, microphone: true,
+                                microphoneApps: ["Google Chrome", "Microsoft Teams", "Slack", "zoom.us"])
+        return [
+            ("full", .items(fixtureEvents()), fixtureLive(), both),
+            ("cameraonly", .off, [], camera),
+            ("micunnamed", .items(fixtureEvents()), [], unnamed),
+            ("manyapps", .items([]), fixtureLive(), many),
+        ]
     }
 
     private struct NowFixture: View {

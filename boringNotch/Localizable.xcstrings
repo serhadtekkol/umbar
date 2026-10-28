@@ -1345,6 +1345,118 @@
         }
       }
     },
+    "privacy.camera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera"
+          }
+        }
+      }
+    },
+    "privacy.camera.inUse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera in use"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera kullanımda"
+          }
+        }
+      }
+    },
+    "privacy.microphone.apps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mikrofon: %@"
+          }
+        }
+      }
+    },
+    "privacy.microphone.inUse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone in use"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mikrofon kullanımda"
+          }
+        }
+      }
+    },
+    "privacy.settings.enabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show when the camera or microphone is in use"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera veya mikrofon kullanımdayken göster"
+          }
+        }
+      }
+    },
+    "privacy.settings.enabled.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A dot beside the closed notch, and on the Now page the apps using the microphone. macOS does not tell other apps which one uses the camera, so the camera is shown without a name. umbar never turns either on."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapalı notch'un yanında bir nokta, Şimdi sayfasında da mikrofonu kullanan uygulamalar. macOS kamerayı hangi uygulamanın kullandığını başka uygulamalara söylemez; bu yüzden kamera adsız gösterilir. umbar ikisini de hiçbir zaman açmaz."
+          }
+        }
+      }
+    },
+    "privacy.settings.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera and microphone"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera ve mikrofon"
+          }
+        }
+      }
+    },
     "quickToggles.hint.armOff" : {
       "localizations" : {
         "en" : {
