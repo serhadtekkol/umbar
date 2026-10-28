@@ -36,6 +36,9 @@ enum ClipboardEvent: Equatable, Sendable {
     /// Image bytes were read (PNG preferred over TIFF). `data` is user
     /// content: never log it. `type` is the representation that was read.
     case capturedImage(data: Data, type: NSPasteboard.PasteboardType, changeCount: Int)
+    /// An image was read but is larger than the monitor's `maxImageBytes`;
+    /// the bytes were dropped right after the read.
+    case skippedOversizeImage(byteCount: Int, changeCount: Int)
     /// The change carried neither plain text nor a PNG/TIFF image, or it was
     /// a file copy (Finder): files belong on the shelf, not in the history.
     case skippedNonText(changeCount: Int)
@@ -62,7 +65,8 @@ enum ClipboardEvent: Equatable, Sendable {
 /// `readObjects`, `detectedValues`) were not measured and are assumed to
 /// behave like `string(forType:)`.
 ///
-/// Threading: main actor only. This is not a style choice. With pasteboard
+/// Threading: main actor, except the image read itself (see
+/// `imageReadQueue`). This is not a style choice. With pasteboard
 /// privacy enforced, `NSPasteboard.accessBehavior` is answered by AppKit's
 /// TrustedUIService over a run-loop semaphore and asserts (SIGABRT,
 /// `-[HIRunLoopSemaphore wait:]`) when called off the main thread. On a
@@ -149,6 +153,11 @@ final class ClipboardMonitor {
     private let leeway: DispatchTimeInterval
     private let policy: ReadPolicy
     private let onEvent: (ClipboardEvent) -> Void
+    private let imageReadQueue: DispatchQueue?
+    private let maxImageBytes: Int
+    /// Bumped by `stop()`, so an image read still in flight when the
+    /// history is switched off is dropped instead of delivered.
+    private var generation = 0
     private let log = Logger(subsystem: "umbar", category: "ClipboardMonitor")
 
     private var timer: DispatchSourceTimer?
@@ -174,8 +183,19 @@ final class ClipboardMonitor {
     ///     (`noteActivated`). Tests inject it.
     ///   - excludedBundleIDs: The user's own exclusion list (AC-4.5), read at
     ///     every change so an edit in Settings applies to the next copy.
-    ///   - onEvent: Called synchronously on the main actor, once per
-    ///     observed change.
+    ///   - imageReadQueue: Where image bytes are read. A TIFF from Preview
+    ///     can be 30 MB and more, which is a visible hitch on the main
+    ///     thread. `nil` reads inline, for tests and the spike harness.
+    ///     Only `data(forType:)` runs there, and only after `accessBehavior`
+    ///     (main-thread only, see above) said `.alwaysAllow`, so it cannot
+    ///     be the read that raises the alert.
+    ///   - maxImageBytes: Images above this are dropped as
+    ///     `.skippedOversizeImage` right after the read. The pasteboard has
+    ///     no size query, so the read cannot be avoided, only kept off the
+    ///     main thread and not handed on.
+    ///   - onEvent: Called on the main actor, once per observed change:
+    ///     synchronously from `tick()`, except for an image read on
+    ///     `imageReadQueue`, which is delivered when the read finishes.
     init(
         source: PasteboardSource = NSPasteboard.general,
         interval: DispatchTimeInterval = .milliseconds(500),
@@ -183,8 +203,12 @@ final class ClipboardMonitor {
         policy: ReadPolicy = .onlyWhenAlwaysAllowed,
         frontmostBundleID: @escaping () -> String? = { NSWorkspace.shared.frontmostApplication?.bundleIdentifier },
         excludedBundleIDs: @escaping () -> Set<String> = { [] },
+        imageReadQueue: DispatchQueue? = DispatchQueue(label: "umbar.clipboard-monitor.image-read", qos: .utility),
+        maxImageBytes: Int = .max,
         onEvent: @escaping (ClipboardEvent) -> Void
     ) {
+        self.imageReadQueue = imageReadQueue
+        self.maxImageBytes = maxImageBytes
         self.source = source
         self.frontmostBundleID = frontmostBundleID
         self.excludedBundleIDs = excludedBundleIDs
@@ -230,6 +254,7 @@ final class ClipboardMonitor {
         if let activationObserver { NSWorkspace.shared.notificationCenter.removeObserver(activationObserver) }
         activationObserver = nil
         frontmostSinceLastTick = []
+        generation += 1
     }
 
     /// Records that `bundleID` came to the front. Production calls it from
@@ -246,7 +271,8 @@ final class ClipboardMonitor {
     }
 
     /// One poll. Internal so the harness can drive it deterministically
-    /// without a timer.
+    /// without a timer. Returns `nil` when nothing changed, and also when an
+    /// image read was handed to `imageReadQueue` (its event follows).
     @discardableResult
     func tick() -> ClipboardEvent? {
         let current = frontmostBundleID()
@@ -309,11 +335,11 @@ final class ClipboardMonitor {
         }
 
         if !types.contains(.string), let imageType {
-            guard let data = source.data(forType: imageType) else {
-                return .permissionRequired(behavior: source.accessBehavior, changeCount: count)
+            guard let queue = imageReadQueue else {
+                return imageEvent(source.data(forType: imageType), type: imageType, changeCount: count)
             }
-            guard source.changeCount == count else { return nil }
-            return .capturedImage(data: data, type: imageType, changeCount: count)
+            readImageInBackground(type: imageType, changeCount: count, on: queue)
+            return nil
         }
 
         guard let text = source.string(forType: .string) else {
@@ -329,6 +355,35 @@ final class ClipboardMonitor {
         return .captured(text: text, changeCount: count)
     }
 
+    /// What one image read amounts to. Main actor: it reads `changeCount`
+    /// and, for a refused read, `accessBehavior`.
+    private func imageEvent(_ data: Data?, type: NSPasteboard.PasteboardType, changeCount count: Int) -> ClipboardEvent? {
+        guard let data else {
+            return .permissionRequired(behavior: source.accessBehavior, changeCount: count)
+        }
+        guard source.changeCount == count else { return nil }
+        guard data.count <= maxImageBytes else {
+            return .skippedOversizeImage(byteCount: data.count, changeCount: count)
+        }
+        return .capturedImage(data: data, type: type, changeCount: count)
+    }
+
+    private func readImageInBackground(type: NSPasteboard.PasteboardType, changeCount count: Int, on queue: DispatchQueue) {
+        let source = UncheckedSendable(source)
+        let generation = generation
+        queue.async { [weak self] in
+            let data = source.value.data(forType: type)
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self, self.generation == generation else { return }
+                    guard let event = self.imageEvent(data, type: type, changeCount: count) else { return }
+                    self.log.debug("change \(count, privacy: .public): \(Self.describe(event), privacy: .public)")
+                    self.onEvent(event)
+                }
+            }
+        }
+    }
+
     /// Content-free description for logs.
     nonisolated static func describe(_ event: ClipboardEvent) -> String {
         switch event {
@@ -337,8 +392,17 @@ final class ClipboardMonitor {
         // No bundle ID: this string is logged `.public`.
         case .skippedSourceApp: return "skippedSourceApp"
         case .skippedSensitive(let marker, _): return "skippedSensitive(\(marker))"
+        case .skippedOversizeImage(let bytes, _): return "skippedOversizeImage(bytes=\(bytes))"
         case .skippedNonText: return "skippedNonText"
         case .permissionRequired(let b, _): return "permissionRequired(behavior=\(b.rawValue))"
         }
     }
+}
+
+/// Carries the pasteboard to the image-read queue. `NSPasteboard` is not
+/// `Sendable`, but reading one type from it on another thread is what
+/// AppKit's own pasteboard readers do; nothing else touches it there.
+private struct UncheckedSendable<Value>: @unchecked Sendable {
+    let value: Value
+    init(_ value: Value) { self.value = value }
 }

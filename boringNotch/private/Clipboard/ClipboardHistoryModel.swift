@@ -159,7 +159,8 @@ final class ClipboardHistoryModel: ObservableObject {
                                        limit: Defaults[.clipboardHistoryLimit], retention: retention)
             items = history.items
             startExpiryTimer()
-            let m = ClipboardMonitor(excludedBundleIDs: { Set(Defaults[.clipboardExcludedBundleIDs]) }) { [weak self] event in
+            let m = ClipboardMonitor(excludedBundleIDs: { Set(Defaults[.clipboardExcludedBundleIDs]) },
+                                     maxImageBytes: ClipboardHistoryPolicy.maxImageBytes) { [weak self] event in
                 self?.handle(event)
             }
             monitor = m
@@ -223,10 +224,9 @@ final class ClipboardHistoryModel: ObservableObject {
             record(ClipboardItem(content: content, copiedAt: Date()), image: nil)
         case .capturedImage(let data, let type, _):
             permissionRequired = false
-            guard data.count <= ClipboardHistoryPolicy.maxImageBytes else {
-                log.debug("image over the size cap, not recorded")
-                return
-            }
+            // The monitor already drops oversize images; this stays as the
+            // rule's owner, in case a caller builds a monitor without it.
+            guard data.count <= ClipboardHistoryPolicy.maxImageBytes else { return }
             let id = UUID()
             let uti = type == .png ? "public.png" : "public.tiff"
             let ref = ClipboardItem.ImageRef(
@@ -236,6 +236,8 @@ final class ClipboardHistoryModel: ObservableObject {
             record(ClipboardItem(id: id, content: .image(ref), copiedAt: Date()), image: data)
         case .permissionRequired:
             permissionRequired = true
+        case .skippedOversizeImage:
+            permissionRequired = false
         case .skippedSensitive, .skippedNonText, .skippedSourceApp:
             break
         }

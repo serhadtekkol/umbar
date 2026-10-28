@@ -27,6 +27,8 @@ private final class FakePasteboard: PasteboardSource {
     var otherStrings: [NSPasteboard.PasteboardType: String] = [:]
     var imageData: [NSPasteboard.PasteboardType: Data] = [:]
     private(set) var reads = 0
+    /// Called at the start of every `data(forType:)`, on the reading thread.
+    var onDataRead: (() -> Void)?
     /// Simulates another app writing while we read.
     var changesDuringRead = false
 
@@ -37,6 +39,7 @@ private final class FakePasteboard: PasteboardSource {
     }
 
     func data(forType dataType: NSPasteboard.PasteboardType) -> Data? {
+        onDataRead?()
         reads += 1
         if changesDuringRead { changeCount += 1 }
         return imageData[dataType]
@@ -97,10 +100,66 @@ struct ClipboardMonitorTests {
 
     @Test func imageIsCapturedPreferringPNG() {
         let pasteboard = FakePasteboard()
-        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }, imageReadQueue: nil) { _ in }
         pasteboard.imageData = [.png: Data([1, 2]), .tiff: Data([3])]
         pasteboard.write([.tiff, .png], text: nil)
         #expect(monitor.tick() == .capturedImage(data: Data([1, 2]), type: .png, changeCount: 1))
+    }
+
+    /// L6: an image over the cap is read (the pasteboard has no size
+    /// query) but never handed on.
+    @Test func oversizeImageIsDroppedAfterTheRead() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil },
+                                       imageReadQueue: nil, maxImageBytes: 2) { _ in }
+        pasteboard.imageData = [.tiff: Data([1, 2, 3])]
+        pasteboard.write([.tiff], text: nil)
+        #expect(monitor.tick() == .skippedOversizeImage(byteCount: 3, changeCount: 1))
+        pasteboard.imageData = [.tiff: Data([1, 2])]
+        pasteboard.write([.tiff], text: nil)
+        #expect(monitor.tick() == .capturedImage(data: Data([1, 2]), type: .tiff, changeCount: 2), "at the cap is kept")
+    }
+
+    /// L6: the image bytes are read on the given queue, and the event comes
+    /// back on the main actor.
+    @Test func imagesAreReadOffTheMainThread() async {
+        let pasteboard = FakePasteboard()
+        let queue = DispatchQueue(label: "umbarTests.clipboard.image-read")
+        var readOnMain: Bool?
+        pasteboard.onDataRead = { readOnMain = Thread.isMainThread }
+        var monitor: ClipboardMonitor?
+        let event: ClipboardEvent = await withCheckedContinuation { continuation in
+            let m = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }, imageReadQueue: queue) {
+                continuation.resume(returning: $0)
+            }
+            monitor = m
+            pasteboard.imageData = [.png: Data([7])]
+            pasteboard.write([.png], text: nil)
+            #expect(m.tick() == nil, "delivered later, not from tick()")
+        }
+        withExtendedLifetime(monitor) {}
+        #expect(event == .capturedImage(data: Data([7]), type: .png, changeCount: 1))
+        #expect(readOnMain == false)
+    }
+
+    /// Switching the history off while a read is in flight drops it.
+    @Test func imageReadInFlightWhenStoppedIsDropped() async {
+        let pasteboard = FakePasteboard()
+        let queue = DispatchQueue(label: "umbarTests.clipboard.image-read")
+        var delivered: [ClipboardEvent] = []
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }, imageReadQueue: queue) {
+            delivered.append($0)
+        }
+        pasteboard.imageData = [.png: Data([7])]
+        pasteboard.write([.png], text: nil)
+        queue.suspend()
+        monitor.tick()
+        monitor.stop()
+        queue.resume()
+        queue.sync {}
+        // The read's main-queue hop was enqueued before this one.
+        await withCheckedContinuation { c in DispatchQueue.main.async { c.resume() } }
+        #expect(delivered.isEmpty)
     }
 
     @Test func textWinsOverAnImage() {
