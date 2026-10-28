@@ -12,6 +12,7 @@ struct ClipboardHistorySettingsSection: View {
     @ObservedObject private var model = ClipboardHistoryModel.shared
     @Default(.clipboardHistoryEnabled) private var enabled
     @Default(.clipboardHistoryLimit) private var limit
+    @Default(.clipboardHistoryRetentionDays) private var retentionDays
 
     var body: some View {
         Section {
@@ -29,6 +30,11 @@ struct ClipboardHistorySettingsSection: View {
                 Picker(String(localized: "settings.clipboard.limit", defaultValue: "Keep the last"), selection: $limit) {
                     ForEach(ClipboardHistoryPolicy.limitChoices, id: \.self) { n in
                         Text(String(localized: "settings.clipboard.limit.items", defaultValue: "\(n) items")).tag(n)
+                    }
+                }
+                Picker(String(localized: "settings.clipboard.retention", defaultValue: "Delete items after"), selection: $retentionDays) {
+                    ForEach(ClipboardHistoryPolicy.retentionChoices, id: \.self) { days in
+                        Text(Self.retentionLabel(days)).tag(days)
                     }
                 }
                 if model.permissionRequired {
@@ -56,6 +62,14 @@ struct ClipboardHistorySettingsSection: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private static func retentionLabel(_ days: Int) -> String {
+        switch days {
+        case 0: String(localized: "settings.clipboard.retention.never", defaultValue: "Never")
+        case 1: String(localized: "settings.clipboard.retention.day", defaultValue: "1 day")
+        default: String(localized: "settings.clipboard.retention.days", defaultValue: "\(days) days")
         }
     }
 }

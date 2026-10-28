@@ -14,6 +14,9 @@ extension Defaults.Keys {
     static let clipboardHistoryEnabled = Key<Bool>("clipboardHistoryEnabled", default: true)
     /// How many copies to keep; one of `ClipboardHistoryPolicy.limitChoices`.
     static let clipboardHistoryLimit = Key<Int>("clipboardHistoryLimit", default: ClipboardHistoryPolicy.defaultLimit)
+    /// BR-4.4: days a copy is kept; one of
+    /// `ClipboardHistoryPolicy.retentionChoices`, 0 for unlimited.
+    static let clipboardHistoryRetentionDays = Key<Int>("clipboardHistoryRetentionDays", default: ClipboardHistoryPolicy.defaultRetentionDays)
     /// Which side of the Raf page was last shown, so reopening the panel
     /// comes back to it. Not a setting; not shown in Settings.
     static let shelfPageSection = Key<ShelfPageSection>("shelfPageSection", default: .files)

@@ -34,10 +34,15 @@ final class ClipboardHistoryModel: ObservableObject {
     /// miss is filled while the card is being drawn.
     private var thumbnails: [UUID: NSImage] = [:]
     private var confirmationReset: DispatchWorkItem?
+    /// Hourly BR-4.4 sweep while the history is on.
+    private var expiryTimer: Timer?
     private let log = Logger(subsystem: "umbar", category: "ClipboardHistory")
 
     /// How long a card says "Copied" after a click.
     static let confirmationDuration: TimeInterval = 1.2
+    /// How often aged items are swept while umbar runs. With a 1-day
+    /// retention an item outlives it by at most this much.
+    static let expiryInterval: TimeInterval = 3600
     /// Longest side of a card preview, in pixels (2x the card's 120 pt).
     private static let thumbnailPixels = 240
 
@@ -74,6 +79,12 @@ final class ClipboardHistoryModel: ObservableObject {
                 MainActor.assumeIsolated { self?.setLimit(change.newValue) }
             }
             .store(in: &observations)
+        Defaults.publisher(.clipboardHistoryRetentionDays)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                MainActor.assumeIsolated { self?.setRetention(days: change.newValue) }
+            }
+            .store(in: &observations)
     }
 
     /// Waits for queued disk writes. Called at quit.
@@ -95,7 +106,7 @@ final class ClipboardHistoryModel: ObservableObject {
             pasteboard.setString(link, forType: .string)
             pasteboard.setString(link, forType: .URL)
         case .image(let ref):
-            guard let store, let data = try? Data(contentsOf: store.imageURL(for: ref)) else {
+            guard let url = store?.imageURL(for: ref), let data = try? Data(contentsOf: url) else {
                 // The file is gone (deleted by hand); the item cannot be
                 // copied back, so it should not stay in the list either.
                 delete(item)
@@ -132,8 +143,8 @@ final class ClipboardHistoryModel: ObservableObject {
 
     func thumbnail(for item: ClipboardItem) -> NSImage? {
         if let cached = thumbnails[item.id] { return cached }
-        guard let ref = item.imageRef, let store,
-              let image = Self.downsampled(url: store.imageURL(for: ref)) else { return nil }
+        guard let ref = item.imageRef, let url = store?.imageURL(for: ref),
+              let image = Self.downsampled(url: url) else { return nil }
         thumbnails[item.id] = image
         return image
     }
@@ -143,8 +154,11 @@ final class ClipboardHistoryModel: ObservableObject {
     private func setEnabled(_ enabled: Bool) {
         if enabled {
             guard monitor == nil else { return }
-            history = ClipboardHistory(items: store?.load() ?? [], limit: Defaults[.clipboardHistoryLimit])
+            let retention = ClipboardHistoryPolicy.retention(days: Defaults[.clipboardHistoryRetentionDays])
+            history = ClipboardHistory(items: store?.load(now: Date(), retention: retention) ?? [],
+                                       limit: Defaults[.clipboardHistoryLimit], retention: retention)
             items = history.items
+            startExpiryTimer()
             let m = ClipboardMonitor { [weak self] event in self?.handle(event) }
             monitor = m
             m.start()
@@ -152,6 +166,8 @@ final class ClipboardHistoryModel: ObservableObject {
         } else {
             monitor?.stop()
             monitor = nil
+            expiryTimer?.invalidate()
+            expiryTimer = nil
             history.removeAll()
             thumbnails = [:]
             items = []
@@ -167,6 +183,32 @@ final class ClipboardHistoryModel: ObservableObject {
         guard !evicted.isEmpty else { return }
         forget(evicted)
         publishAndSave()
+    }
+
+    private func setRetention(days: Int) {
+        let evicted = history.setRetention(ClipboardHistoryPolicy.retention(days: days), now: Date())
+        guard !evicted.isEmpty else { return }
+        forget(evicted)
+        publishAndSave()
+    }
+
+    private func startExpiryTimer() {
+        expiryTimer?.invalidate()
+        let timer = Timer(timeInterval: Self.expiryInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.expireAgedItems() }
+        }
+        // Precision does not matter for an hourly sweep; let it coalesce.
+        timer.tolerance = 60
+        RunLoop.main.add(timer, forMode: .common)
+        expiryTimer = timer
+    }
+
+    private func expireAgedItems() {
+        let evicted = history.expire(now: Date())
+        guard !evicted.isEmpty else { return }
+        forget(evicted)
+        publishAndSave()
+        log.info("clipboard history: \(evicted.count, privacy: .public) aged items removed")
     }
 
     // MARK: Monitor events
