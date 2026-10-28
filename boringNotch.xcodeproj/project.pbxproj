@@ -362,6 +362,7 @@
 				LiveActivities/LiveActivityModel.swift,
 				LiveActivities/PowerSourceParsing.swift,
 				LiveActivities/TimeMachineParsing.swift,
+				Panel/CapturePrivacyPolicy.swift,
 				Panel/NotchHoverPolicy.swift,
 				Panel/PanelKeyPolicy.swift,
 				PrivacyIndicator/PrivacyIndicatorCore.swift,

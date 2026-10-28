@@ -82,14 +82,24 @@ class BoringNotchSkyLightWindow: NSPanel {
                 self?.updateSharingType()
             }
             .store(in: &observers)
+        // L5: the clipboard history on screen excludes the window too.
+        CapturePrivacy.shared.$sensitiveOnScreen
+            .removeDuplicates()
+            .sink { [weak self] sensitive in
+                self?.updateSharingType(sensitiveOnScreen: sensitive)
+            }
+            .store(in: &observers)
     }
 
-    private func updateSharingType() {
-        if Defaults[.hideFromScreenRecording] {
-            sharingType = .none
-        } else {
-            sharingType = .readWrite
-        }
+    /// `sensitiveOnScreen` is passed by the CapturePrivacy sink because
+    /// @Published delivers in willSet: the property still holds the old
+    /// value while the sink runs.
+    private func updateSharingType(sensitiveOnScreen: Bool? = nil) {
+        let excluded = CapturePrivacyPolicy.excludesFromCapture(
+            userHides: Defaults[.hideFromScreenRecording],
+            sensitiveOnScreen: sensitiveOnScreen ?? CapturePrivacy.shared.sensitiveOnScreen
+        )
+        sharingType = excluded ? .none : .readWrite
     }
 
     private var observers: Set<AnyCancellable> = []
