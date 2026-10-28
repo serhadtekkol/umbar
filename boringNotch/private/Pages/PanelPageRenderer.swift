@@ -24,7 +24,7 @@ enum PanelPageRenderer {
         let out = URL(fileURLWithPath: dir, isDirectory: true)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
         // MacBook Air 13" notch (design-language §3 reference) and a 14" Pro.
-        for notch in [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32)] {
+        for notch in [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)] {
             let tag = "\(Int(notch.width))x\(Int(notch.height))"
             for view in NotchViews.allCases {
                 render(page(view), selected: view, notch: notch, to: out.appendingPathComponent("page-\(view)-\(tag).png"))

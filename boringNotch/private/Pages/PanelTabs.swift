@@ -122,7 +122,11 @@ struct PanelPageView: View {
     @ViewBuilder
     private func content(_ view: NotchViews) -> some View {
         switch view {
-        case .home: NotchHomeView(albumArtNamespace: albumArtNamespace)
+        case .home:
+            // Şimdi is one compact row (player, today): centred in the page
+            // so a tall budget (45 pt notch) leaves no empty band below it.
+            NotchHomeView(albumArtNamespace: albumArtNamespace)
+                .frame(maxHeight: .infinity, alignment: .center)
         case .shelf: ShelfView()
         case .calendar: CalendarPage()
         case .network: NetworkPage()
