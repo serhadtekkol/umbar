@@ -241,6 +241,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         EyeBreakManager.shared.start()
         HUDAccessCard.shared.start()
         LiveActivityCenter.shared.start()
+        BTBatteryMonitor.shared.start()
         NetMonitor.shared.start()
         // Spike A2 prototype; inert unless clipboardMonitorEnabled is set.
         ClipboardMonitorController.shared.activate()

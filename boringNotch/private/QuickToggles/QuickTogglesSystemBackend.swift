@@ -115,6 +115,10 @@ final class SystemQuickTogglesBackend: NSObject, QuickTogglesBackend {
         guard bluetoothConfigured, bluetoothPermission() == .granted else { return [] }
         let paired = (IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice]) ?? []
         let batteries = await Self.readBatteries()
+        // F24: Magic devices' live IORegistry level, for a device that
+        // system_profiler has no level for.
+        let hid = Dictionary(BTBatteryMonitor.readHIDBatteries().map { ($0.id, $0.percent) },
+                             uniquingKeysWith: { first, _ in first })
         return paired.compactMap { device in
             guard let address = device.addressString else { return nil }
             let id = QuickBluetoothAddress.normalize(address)
@@ -126,7 +130,7 @@ final class SystemQuickTogglesBackend: NSObject, QuickTogglesBackend {
                 isAudio: device.deviceClassMajor == kBluetoothDeviceClassMajorAudio,
                 // Levels are cached from the last connection; showing them
                 // for a disconnected device would be stale data.
-                battery: connected ? batteries[id] : nil
+                battery: connected ? (batteries[id] ?? hid[id].map { QuickBattery(single: $0) }) : nil
             )
         }
     }

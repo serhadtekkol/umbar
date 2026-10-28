@@ -248,6 +248,14 @@ final class LiveActivityCenter: ObservableObject {
         publish()
     }
 
+    /// Shows an item a source outside this center produced (F24's
+    /// Bluetooth connect glance). It must carry `stripUntil` / `expiresAt`:
+    /// nothing else removes it. An item with the same id replaces the old one.
+    func flash(_ activity: LiveActivity) {
+        items[activity.id] = activity
+        publish()
+    }
+
     private func remove(kind: LiveActivityKind) {
         remove { $0.kind == kind }
     }

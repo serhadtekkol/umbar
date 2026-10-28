@@ -58,6 +58,23 @@ struct QuickTogglesSettings: View {
             .disabled(!enabled)
 
             Section {
+                Defaults.Toggle(key: .btBatteryEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Show Bluetooth device batteries")
+                        Text("Levels of connected AirPods, Magic Mouse, Keyboard and Trackpad on the Tools page, and a short notice under the notch when one connects.")
+                            .font(.subheadline)
+                            .foregroundStyle(permissionMutedText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            } footer: {
+                Text("AirPods levels need the Bluetooth permission below; Magic devices show theirs without it. Per-ear levels appear only for models that report them to macOS.")
+                    .font(.caption)
+                    .foregroundStyle(permissionMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Section {
                 LabeledContent("Bluetooth devices") {
                     if store.backend.bluetoothConfigured {
                         permissionControl(store.bluetoothPermission, deniedPane: .bluetoothPrivacy) {

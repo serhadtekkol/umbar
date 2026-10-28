@@ -18,6 +18,9 @@
 //    wifi-on-<ms>.png            and the one-tap turn back on
 //    undo-chip-in-<ms>.png       the Raf "Taşındı · Geri al" chip arriving
 //    undo-chip-out-<ms>.png      and leaving on its close button
+//    bt-glance-<notch>-<kind>-<ms>.png  the closed island when a Bluetooth
+//                                device connects (F24), and bt-glance-out-…
+//                                as it leaves after 3 s
 //
 
 #if DEBUG
@@ -35,6 +38,7 @@ enum MotionFrameRenderer {
         for notch in [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)] {
             renderTabSwitches(notch: notch, out: out)
             renderIsland(notch: notch, out: out)
+            renderBluetoothGlance(notch: notch, out: out)
         }
         renderWiFiConfirm(out: out)
         renderUndoChip(out: out)
@@ -96,6 +100,38 @@ enum MotionFrameRenderer {
             vm.closedNotchSize = notch
             vm.notchSize = notch
         }, name: { out.appendingPathComponent("close-\(tag)-\($0).png") })
+        session.close()
+    }
+
+    // MARK: Bluetooth connect glance
+
+    /// The closed island, no music, as three devices connect in turn
+    /// (AirPods with ear and case levels, a mouse with one, one with none).
+    private static func renderBluetoothGlance(notch: CGSize, out: URL) {
+        let tag = "\(Int(notch.width))x\(Int(notch.height))"
+        let music = MusicManager.shared
+        music.isPlaying = false
+        music.isPlayerIdle = true
+        let vm = fixtureViewModel(notch: notch)
+        vm.notchSize = notch
+        let root = ContentView()
+            .environmentObject(vm)
+            .frame(width: windowSize.width, height: 120, alignment: .top)
+            .background(Color(white: 0.85))
+        let session = Session(root, size: NSSize(width: windowSize.width, height: 120))
+        let glances: [(String, String, QuickBattery?)] = [
+            ("airpods", "Serhad Bahadır (AirPods Pro)", QuickBattery(left: 80, right: 75, caseLevel: 60)),
+            ("mouse", "Magic Mouse", QuickBattery(single: 12)),
+            ("nolevel", "JBL Flip 6", nil),
+        ]
+        for (kind, name, battery) in glances {
+            session.play(change: {
+                LiveActivityCenter.shared.flash(.bluetoothConnected(id: kind, name: name, battery: battery, now: Date()))
+            }, name: { out.appendingPathComponent("bt-glance-\(tag)-\(kind)-\($0).png") })
+        }
+        // Past the 3 s glance of the last one: the island is back to the notch.
+        RunLoop.main.run(until: Date().addingTimeInterval(BTConnectGlancePolicy.duration))
+        session.play(change: {}, name: { out.appendingPathComponent("bt-glance-out-\(tag)-\($0).png") })
         session.close()
     }
 

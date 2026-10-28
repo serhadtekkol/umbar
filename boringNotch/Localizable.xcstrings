@@ -7376,6 +7376,198 @@
           }
         }
       }
+    },
+    "liveActivity.bluetooth.connected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlandı"
+          }
+        }
+      }
+    },
+    "btBattery.left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sol %@"
+          }
+        }
+      }
+    },
+    "btBattery.right" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "R %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağ %@"
+          }
+        }
+      }
+    },
+    "btBattery.case" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Case %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kutu %@"
+          }
+        }
+      }
+    },
+    "btBattery.spoken.left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sol kulaklık %@"
+          }
+        }
+      }
+    },
+    "btBattery.spoken.right" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağ kulaklık %@"
+          }
+        }
+      }
+    },
+    "btBattery.spoken.battery" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pil %@"
+          }
+        }
+      }
+    },
+    "btBattery.spoken.case" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Case %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kutu %@"
+          }
+        }
+      }
+    },
+    "btBattery.group" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bluetooth batteries"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bluetooth pilleri"
+          }
+        }
+      }
+    },
+    "Show Bluetooth device batteries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Bluetooth device batteries"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bluetooth cihaz pillerini göster"
+          }
+        }
+      }
+    },
+    "Levels of connected AirPods, Magic Mouse, Keyboard and Trackpad on the Tools page, and a short notice under the notch when one connects." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Levels of connected AirPods, Magic Mouse, Keyboard and Trackpad on the Tools page, and a short notice under the notch when one connects."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlı AirPods, Magic Mouse, Keyboard ve Trackpad'in pil düzeyleri Araçlar sayfasında; biri bağlandığında notch'un altında kısa bir bildirim."
+          }
+        }
+      }
+    },
+    "AirPods levels need the Bluetooth permission below; Magic devices show theirs without it. Per-ear levels appear only for models that report them to macOS." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirPods levels need the Bluetooth permission below; Magic devices show theirs without it. Per-ear levels appear only for models that report them to macOS."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirPods düzeyleri için aşağıdaki Bluetooth izni gerekir; Magic cihazlar düzeylerini izinsiz de gösterir. Kulak başına düzey yalnızca bunu macOS'e bildiren modellerde görünür."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
