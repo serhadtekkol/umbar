@@ -105,6 +105,31 @@ struct PrivacyNamingTests {
         #expect(PrivacyUsage.displayName(bundleID: "com.apple.WebKit.GPU", runningApps: apps) == nil)
     }
 
+    /// L9: a process claiming Zoom's bundle ID is named by its own pid.
+    @Test func thePidOutranksTheClaimedBundleID() {
+        let running = [PrivacyRunningApp(bundleID: "us.zoom.xos", name: "Zoom", pid: 10),
+                       PrivacyRunningApp(bundleID: "org.example.spy", name: "Spy", pid: 66)]
+        #expect(PrivacyUsage.displayName(bundleID: "us.zoom.xos", pid: 66, runningApps: running) == "Spy")
+        #expect(PrivacyUsage.displayName(bundleID: "us.zoom.xos", pid: 10, runningApps: running) == "Zoom")
+    }
+
+    @Test func aPidResolvedHelperStillFoldsIntoItsApp() {
+        let running = [PrivacyRunningApp(bundleID: "com.google.Chrome", name: "Google Chrome", pid: 1),
+                       PrivacyRunningApp(bundleID: "com.google.Chrome.helper", name: "Google Chrome Helper", pid: 2),
+                       PrivacyRunningApp(bundleID: "com.apple.WebKit.GPU", name: "WebKit GPU", pid: 3)]
+        #expect(PrivacyUsage.displayName(bundleID: "com.google.Chrome.helper", pid: 2, runningApps: running) == "Google Chrome")
+        #expect(PrivacyUsage.displayName(bundleID: "com.apple.Safari", pid: 3, runningApps: running) == nil)
+    }
+
+    @Test func reduceNamesByPid() {
+        let running = [PrivacyRunningApp(bundleID: "org.example.spy", name: "Spy", pid: 66)]
+        let usage = PrivacyUsage.reduce(
+            PrivacySample(cameraRunning: false, inputDeviceRunning: true,
+                          audioProcesses: [PrivacyAudioProcess(pid: 66, bundleID: "us.zoom.xos", isRunningInput: true)]),
+            enabled: true, ownPID: 1, runningApps: running)
+        #expect(usage.microphoneApps == ["Spy"])
+    }
+
     @Test func unknownToolStaysUnnamed() {
         #expect(PrivacyUsage.displayName(bundleID: "org.example.recorder", runningApps: apps) == nil)
         #expect(PrivacyUsage.displayName(bundleID: nil, runningApps: apps) == nil)

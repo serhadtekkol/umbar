@@ -66,7 +66,7 @@ final class PrivacyIndicatorMonitor: ObservableObject {
     private func publish(_ sample: PrivacySample) {
         let apps = NSWorkspace.shared.runningApplications.compactMap { app -> PrivacyRunningApp? in
             guard let id = app.bundleIdentifier, let name = app.localizedName else { return nil }
-            return PrivacyRunningApp(bundleID: id, name: name)
+            return PrivacyRunningApp(bundleID: id, name: name, pid: app.processIdentifier)
         }
         let next = PrivacyUsage.reduce(sample, enabled: Defaults[.privacyIndicatorEnabled],
                                        ownPID: ProcessInfo.processInfo.processIdentifier, runningApps: apps)
