@@ -11,8 +11,11 @@
 import Defaults
 import SwiftUI
 
-/// The Raf page. With both the shelf and the clipboard history on it shows
-/// a two-way switch above the content; with one of them off, just that one.
+/// The Raf page. With the shelf on it shows a two-way switch above the
+/// content; the Pano side then holds either the history or, while the
+/// history is off (the default), a short explainer with a "Turn on" button.
+/// With the shelf off only the history is shown (the tab is hidden when
+/// both are off, PanelTabs).
 struct ShelfPage: View {
     @EnvironmentObject private var vm: BoringViewModel
     @Default(.boringShelf) private var shelfOn
@@ -23,40 +26,47 @@ struct ShelfPage: View {
     var undoChipFixture: [ShelfMoveGhost]? = nil
     /// Set only by the page renderer, which cannot write the user's defaults.
     var sectionOverride: ShelfPageSection? = nil
+    /// Set only by the page renderer, for the same reason.
+    var clipboardEnabledOverride: Bool? = nil
 
     init(clipboard: ClipboardHistoryModel = .shared, undoChipFixture: [ShelfMoveGhost]? = nil,
-         section: ShelfPageSection? = nil) {
+         section: ShelfPageSection? = nil, clipboardEnabled: Bool? = nil) {
         self.clipboard = clipboard
         self.undoChipFixture = undoChipFixture
         self.sectionOverride = section
+        self.clipboardEnabledOverride = clipboardEnabled
     }
+
+    private var clipboardEnabled: Bool { clipboardEnabledOverride ?? clipboardOn }
 
     /// Height of the switch row; the content gets the rest of the page.
     static let switchRowHeight: CGFloat = 22
 
     private var section: ShelfPageSection {
-        if !clipboardOn { return .files }
         if !shelfOn { return .clipboard }
         return sectionOverride ?? storedSection
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: PageTokens.s) {
-            if clipboardOn {
-                HStack(spacing: PageTokens.s) {
-                    if shelfOn {
-                        ShelfSectionSwitch(selection: section) { storedSection = $0 }
-                    }
-                    Spacer(minLength: 0)
-                    if section == .clipboard, !clipboard.items.isEmpty {
-                        ClipboardClearAllButton { clipboard.clearAll() }
-                    }
+            HStack(spacing: PageTokens.s) {
+                if shelfOn {
+                    ShelfSectionSwitch(selection: section) { storedSection = $0 }
                 }
-                .frame(height: Self.switchRowHeight)
+                Spacer(minLength: 0)
+                if section == .clipboard, clipboardEnabled, !clipboard.items.isEmpty {
+                    ClipboardClearAllButton { clipboard.clearAll() }
+                }
             }
+            .frame(height: Self.switchRowHeight)
             switch section {
             case .files: ShelfView(undoChipFixture: undoChipFixture)
-            case .clipboard: ClipboardHistoryStrip(model: clipboard)
+            case .clipboard:
+                if clipboardEnabled {
+                    ClipboardHistoryStrip(model: clipboard)
+                } else {
+                    ClipboardHistoryOffCard { Defaults[.clipboardHistoryEnabled] = true }
+                }
             }
         }
         // A file dragged onto the notch means "put it on the shelf"; show
@@ -182,6 +192,45 @@ struct ClipboardHistoryStrip: View {
                 .font(.system(size: 11))
                 .foregroundStyle(PageTokens.textSecondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(PageTokens.raised.opacity(0.5), in: RoundedRectangle(cornerRadius: PageTokens.tileRadius, style: .continuous))
+    }
+}
+
+/// The Pano side while the history is off: what it would do, and one
+/// button that turns it on. Turning on starts recording from the next copy;
+/// nothing copied before is read (BR-4.7).
+struct ClipboardHistoryOffCard: View {
+    let turnOn: () -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "doc.on.clipboard")
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(PageTokens.textSecondary)
+                .imageScale(.large)
+            Text(String(localized: "clipboard.off.title", defaultValue: "Clipboard history is off"))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(PageTokens.textPrimary)
+            Text(String(localized: "clipboard.off.detail",
+                        defaultValue: "Turn it on to keep what you copy here and copy it again with a click. It stays on this Mac."))
+                .font(.system(size: 11))
+                .foregroundStyle(PageTokens.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(action: turnOn) {
+                Text(String(localized: "clipboard.off.turnOn", defaultValue: "Turn On"))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(PageTokens.textPrimary)
+                    .padding(.horizontal, 12)
+                    .frame(height: 22)
+                    .background(PageTokens.raisedStrong, in: Capsule())
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
+        }
+        .padding(.horizontal, PageTokens.s)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PageTokens.raised.opacity(0.5), in: RoundedRectangle(cornerRadius: PageTokens.tileRadius, style: .continuous))
     }

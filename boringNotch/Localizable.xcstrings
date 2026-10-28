@@ -8513,6 +8513,54 @@
         }
       }
     },
+    "clipboard.off.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn it on to keep what you copy here and copy it again with a click. It stays on this Mac."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Açarsan kopyaladıkların burada durur, bir tıkla yeniden kopyalarsın. Bu Mac'ten çıkmaz."
+          }
+        }
+      }
+    },
+    "clipboard.off.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard history is off"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pano geçmişi kapalı"
+          }
+        }
+      }
+    },
+    "clipboard.off.turnOn" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aç"
+          }
+        }
+      }
+    },
     "clipboard.permission.title" : {
       "localizations" : {
         "en" : {
