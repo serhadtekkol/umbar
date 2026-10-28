@@ -16,6 +16,8 @@
 //    wifi-arm-<ms>.png           the quick toggles row, first tap on Wi-Fi
 //    wifi-off-<ms>.png           and the confirming second tap
 //    wifi-on-<ms>.png            and the one-tap turn back on
+//    undo-chip-in-<ms>.png       the Raf "Taşındı · Geri al" chip arriving
+//    undo-chip-out-<ms>.png      and leaving on its close button
 //
 
 #if DEBUG
@@ -35,6 +37,7 @@ enum MotionFrameRenderer {
             renderIsland(notch: notch, out: out)
         }
         renderWiFiConfirm(out: out)
+        renderUndoChip(out: out)
         exit(0)
     }
 
@@ -113,6 +116,31 @@ enum MotionFrameRenderer {
                 out.appendingPathComponent("wifi-\(name)-\($0).png")
             })
         }
+        session.close()
+    }
+
+    // MARK: Shelf undo chip
+
+    /// A model of its own, not the shelf's: the move is made up and its
+    /// paths are never touched (nothing calls undo).
+    private static func renderUndoChip(out: URL) {
+        let model = ShelfMoveUndoModel()
+        let width = openNotchSize.width - 40
+        let root = ZStack(alignment: .bottom) {
+            Color.black
+            Rectangle().fill(Color.white.opacity(0.1)).frame(height: 3).padding(.bottom, ShelfMoveUndoChip.height / 2)
+            ShelfMoveUndoChip(model: model).padding(.horizontal, 40)
+        }
+        .frame(width: width, height: 60)
+        .environment(\.colorScheme, .dark)
+        let session = Session(root, size: NSSize(width: width, height: 60))
+        let item = ShelfItem(kind: .file(bookmark: Data()))
+        let source = ShelfDragSource(path: "/Users/me/Desktop/teklif.pdf", identity: ShelfFileIdentity(device: 1, inode: 1))
+        let destination = URL(fileURLWithPath: "/Users/me/Documents/teklif.pdf")
+        session.play(change: {
+            model.recordMove(of: item, at: 0, source: source) { .found(destination, identity: ShelfFileIdentity(device: 1, inode: 1)) }
+        }, name: { out.appendingPathComponent("undo-chip-in-\($0).png") })
+        session.play(change: { model.dismiss(item.id) }, name: { out.appendingPathComponent("undo-chip-out-\($0).png") })
         session.close()
     }
 

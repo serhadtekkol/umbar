@@ -13,6 +13,9 @@ struct ShelfView: View {
     @StateObject var tvm = ShelfStateViewModel.shared
     @StateObject var selection = ShelfSelectionModel.shared
     @StateObject private var quickLookService = QuickLookService()
+    /// Ghosts for the "Taşındı · Geri al" chip in place of real moves; set
+    /// only by the page renderer.
+    var undoChipFixture: [ShelfMoveGhost]? = nil
     private let spacing: CGFloat = 8
 
     var body: some View {
@@ -60,6 +63,14 @@ struct ShelfView: View {
             .overlay {
                 content
                     .padding()
+            }
+            // On the frame's bottom edge, not in the strip, so the items keep
+            // their place. 4 pt above centred: 8 pt to the island's edge
+            // below, and still clear of a tile's bottom padding above.
+            .overlay(alignment: .bottom) {
+                ShelfMoveUndoChip(model: tvm.moveUndo, fixture: undoChipFixture)
+                    .padding(.horizontal, 40)
+                    .offset(y: ShelfMoveUndoChip.height / 2 - 1.5 - 4)
             }
             .transaction { transaction in
                 transaction.animation = vm.animation

@@ -15,6 +15,7 @@
 import AppKit
 import EventKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor
 enum PanelPageRenderer {
@@ -37,7 +38,12 @@ enum PanelPageRenderer {
                    to: out.appendingPathComponent("page-home-noaccess-\(tag).png"))
             render(nowPage(agenda: .off, live: []), selected: .home, notch: notch,
                    to: out.appendingPathComponent("page-home-musiconly-\(tag).png"))
+            for (state, ghosts) in undoChipFixtures() {
+                render(ShelfView(undoChipFixture: ghosts), selected: .shelf, notch: notch,
+                       to: out.appendingPathComponent("page-shelf-undo-\(state)-\(tag).png"))
+            }
         }
+        renderDragPreview(to: out.appendingPathComponent("shelf-drag-preview.png"))
         exit(0)
     }
 
@@ -185,6 +191,42 @@ enum PanelPageRenderer {
                          percent: 64, minutesRemaining: 48, fileURL: nil, startedAt: Date(),
                          stripUntil: nil, expiresAt: nil),
         ]
+    }
+
+    /// One set of ghosts per chip state (design-language §5.3). The paths
+    /// are never touched: the chip only shows them.
+    private static func undoChipFixtures() -> [(String, [ShelfMoveGhost])] {
+        func ghost(_ name: String, _ status: ShelfMoveGhost.Status, to folder: String = "/Users/me/Documents/Teklifler") -> ShelfMoveGhost {
+            ShelfMoveGhost(id: UUID(), name: name, index: 0, originalPath: "/Users/me/Desktop/\(name)",
+                           destination: URL(fileURLWithPath: "\(folder)/\(name)"), status: status)
+        }
+        return [
+            ("ready", [ghost("teklif.pdf", .ready)]),
+            ("locating", [ghost("teklif.pdf", .locating)]),
+            ("longname", [ghost("2026-Q4 Müşteri Sunumu — son hali (revize 3, onaylı) kopya.key", .ready)]),
+            ("multi", [ghost("teklif.pdf", .ready), ghost("fatura.pdf", .ready), ghost("logo.png", .ready)]),
+            ("trash", [ghost("teklif.pdf", .ready, to: "/Users/me/.Trash")]),
+            ("unavailable", [ghost("teklif.pdf", .undoUnavailable)]),
+            ("undoing", [ghost("teklif.pdf", .undoing)]),
+            ("failed", [ghost("teklif.pdf", .failed(.originalOccupied))]),
+            ("leftcopy", [ghost("teklif.pdf", .restoredLeavingCopy, to: "/Volumes/Yedek")]),
+        ]
+    }
+
+    /// The drag image with its "⌥: kopyala" rule, on a light and a dark
+    /// desktop, since it floats over whatever is under the pointer.
+    private static func renderDragPreview(to url: URL) {
+        let icon = NSWorkspace.shared.icon(for: .pdf)
+        let preview = DragPreviewView(thumbnail: icon, displayName: "teklif.pdf", showsCopyRule: true)
+        let root = HStack(spacing: 0) {
+            preview.padding(16).background(Color(white: 0.96))
+            preview.padding(16).background(Color(white: 0.12))
+        }
+        let renderer = ImageRenderer(content: root)
+        renderer.scale = 2
+        guard let image = renderer.nsImage, let tiff = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff) else { return }
+        try? rep.representation(using: .png, properties: [:])?.write(to: url)
     }
 
     private static func fixtureNetwork() -> NetPageSnapshot {
