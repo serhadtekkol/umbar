@@ -8582,13 +8582,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Text, links and images you copy appear on the Shelf page under Clipboard. Click one to copy it again. Passwords and items apps mark as private are never saved. Turning this off deletes the history."
+            "value" : "Text, links and images you copy appear on the Shelf page under Clipboard. Click one to copy it again. Items that apps mark as private or concealed, and copies from known password managers and the apps you exclude below, are not saved. Turning this off deletes the history."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kopyaladığın metin, bağlantı ve görseller Raf sayfasında Pano altında görünür. Birine tıklayınca yeniden kopyalanır. Parolalar ve uygulamaların gizli olarak işaretlediği öğeler hiç kaydedilmez. Kapatınca geçmiş silinir."
+            "value" : "Kopyaladığın metin, bağlantı ve görseller Raf sayfasında Pano altında görünür. Birine tıklayınca yeniden kopyalanır. Uygulamaların gizli olarak işaretlediği öğeler ile bilinen parola yöneticilerinden ve aşağıda hariç tuttuğun uygulamalardan yapılan kopyalar kaydedilmez. Kapatınca geçmiş silinir."
           }
         }
       }
@@ -8653,6 +8653,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geçmişi temizle"
+          }
+        }
+      }
+    },
+    "settings.clipboard.excluded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never save copies from"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu uygulamalardan kopyalananları kaydetme"
+          }
+        }
+      }
+    },
+    "settings.clipboard.excluded.add" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add App…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uygulama Ekle…"
+          }
+        }
+      }
+    },
+    "settings.clipboard.excluded.remove" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaldır"
           }
         }
       }

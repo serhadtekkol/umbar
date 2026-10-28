@@ -159,7 +159,9 @@ final class ClipboardHistoryModel: ObservableObject {
                                        limit: Defaults[.clipboardHistoryLimit], retention: retention)
             items = history.items
             startExpiryTimer()
-            let m = ClipboardMonitor { [weak self] event in self?.handle(event) }
+            let m = ClipboardMonitor(excludedBundleIDs: { Set(Defaults[.clipboardExcludedBundleIDs]) }) { [weak self] event in
+                self?.handle(event)
+            }
             monitor = m
             m.start()
             log.info("clipboard history on, \(self.items.count, privacy: .public) items")

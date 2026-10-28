@@ -39,9 +39,11 @@ enum ClipboardEvent: Equatable, Sendable {
     /// The change carried neither plain text nor a PNG/TIFF image, or it was
     /// a file copy (Finder): files belong on the shelf, not in the history.
     case skippedNonText(changeCount: Int)
-    /// The app in front when the change was seen is a password manager
-    /// (`passwordManagerBundleIDs`); contents were not read. Covers managers
-    /// that do not set the nspasteboard.org markers.
+    /// A password manager (`passwordManagerBundleIDs`) or an app the user
+    /// excluded (AC-4.5) was in front at some moment since the previous
+    /// poll, or the writer named one of them in `org.nspasteboard.source`.
+    /// Covers managers that do not set the nspasteboard.org markers.
+    /// `bundleID` identifies an app the user uses: log it `.private` only.
     case skippedSourceApp(bundleID: String, changeCount: Int)
     /// Reading would surface the system pasteboard alert, or the user chose
     /// "Deny"; contents were not read. Drives the AC-4.8 "permission
@@ -125,6 +127,11 @@ final class ClipboardMonitor {
         "com.lastpass.LastPass",
     ]
 
+    /// nspasteboard.org: a writer may name itself by putting its bundle ID
+    /// under this type. Optional and self-declared, so it only ever adds a
+    /// reason to skip, never a reason to record.
+    nonisolated static let sourceType = NSPasteboard.PasteboardType("org.nspasteboard.source")
+
     /// File copies from Finder also carry the file's name as text and its
     /// icon as TIFF; recording either would be wrong, so these skip outright.
     nonisolated static let fileTypes: [NSPasteboard.PasteboardType] = [
@@ -137,6 +144,7 @@ final class ClipboardMonitor {
 
     private let source: PasteboardSource
     private let frontmostBundleID: () -> String?
+    private let excludedBundleIDs: () -> Set<String>
     private let interval: DispatchTimeInterval
     private let leeway: DispatchTimeInterval
     private let policy: ReadPolicy
@@ -145,6 +153,13 @@ final class ClipboardMonitor {
 
     private var timer: DispatchSourceTimer?
     private var lastChangeCount: Int
+    /// Every app that was frontmost at some moment since the previous poll.
+    /// A copy is seen up to one interval after it happened, so "who is in
+    /// front now" alone misses ⌘C in a password manager followed by ⌘Tab
+    /// before the poll. Filled by `didActivateApplicationNotification`;
+    /// reset at each poll to the app in front at that moment.
+    private var frontmostSinceLastTick: Set<String> = []
+    private var activationObserver: NSObjectProtocol?
 
     /// - Parameters:
     ///   - source: Pasteboard to watch; production passes `NSPasteboard.general`.
@@ -154,7 +169,11 @@ final class ClipboardMonitor {
     ///     with other timers. Larger is cheaper; it adds directly to latency.
     ///   - policy: See `ReadPolicy`.
     ///   - frontmostBundleID: Bundle ID of the app in front, checked against
-    ///     `passwordManagerBundleIDs` before any read. Tests inject it.
+    ///     `passwordManagerBundleIDs` and `excludedBundleIDs` before any
+    ///     read, together with every app activated since the previous poll
+    ///     (`noteActivated`). Tests inject it.
+    ///   - excludedBundleIDs: The user's own exclusion list (AC-4.5), read at
+    ///     every change so an edit in Settings applies to the next copy.
     ///   - onEvent: Called synchronously on the main actor, once per
     ///     observed change.
     init(
@@ -163,10 +182,12 @@ final class ClipboardMonitor {
         leeway: DispatchTimeInterval = .milliseconds(100),
         policy: ReadPolicy = .onlyWhenAlwaysAllowed,
         frontmostBundleID: @escaping () -> String? = { NSWorkspace.shared.frontmostApplication?.bundleIdentifier },
+        excludedBundleIDs: @escaping () -> Set<String> = { [] },
         onEvent: @escaping (ClipboardEvent) -> Void
     ) {
         self.source = source
         self.frontmostBundleID = frontmostBundleID
+        self.excludedBundleIDs = excludedBundleIDs
         self.interval = interval
         self.leeway = leeway
         self.policy = policy
@@ -178,6 +199,7 @@ final class ClipboardMonitor {
 
     isolated deinit {
         timer?.cancel()
+        if let activationObserver { NSWorkspace.shared.notificationCenter.removeObserver(activationObserver) }
     }
 
     var isRunning: Bool { timer != nil }
@@ -191,6 +213,13 @@ final class ClipboardMonitor {
             MainActor.assumeIsolated { _ = self?.tick() }
         }
         timer = t
+        activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            let bundleID = app?.bundleIdentifier
+            MainActor.assumeIsolated { self?.noteActivated(bundleID: bundleID) }
+        }
         t.resume()
     }
 
@@ -198,6 +227,15 @@ final class ClipboardMonitor {
     func stop() {
         timer?.cancel()
         timer = nil
+        if let activationObserver { NSWorkspace.shared.notificationCenter.removeObserver(activationObserver) }
+        activationObserver = nil
+        frontmostSinceLastTick = []
+    }
+
+    /// Records that `bundleID` came to the front. Production calls it from
+    /// `didActivateApplicationNotification`; tests call it directly.
+    func noteActivated(bundleID: String?) {
+        if let bundleID { frontmostSinceLastTick.insert(bundleID) }
     }
 
     /// Treats the pasteboard as already seen. Call right after umbar itself
@@ -211,19 +249,29 @@ final class ClipboardMonitor {
     /// without a timer.
     @discardableResult
     func tick() -> ClipboardEvent? {
+        let current = frontmostBundleID()
+        var recentApps = frontmostSinceLastTick
+        if let current { recentApps.insert(current) }
+        // Reset on every poll, changed or not: the window that matters for
+        // the next change starts now, with whoever is in front now.
+        frontmostSinceLastTick = current.map { [$0] } ?? []
+
         let count = source.changeCount
         guard count != lastChangeCount else { return nil }
         lastChangeCount = count
 
-        let event = classify(changeCount: count)
+        let event = classify(changeCount: count, recentApps: recentApps)
         if let event {
             log.debug("change \(count, privacy: .public): \(Self.describe(event), privacy: .public)")
+            if case .skippedSourceApp(let app, _) = event {
+                log.debug("skipped source app \(app, privacy: .private)")
+            }
             onEvent(event)
         }
         return event
     }
 
-    private func classify(changeCount count: Int) -> ClipboardEvent? {
+    private func classify(changeCount count: Int, recentApps: Set<String>) -> ClipboardEvent? {
         let types = source.types ?? []
 
         // Checked before any content read: a concealed item must not be
@@ -240,13 +288,24 @@ final class ClipboardMonitor {
         guard types.contains(.string) || imageType != nil else {
             return .skippedNonText(changeCount: count)
         }
-        if let app = frontmostBundleID(), Self.passwordManagerBundleIDs.contains(app) {
+        let blocked = Self.passwordManagerBundleIDs.union(excludedBundleIDs())
+        // Sorted so the reported app does not depend on Set order.
+        if let app = recentApps.sorted().first(where: blocked.contains) {
             return .skippedSourceApp(bundleID: app, changeCount: count)
         }
 
         let behavior = source.accessBehavior
         if policy == .onlyWhenAlwaysAllowed, behavior != .alwaysAllow {
             return .permissionRequired(behavior: behavior, changeCount: count)
+        }
+
+        // Reading the source marker is a content read, so it comes after the
+        // access check. It catches writers that never come to the front
+        // (menu-bar panels such as 1Password's Quick Access).
+        if types.contains(Self.sourceType),
+           let app = source.string(forType: Self.sourceType)?.trimmingCharacters(in: .whitespacesAndNewlines),
+           blocked.contains(app) {
+            return .skippedSourceApp(bundleID: app, changeCount: count)
         }
 
         if !types.contains(.string), let imageType {
@@ -275,7 +334,8 @@ final class ClipboardMonitor {
         switch event {
         case .captured(let text, _): return "captured(len=\(text.count))"
         case .capturedImage(let data, let type, _): return "capturedImage(\(type.rawValue), bytes=\(data.count))"
-        case .skippedSourceApp(let app, _): return "skippedSourceApp(\(app))"
+        // No bundle ID: this string is logged `.public`.
+        case .skippedSourceApp: return "skippedSourceApp"
         case .skippedSensitive(let marker, _): return "skippedSensitive(\(marker))"
         case .skippedNonText: return "skippedNonText"
         case .permissionRequired(let b, _): return "permissionRequired(behavior=\(b.rawValue))"

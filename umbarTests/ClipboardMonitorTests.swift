@@ -23,6 +23,8 @@ private final class FakePasteboard: PasteboardSource {
     var types: [NSPasteboard.PasteboardType]? = []
     var accessBehavior: NSPasteboard.AccessBehavior = .alwaysAllow
     var text: String?
+    /// Strings for types other than `.string` (the nspasteboard.org source).
+    var otherStrings: [NSPasteboard.PasteboardType: String] = [:]
     var imageData: [NSPasteboard.PasteboardType: Data] = [:]
     private(set) var reads = 0
     /// Simulates another app writing while we read.
@@ -31,7 +33,7 @@ private final class FakePasteboard: PasteboardSource {
     func string(forType dataType: NSPasteboard.PasteboardType) -> String? {
         reads += 1
         if changesDuringRead { changeCount += 1 }
-        return text
+        return dataType == .string ? text : otherStrings[dataType]
     }
 
     func data(forType dataType: NSPasteboard.PasteboardType) -> Data? {
@@ -125,6 +127,93 @@ struct ClipboardMonitorTests {
         pasteboard.write([.string], text: "hunter2")
         #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.bitwarden.desktop", changeCount: 1))
         #expect(pasteboard.reads == 0)
+    }
+
+    /// M3: ⌘C in the password manager, ⌘Tab away, and only then the poll.
+    @Test func aPasswordManagerActivatedSinceTheLastPollStillCounts() {
+        let pasteboard = FakePasteboard()
+        var front = "com.apple.Safari"
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { front }) { _ in }
+        monitor.tick()
+        monitor.noteActivated(bundleID: "com.1password.1password")
+        pasteboard.write([.string], text: "hunter2")
+        front = "com.apple.Safari"
+        monitor.noteActivated(bundleID: front)
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.1password.1password", changeCount: 1))
+        #expect(pasteboard.reads == 0)
+    }
+
+    /// The manager was in front at the previous poll and the user switched
+    /// away before the next one: no activation of the manager falls inside
+    /// the window, but it was frontmost at its start.
+    @Test func theAppInFrontAtThePreviousPollCounts() {
+        let pasteboard = FakePasteboard()
+        var front = "com.bitwarden.desktop"
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { front }) { _ in }
+        monitor.tick()
+        pasteboard.write([.string], text: "hunter2")
+        front = "com.apple.Terminal"
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.bitwarden.desktop", changeCount: 1))
+    }
+
+    @Test func theWindowResetsAtEveryPoll() {
+        let pasteboard = FakePasteboard()
+        var front = "com.bitwarden.desktop"
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { front }) { _ in }
+        monitor.tick()
+        front = "com.apple.Terminal"
+        monitor.tick()
+        pasteboard.write([.string], text: "ls")
+        #expect(monitor.tick() == .captured(text: "ls", changeCount: 1),
+                "a manager in front two polls ago does not block a later copy")
+    }
+
+    /// AC-4.5.
+    @Test func userExcludedAppsAreNotRead() {
+        let pasteboard = FakePasteboard()
+        var excluded: Set<String> = ["com.example.bank"]
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { "com.example.bank" },
+                                       excludedBundleIDs: { excluded }) { _ in }
+        pasteboard.write([.string], text: "IBAN")
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.example.bank", changeCount: 1))
+        #expect(pasteboard.reads == 0)
+        excluded = []
+        pasteboard.write([.string], text: "IBAN")
+        #expect(monitor.tick() == .captured(text: "IBAN", changeCount: 2), "an edit applies to the next copy")
+    }
+
+    /// A menu-bar panel (1Password Quick Access) never becomes frontmost;
+    /// the writer's self-declared source is the only sign.
+    @Test func sourceMarkerNamingAListedAppIsSkipped() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { "com.apple.Safari" }) { _ in }
+        pasteboard.otherStrings = [ClipboardMonitor.sourceType: "com.1password.1password\n"]
+        pasteboard.write([.string, ClipboardMonitor.sourceType], text: "hunter2")
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.1password.1password", changeCount: 1))
+        #expect(pasteboard.reads == 1, "only the source marker was read, never the text")
+    }
+
+    @Test func sourceMarkerNamingAnotherAppIsRecorded() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.otherStrings = [ClipboardMonitor.sourceType: "com.apple.Notes"]
+        pasteboard.write([.string, ClipboardMonitor.sourceType], text: "note")
+        #expect(monitor.tick() == .captured(text: "note", changeCount: 1))
+    }
+
+    @Test func sourceMarkerIsNotReadWithoutPermission() {
+        let pasteboard = FakePasteboard()
+        pasteboard.accessBehavior = .ask
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.otherStrings = [ClipboardMonitor.sourceType: "com.1password.1password"]
+        pasteboard.write([.string, ClipboardMonitor.sourceType], text: "x")
+        #expect(monitor.tick() == .permissionRequired(behavior: .ask, changeCount: 1))
+        #expect(pasteboard.reads == 0)
+    }
+
+    @Test func describeNeverContainsTheSourceApp() {
+        let description = ClipboardMonitor.describe(.skippedSourceApp(bundleID: "com.example.bank", changeCount: 1))
+        #expect(!description.contains("com.example.bank"))
     }
 
     @Test func ownWriteIsIgnored() {

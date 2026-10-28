@@ -17,6 +17,9 @@ extension Defaults.Keys {
     /// BR-4.4: days a copy is kept; one of
     /// `ClipboardHistoryPolicy.retentionChoices`, 0 for unlimited.
     static let clipboardHistoryRetentionDays = Key<Int>("clipboardHistoryRetentionDays", default: ClipboardHistoryPolicy.defaultRetentionDays)
+    /// AC-4.5: bundle IDs of apps whose copies are never recorded, on top
+    /// of `ClipboardMonitor.passwordManagerBundleIDs`. Managed in Settings.
+    static let clipboardExcludedBundleIDs = Key<[String]>("clipboardExcludedBundleIDs", default: [])
     /// Which side of the Raf page was last shown, so reopening the panel
     /// comes back to it. Not a setting; not shown in Settings.
     static let shelfPageSection = Key<ShelfPageSection>("shelfPageSection", default: .files)
