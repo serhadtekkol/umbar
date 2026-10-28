@@ -22,7 +22,7 @@ struct TabButton: View {
     /// Unselected: a 14 pt glyph in a 28 pt circle (the §3.6 minimum hit
     /// target). Selected: glyph + label.
     private static let iconOnlyPadding: CGFloat = 7
-    private static let labelledPadding: CGFloat = 10
+    private static let labelledPadding: CGFloat = 13
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
