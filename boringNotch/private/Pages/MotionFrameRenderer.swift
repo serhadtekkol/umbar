@@ -28,6 +28,8 @@
 //                                (countdown, stopwatch, paused, alert)
 //    timer-priority-<case>-<notch>.png  focus and timer both active: only
 //                                the owner's ear shows (LeadingTimeEarPolicy)
+//    timer-net-<state>-<notch>.png     the network ear beside the time ear
+//                                (run with -netMonitorShowInClosedNotch YES)
 //
 
 #if DEBUG
@@ -208,6 +210,14 @@ enum MotionFrameRenderer {
             timer.showFixture(fixture, alerting: false)
             RunLoop.main.run(until: Date().addingTimeInterval(0.8))
             capture(session.host, to: out.appendingPathComponent("timer-priority-\(name)-\(tag).png"))
+        }
+        // Only shows the network ear when the run turns it on; otherwise
+        // these are the plain time ears again.
+        for (name, fixture, alerting) in [("countdown", countdown.state, false), ("alert", TimerState.idle, true)] {
+            focus.showFixture(.idle)
+            timer.showFixture(fixture, alerting: alerting)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.8))
+            capture(session.host, to: out.appendingPathComponent("timer-net-\(name)-\(tag).png"))
         }
         focus.showFixture(.idle)
         timer.showFixture(.idle, alerting: false)
