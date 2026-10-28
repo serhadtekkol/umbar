@@ -24,6 +24,12 @@
 //    privacy-<state>-<notch>-<ms>.png  the camera/mic ear arriving on the
 //                                closed island (state: both, camera, mic)
 //    privacy-caffeinate-<notch>.png    that ear beside Caffeinate's ear
+//    timer-<state>-<notch>-<ms>.png    the F25 timer ear on the closed island
+//                                (countdown, stopwatch, paused, alert)
+//    timer-priority-<case>-<notch>.png  focus and timer both active: only
+//                                the owner's ear shows (LeadingTimeEarPolicy)
+//    timer-net-<state>-<notch>.png     the network ear beside the time ear
+//                                (run with -netMonitorShowInClosedNotch YES)
 //
 
 #if DEBUG
@@ -43,6 +49,7 @@ enum MotionFrameRenderer {
             renderIsland(notch: notch, out: out)
             renderBluetoothGlance(notch: notch, out: out)
             renderPrivacyEar(notch: notch, out: out)
+            renderTimerEar(notch: notch, out: out)
         }
         renderWiFiConfirm(out: out)
         renderUndoChip(out: out)
@@ -152,6 +159,70 @@ enum MotionFrameRenderer {
         let still = Session(pair, size: NSSize(width: notch.width + 200, height: notch.height + 20))
         capture(still.host, to: out.appendingPathComponent("privacy-caffeinate-\(tag).png"))
         still.close()
+    }
+
+    // MARK: Timer ear (F25)
+
+    /// The real closed island, no music, with fixture timer and focus states.
+    /// The fixtures bypass the clock, the notification and the sound.
+    private static func renderTimerEar(notch: CGSize, out: URL) {
+        let tag = "\(Int(notch.width))x\(Int(notch.height))"
+        let music = MusicManager.shared
+        music.isPlaying = false
+        music.isPlayerIdle = true
+        let timer = TimerService.shared
+        let focus = FocusTimerService.shared
+        let now = Date()
+        var countdown = TimerEngine()
+        countdown.startCountdown(minutes: 5, now: now.addingTimeInterval(-42))
+        var paused = countdown
+        paused.pause(now: now)
+        var watch = TimerEngine()
+        watch.startStopwatch(now: now.addingTimeInterval(-3_725))
+        var focusing = FocusTimerEngine()
+        focusing.start(preset: .classic, now: now.addingTimeInterval(-120))
+
+        let vm = fixtureViewModel(notch: notch)
+        vm.notchSize = notch
+        let root = ContentView()
+            .environmentObject(vm)
+            .frame(width: windowSize.width, height: 80, alignment: .top)
+            .background(Color(white: 0.85))
+        let session = Session(root, size: NSSize(width: windowSize.width, height: 80))
+        let states: [(String, TimerState, Bool)] = [
+            ("countdown", countdown.state, false),
+            ("paused", paused.state, false),
+            ("stopwatch", watch.state, false),
+            ("alert", .idle, true),
+        ]
+        for (state, fixture, alerting) in states {
+            session.play(change: { timer.showFixture(fixture, alerting: alerting) },
+                         name: { out.appendingPathComponent("timer-\(state)-\(tag)-\($0).png") })
+            timer.showFixture(.idle, alerting: false)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+        }
+        let priority: [(String, TimerState)] = [
+            ("focus-countdown", countdown.state),   // timer wins
+            ("focus-stopwatch", watch.state),       // focus wins
+        ]
+        for (name, fixture) in priority {
+            focus.showFixture(focusing.state)
+            timer.showFixture(fixture, alerting: false)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.8))
+            capture(session.host, to: out.appendingPathComponent("timer-priority-\(name)-\(tag).png"))
+        }
+        // Only shows the network ear when the run turns it on; otherwise
+        // these are the plain time ears again.
+        for (name, fixture, alerting) in [("countdown", countdown.state, false), ("alert", TimerState.idle, true)] {
+            focus.showFixture(.idle)
+            timer.showFixture(fixture, alerting: alerting)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.8))
+            capture(session.host, to: out.appendingPathComponent("timer-net-\(name)-\(tag).png"))
+        }
+        focus.showFixture(.idle)
+        timer.showFixture(.idle, alerting: false)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+        session.close()
     }
 
     // MARK: Bluetooth connect glance

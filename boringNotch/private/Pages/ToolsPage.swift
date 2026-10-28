@@ -3,8 +3,11 @@
 //  boringNotch
 //
 //  Araçlar: the quick toggles on one line, then one tile per tool
-//  (Caffeinate, focus timer, eye break). These used to sit in the header
-//  and on Şimdi; each now has room to show its state in words.
+//  (Caffeinate, time card, eye break). These used to sit in the header
+//  and on Şimdi; each now has room to show its state in words. The time
+//  card switches between the focus timer, a countdown and a stopwatch
+//  (F25): a fourth tile would leave each ~128 pt inside, too narrow for
+//  Caffeinate's duration chips or the focus timer's running controls.
 //
 
 import Defaults
@@ -14,13 +17,19 @@ struct ToolsPage: View {
     @Default(.quickTogglesEnabled) private var togglesOn
     @Default(.caffeinateEnabled) private var caffeinateOn
     @Default(.focusTimerEnabled) private var focusOn
+    @Default(.timerEnabled) private var timerOn
     @Default(.eyeBreakEnabled) private var eyeBreakOn
     @Default(.btBatteryEnabled) private var btBatteryOn
     #if DEBUG
     /// The frame renderer's Bluetooth devices; nil reads the monitor.
     private var btFixture: [BTBatteryDevice]?
+    /// The frame renderer's time-card mode; nil reads the user's choice.
+    private var timeModeFixture: TimeToolMode?
 
-    init(btFixture: [BTBatteryDevice]? = nil) { self.btFixture = btFixture }
+    init(btFixture: [BTBatteryDevice]? = nil, timeModeFixture: TimeToolMode? = nil) {
+        self.btFixture = btFixture
+        self.timeModeFixture = timeModeFixture
+    }
     #endif
 
     var body: some View {
@@ -35,7 +44,7 @@ struct ToolsPage: View {
             }
             HStack(alignment: .top, spacing: PageTokens.s) {
                 if caffeinateOn { CaffeinateTile() }
-                if focusOn { FocusTimerTile() }
+                if focusOn || timerOn { timeTile }
                 if eyeBreakOn { EyeBreakTile() }
             }
             .frame(maxHeight: .infinity)
@@ -44,6 +53,15 @@ struct ToolsPage: View {
 }
 
 extension ToolsPage {
+    @ViewBuilder
+    private var timeTile: some View {
+        #if DEBUG
+        TimeToolTile(modeFixture: timeModeFixture)
+        #else
+        TimeToolTile()
+        #endif
+    }
+
     @ViewBuilder
     private var btBatteryStrip: some View {
         #if DEBUG
@@ -57,13 +75,34 @@ extension ToolsPage {
 /// A tool's tile: glyph and name, one status line, controls at the bottom.
 /// `active` tints the glyph amber; the status line always says the same
 /// thing in words, so colour is never the only signal.
-struct ToolTile<Controls: View>: View {
+///
+/// `accessory` sits at the trailing end of the title row (the time card's
+/// mode switch); `statusView` replaces the status line with a view when a tool
+/// needs a control there instead of words.
+struct ToolTile<Controls: View, Accessory: View, Status: View>: View {
     let symbol: String
     let title: String
     let status: String
     var statusTint: Color = PageTokens.textSecondary
     var active = false
-    @ViewBuilder let controls: () -> Controls
+    let accessory: () -> Accessory
+    let statusView: () -> Status
+    let controls: () -> Controls
+
+    init(symbol: String, title: String, status: String,
+         statusTint: Color = PageTokens.textSecondary, active: Bool = false,
+         @ViewBuilder accessory: @escaping () -> Accessory,
+         @ViewBuilder statusView: @escaping () -> Status,
+         @ViewBuilder controls: @escaping () -> Controls) {
+        self.symbol = symbol
+        self.title = title
+        self.status = status
+        self.statusTint = statusTint
+        self.active = active
+        self.accessory = accessory
+        self.statusView = statusView
+        self.controls = controls
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -77,12 +116,20 @@ struct ToolTile<Controls: View>: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(PageTokens.textPrimary)
                     .lineLimit(1)
+                if Accessory.self != EmptyView.self {
+                    Spacer(minLength: 4)
+                    accessory()
+                }
             }
-            Text(status)
-                .font(.system(size: 12).monospacedDigit())
-                .foregroundStyle(statusTint)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+            if Status.self == EmptyView.self {
+                Text(status)
+                    .font(.system(size: 12).monospacedDigit())
+                    .foregroundStyle(statusTint)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                statusView()
+            }
             Spacer(minLength: 0)
             controls()
         }
@@ -92,6 +139,15 @@ struct ToolTile<Controls: View>: View {
         .background(PageTokens.raised, in: RoundedRectangle(cornerRadius: PageTokens.tileRadius, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(title)
+    }
+}
+
+extension ToolTile where Accessory == EmptyView, Status == EmptyView {
+    init(symbol: String, title: String, status: String,
+         statusTint: Color = PageTokens.textSecondary, active: Bool = false,
+         @ViewBuilder controls: @escaping () -> Controls) {
+        self.init(symbol: symbol, title: title, status: status, statusTint: statusTint, active: active,
+                  accessory: { EmptyView() }, statusView: { EmptyView() }, controls: controls)
     }
 }
 

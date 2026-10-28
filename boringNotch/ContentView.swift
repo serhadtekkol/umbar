@@ -156,8 +156,16 @@ struct ContentView: View {
                         CaffeinateClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                     }
                     .background(alignment: .topLeading) {
-                        FocusTimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
-                        NetMonitorClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
+                        // An explicit leading stack: the builder's implicit one
+                        // centres its children, which moves a narrower ear in
+                        // under the island when a wider one is out.
+                        ZStack(alignment: .topLeading) {
+                            // Drawn first: its black runs under the time ear it sits beyond.
+                            NetMonitorClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
+                            // One time slot: LeadingTimeEarPolicy lets only one of these two draw.
+                            FocusTimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
+                            TimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
+                        }
                     }
                 
                 mainLayout

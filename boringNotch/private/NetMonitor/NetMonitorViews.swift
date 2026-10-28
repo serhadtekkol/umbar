@@ -305,42 +305,66 @@ struct NetSparkline: View {
 /// `CaffeinateClosedBadge` on the trailing edge. One ear wide (§4: the
 /// island never grows sideways beyond W + 2H), so speeds are in the compact
 /// form ("1.2M").
+///
+/// The focus timer and the F25 timer share the slot right next to the
+/// notch; when one of them is out this ear sits beyond it, the way the
+/// camera/mic ear sits beyond Caffeinate's on the trailing edge.
 struct NetMonitorClosedBadge: View {
     @Default(.netMonitorEnabled) private var enabled
     @Default(.netMonitorShowInClosedNotch) private var showInClosed
+    @Default(.timerEnabled) private var timerEnabled
+    @ObservedObject private var focus = FocusTimerService.shared
+    @ObservedObject private var timer = TimerService.shared
     let isClosed: Bool
     let height: CGFloat
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Width of the time ear already out between the notch and this one.
+    private var inner: CGFloat {
+        switch LeadingTimeEarPolicy.owner(focusActive: !focus.state.isIdle, timer: timer.state,
+                                          alerting: timer.isAlerting, timerEnabled: timerEnabled) {
+        case .none: return 0
+        case .focus: return FocusTimerClosedBadge.width
+        case .timer: return TimerClosedEar.width(alerting: timer.isAlerting)
+        }
+    }
+
     var body: some View {
         let shown = isClosed && enabled && showInClosed && height > 0
+        let inner = inner
         ZStack {
             if shown {
                 // Slides out from under the island's leading edge.
-                NetMonitorEar(height: height)
-                    .transition(.ear(inward: max(30, height + 6), reduce: reduceMotion))
+                NetMonitorEar(height: height, innerWidth: inner)
+                    .transition(.ear(inward: inner + NetMonitorEar.width(height: height), reduce: reduceMotion))
             }
         }
         .animation(UmbarMotion.ear(reduce: reduceMotion), value: shown)
+        .animation(UmbarMotion.ear(reduce: reduceMotion), value: inner)
     }
 }
 
 private struct NetMonitorEar: View {
     @ObservedObject private var monitor = NetMonitor.shared
     let height: CGFloat
+    /// The time ear's width; this one's black runs under it, so there is no seam.
+    let innerWidth: CGFloat
 
-    private var width: CGFloat { max(30, height + 6) }
+    static func width(height: CGFloat) -> CGFloat { max(30, height + 6) }
+    private var width: CGFloat { Self.width(height: height) }
 
     var body: some View {
+        let total = innerWidth + width
         VStack(alignment: .trailing, spacing: 0) {
             line(symbol: "arrow.down", value: monitor.rxRate, tint: NetTokens.live)
             line(symbol: "arrow.up", value: monitor.txRate, tint: NetTokens.textSecondary)
         }
         .font(.system(size: 9, weight: .semibold).monospacedDigit())
         .frame(width: width, height: height)
+        .frame(width: total, alignment: .leading)
         .background(.black, in: UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: 8))
-        .offset(x: -width)
+        .offset(x: -total)
         .allowsHitTesting(false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "netmonitor.ear.a11y", defaultValue: "Network speed"))

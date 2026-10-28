@@ -44,6 +44,9 @@ struct SettingsView: View {
                 NavigationLink(value: "FocusTimer") {
                     Label("Focus timer", systemImage: "timer")
                 }
+                NavigationLink(value: "Timer") {
+                    Label("Timer", systemImage: "hourglass")
+                }
                 NavigationLink(value: "QuickToggles") {
                     Label("Quick toggles", systemImage: "switch.2")
                 }
@@ -92,6 +95,8 @@ struct SettingsView: View {
                     EyeBreakSettings()
                 case "FocusTimer":
                     FocusTimerSettings()
+                case "Timer":
+                    TimerSettings()
                 case "QuickToggles":
                     QuickTogglesSettings()
                 case "Network":

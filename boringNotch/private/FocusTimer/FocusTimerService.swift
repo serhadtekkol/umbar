@@ -198,6 +198,15 @@ final class FocusTimerService: ObservableObject {
         return cfg
     }
 
+    #if DEBUG
+    /// Frame renderer only: puts the service in a fixed state without the
+    /// clock, Shortcuts, persistence or the banner.
+    func showFixture(_ fixture: FocusTimerState) {
+        engine = FocusTimerEngine(state: fixture, config: engine.config)
+        state = fixture
+    }
+    #endif
+
     // MARK: - Shortcuts
 
     /// Runs a user-named shortcut through the shortcuts:// URL scheme: no

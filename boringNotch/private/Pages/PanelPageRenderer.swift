@@ -52,6 +52,14 @@ enum PanelPageRenderer {
                    to: out.appendingPathComponent("page-home-musiconly-\(tag).png"))
             render(ToolsPage(btFixture: btBatteryFixture()), selected: .tools, notch: notch,
                    to: out.appendingPathComponent("page-tools-btbattery-\(tag).png"))
+            // F25 time card: every mode and state, with Bluetooth batteries
+            // on, the densest Araçlar layout.
+            for (state, mode, timer, alerting) in timerFixtures() {
+                TimerService.shared.showFixture(timer, alerting: alerting)
+                render(ToolsPage(btFixture: btBatteryFixture(), timeModeFixture: mode), selected: .tools, notch: notch,
+                       to: out.appendingPathComponent("page-tools-timer-\(state)-\(tag).png"))
+            }
+            TimerService.shared.showFixture(.idle, alerting: false)
             for (state, model, section) in clipboardFixtures() {
                 render(ShelfPage(clipboard: model, section: section, clipboardEnabled: true), selected: .shelf, notch: notch,
                        to: out.appendingPathComponent("page-shelf-clipboard-\(state)-\(tag).png"))
@@ -85,6 +93,33 @@ enum PanelPageRenderer {
                 system: { SysStatsRow(snapshot: fixtureSystem()) }
         case .tools: ToolsPage()
         }
+    }
+
+    /// F25: (name, card mode, timer state, alerting). Times are fixed
+    /// offsets from now, so the clocks read the same in every run.
+    private static func timerFixtures() -> [(String, TimeToolMode, TimerState, Bool)] {
+        let now = Date()
+        var countdown = TimerEngine()
+        countdown.startCountdown(minutes: 25, now: now.addingTimeInterval(-63))
+        var paused = countdown
+        paused.pause(now: now)
+        var watch = TimerEngine()
+        watch.startStopwatch(now: now.addingTimeInterval(-3_725))
+        watch.lap(now: now.addingTimeInterval(-3_000))
+        watch.lap(now: now.addingTimeInterval(-1_200))
+        var finished = TimerEngine()
+        finished.startCountdown(minutes: 5, now: now.addingTimeInterval(-300))
+        finished.tick(now: now)
+        return [
+            ("countdown-idle", .countdown, .idle, false),
+            ("countdown-running", .countdown, countdown.state, false),
+            ("countdown-paused", .countdown, paused.state, false),
+            ("countdown-alert", .focus, finished.state, true),
+            ("stopwatch-idle", .stopwatch, .idle, false),
+            ("stopwatch-laps", .stopwatch, watch.state, false),
+            // The focus card with the switch, a stopwatch counting behind it.
+            ("focus-switch", .focus, watch.state, false),
+        ]
     }
 
     private static func nowPage(agenda: TodayAgenda, live: [LiveActivity], privacy: PrivacyUsage = .idle) -> some View {
