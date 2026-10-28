@@ -205,6 +205,26 @@ struct BTProfilerPolicyTests {
         #expect(BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: nil, now: epoch, forced: false))
         #expect(!BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: epoch, now: at(59.9), forced: false))
         #expect(BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: epoch, now: at(60), forced: false))
-        #expect(BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: epoch, now: at(1), forced: true))
+        #expect(BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: epoch, now: at(5), forced: true))
+    }
+
+    /// L8: a forced read (connect/disconnect) still has a floor, so a
+    /// flapping device cannot spawn one system_profiler per event.
+    @Test func forcedReadsHaveAFloor() {
+        #expect(!BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: epoch, now: at(1), forced: true))
+        #expect(!BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: epoch, now: at(4.9), forced: true))
+        #expect(BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: nil, now: epoch, forced: true))
+    }
+
+    @Test func aRefusedForcedReadIsRetriedWhenTheFloorEnds() {
+        #expect(BTProfilerPolicy.forcedRetryDelay(hasConnectedAudio: true, lastRun: epoch, now: at(1)) == 4)
+        #expect(BTProfilerPolicy.forcedRetryDelay(hasConnectedAudio: true, lastRun: epoch, now: at(5)) == nil)
+        #expect(BTProfilerPolicy.forcedRetryDelay(hasConnectedAudio: false, lastRun: epoch, now: at(1)) == nil)
+        #expect(BTProfilerPolicy.forcedRetryDelay(hasConnectedAudio: true, lastRun: nil, now: epoch) == nil)
+    }
+
+    @Test func aClockSetBackDoesNotStallTheRead() {
+        #expect(BTProfilerPolicy.shouldRun(hasConnectedAudio: true, lastRun: at(3600), now: epoch, forced: false))
+        #expect(BTProfilerPolicy.forcedRetryDelay(hasConnectedAudio: true, lastRun: at(3600), now: epoch) == nil)
     }
 }

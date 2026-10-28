@@ -23,18 +23,23 @@ private final class FakePasteboard: PasteboardSource {
     var types: [NSPasteboard.PasteboardType]? = []
     var accessBehavior: NSPasteboard.AccessBehavior = .alwaysAllow
     var text: String?
+    /// Strings for types other than `.string` (the nspasteboard.org source).
+    var otherStrings: [NSPasteboard.PasteboardType: String] = [:]
     var imageData: [NSPasteboard.PasteboardType: Data] = [:]
     private(set) var reads = 0
+    /// Called at the start of every `data(forType:)`, on the reading thread.
+    var onDataRead: (() -> Void)?
     /// Simulates another app writing while we read.
     var changesDuringRead = false
 
     func string(forType dataType: NSPasteboard.PasteboardType) -> String? {
         reads += 1
         if changesDuringRead { changeCount += 1 }
-        return text
+        return dataType == .string ? text : otherStrings[dataType]
     }
 
     func data(forType dataType: NSPasteboard.PasteboardType) -> Data? {
+        onDataRead?()
         reads += 1
         if changesDuringRead { changeCount += 1 }
         return imageData[dataType]
@@ -95,10 +100,66 @@ struct ClipboardMonitorTests {
 
     @Test func imageIsCapturedPreferringPNG() {
         let pasteboard = FakePasteboard()
-        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }, imageReadQueue: nil) { _ in }
         pasteboard.imageData = [.png: Data([1, 2]), .tiff: Data([3])]
         pasteboard.write([.tiff, .png], text: nil)
         #expect(monitor.tick() == .capturedImage(data: Data([1, 2]), type: .png, changeCount: 1))
+    }
+
+    /// L6: an image over the cap is read (the pasteboard has no size
+    /// query) but never handed on.
+    @Test func oversizeImageIsDroppedAfterTheRead() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil },
+                                       imageReadQueue: nil, maxImageBytes: 2) { _ in }
+        pasteboard.imageData = [.tiff: Data([1, 2, 3])]
+        pasteboard.write([.tiff], text: nil)
+        #expect(monitor.tick() == .skippedOversizeImage(byteCount: 3, changeCount: 1))
+        pasteboard.imageData = [.tiff: Data([1, 2])]
+        pasteboard.write([.tiff], text: nil)
+        #expect(monitor.tick() == .capturedImage(data: Data([1, 2]), type: .tiff, changeCount: 2), "at the cap is kept")
+    }
+
+    /// L6: the image bytes are read on the given queue, and the event comes
+    /// back on the main actor.
+    @Test func imagesAreReadOffTheMainThread() async {
+        let pasteboard = FakePasteboard()
+        let queue = DispatchQueue(label: "umbarTests.clipboard.image-read")
+        var readOnMain: Bool?
+        pasteboard.onDataRead = { readOnMain = Thread.isMainThread }
+        var monitor: ClipboardMonitor?
+        let event: ClipboardEvent = await withCheckedContinuation { continuation in
+            let m = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }, imageReadQueue: queue) {
+                continuation.resume(returning: $0)
+            }
+            monitor = m
+            pasteboard.imageData = [.png: Data([7])]
+            pasteboard.write([.png], text: nil)
+            #expect(m.tick() == nil, "delivered later, not from tick()")
+        }
+        withExtendedLifetime(monitor) {}
+        #expect(event == .capturedImage(data: Data([7]), type: .png, changeCount: 1))
+        #expect(readOnMain == false)
+    }
+
+    /// Switching the history off while a read is in flight drops it.
+    @Test func imageReadInFlightWhenStoppedIsDropped() async {
+        let pasteboard = FakePasteboard()
+        let queue = DispatchQueue(label: "umbarTests.clipboard.image-read")
+        var delivered: [ClipboardEvent] = []
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }, imageReadQueue: queue) {
+            delivered.append($0)
+        }
+        pasteboard.imageData = [.png: Data([7])]
+        pasteboard.write([.png], text: nil)
+        queue.suspend()
+        monitor.tick()
+        monitor.stop()
+        queue.resume()
+        queue.sync {}
+        // The read's main-queue hop was enqueued before this one.
+        await withCheckedContinuation { c in DispatchQueue.main.async { c.resume() } }
+        #expect(delivered.isEmpty)
     }
 
     @Test func textWinsOverAnImage() {
@@ -125,6 +186,93 @@ struct ClipboardMonitorTests {
         pasteboard.write([.string], text: "hunter2")
         #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.bitwarden.desktop", changeCount: 1))
         #expect(pasteboard.reads == 0)
+    }
+
+    /// M3: ⌘C in the password manager, ⌘Tab away, and only then the poll.
+    @Test func aPasswordManagerActivatedSinceTheLastPollStillCounts() {
+        let pasteboard = FakePasteboard()
+        var front = "com.apple.Safari"
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { front }) { _ in }
+        monitor.tick()
+        monitor.noteActivated(bundleID: "com.1password.1password")
+        pasteboard.write([.string], text: "hunter2")
+        front = "com.apple.Safari"
+        monitor.noteActivated(bundleID: front)
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.1password.1password", changeCount: 1))
+        #expect(pasteboard.reads == 0)
+    }
+
+    /// The manager was in front at the previous poll and the user switched
+    /// away before the next one: no activation of the manager falls inside
+    /// the window, but it was frontmost at its start.
+    @Test func theAppInFrontAtThePreviousPollCounts() {
+        let pasteboard = FakePasteboard()
+        var front = "com.bitwarden.desktop"
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { front }) { _ in }
+        monitor.tick()
+        pasteboard.write([.string], text: "hunter2")
+        front = "com.apple.Terminal"
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.bitwarden.desktop", changeCount: 1))
+    }
+
+    @Test func theWindowResetsAtEveryPoll() {
+        let pasteboard = FakePasteboard()
+        var front = "com.bitwarden.desktop"
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { front }) { _ in }
+        monitor.tick()
+        front = "com.apple.Terminal"
+        monitor.tick()
+        pasteboard.write([.string], text: "ls")
+        #expect(monitor.tick() == .captured(text: "ls", changeCount: 1),
+                "a manager in front two polls ago does not block a later copy")
+    }
+
+    /// AC-4.5.
+    @Test func userExcludedAppsAreNotRead() {
+        let pasteboard = FakePasteboard()
+        var excluded: Set<String> = ["com.example.bank"]
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { "com.example.bank" },
+                                       excludedBundleIDs: { excluded }) { _ in }
+        pasteboard.write([.string], text: "IBAN")
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.example.bank", changeCount: 1))
+        #expect(pasteboard.reads == 0)
+        excluded = []
+        pasteboard.write([.string], text: "IBAN")
+        #expect(monitor.tick() == .captured(text: "IBAN", changeCount: 2), "an edit applies to the next copy")
+    }
+
+    /// A menu-bar panel (1Password Quick Access) never becomes frontmost;
+    /// the writer's self-declared source is the only sign.
+    @Test func sourceMarkerNamingAListedAppIsSkipped() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { "com.apple.Safari" }) { _ in }
+        pasteboard.otherStrings = [ClipboardMonitor.sourceType: "com.1password.1password\n"]
+        pasteboard.write([.string, ClipboardMonitor.sourceType], text: "hunter2")
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.1password.1password", changeCount: 1))
+        #expect(pasteboard.reads == 1, "only the source marker was read, never the text")
+    }
+
+    @Test func sourceMarkerNamingAnotherAppIsRecorded() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.otherStrings = [ClipboardMonitor.sourceType: "com.apple.Notes"]
+        pasteboard.write([.string, ClipboardMonitor.sourceType], text: "note")
+        #expect(monitor.tick() == .captured(text: "note", changeCount: 1))
+    }
+
+    @Test func sourceMarkerIsNotReadWithoutPermission() {
+        let pasteboard = FakePasteboard()
+        pasteboard.accessBehavior = .ask
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.otherStrings = [ClipboardMonitor.sourceType: "com.1password.1password"]
+        pasteboard.write([.string, ClipboardMonitor.sourceType], text: "x")
+        #expect(monitor.tick() == .permissionRequired(behavior: .ask, changeCount: 1))
+        #expect(pasteboard.reads == 0)
+    }
+
+    @Test func describeNeverContainsTheSourceApp() {
+        let description = ClipboardMonitor.describe(.skippedSourceApp(bundleID: "com.example.bank", changeCount: 1))
+        #expect(!description.contains("com.example.bank"))
     }
 
     @Test func ownWriteIsIgnored() {

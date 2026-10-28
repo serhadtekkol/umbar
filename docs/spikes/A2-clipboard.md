@@ -148,6 +148,7 @@ Değerler süreç toplamıdır, harness'in kendi 1 sn'lik bekleme döngüsü de 
    - `accessBehavior != .alwaysAllow` ise `.permissionRequired` üretilir.
    - Bunların hiçbiri değilse okunur. Okumadan sonra `changeCount` tekrar kontrol edilir; değiştiyse okunan değer atılır.
 3. AC-4.5 (hariç tutulan uygulamalar): kaynak uygulama için bir public API yok. Öneri: varsa `org.nspasteboard.source` tipi (bundle id) kullanılır, yoksa değişiklik anındaki `NSWorkspace.frontmostApplication` (sezgisel bir yöntem, en fazla 0,5 sn gecikmeli). Bu spike'ta test edilmedi.
+   *Uygulanan (güvenlik incelemesi M3):* yalnızca yoklama anındaki ön uygulama yetmez (parola yöneticisinde ⌘C, 0,5 sn içinde ⌘Tab kaçar). `ClipboardMonitor`, `NSWorkspace.didActivateApplicationNotification` ile son yoklamadan bu yana öne gelen her uygulamayı tutar; listedekilerden biri o aralıkta önde olduysa içerik okunmaz. `org.nspasteboard.source` yalnızca erişim "her zaman izinli" iken okunur (bir içerik okuması) ve yalnızca atlama sebebi ekler. Öne hiç gelmeyen menü çubuğu panelleri (1Password Quick Access) yalnızca bu işaretle ya da ConcealedType ile yakalanır.
 4. **Uygulama modu için kurulum akışı (#17, ürün kararı):**
    1. Widget "Pano geçmişi için izin gerekli" durumunu gösterir (AC-4.8).
    2. Kullanıcı "İzin ver" düğmesine basar. Uygulama aktifken tek ve bilinçli bir okuma yapılır. Sistem uyarısı çıkar, kullanıcı "Allow Paste" seçer. Uygulama bundan sonra Ayarlar listesinde görünür.

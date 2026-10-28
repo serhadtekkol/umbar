@@ -31,6 +31,10 @@ struct PrivacyAudioProcess: Equatable, Sendable {
 struct PrivacyRunningApp: Equatable, Sendable {
     var bundleID: String
     var name: String
+    /// The app's pid, when known. Lets a capturing process be named by who
+    /// it is (`NSRunningApplication(processIdentifier:)`) rather than by
+    /// the bundle ID it reports to the HAL.
+    var pid: Int32? = nil
 }
 
 /// One read of the hardware, taken after any listener fired.
@@ -78,7 +82,7 @@ struct PrivacyUsage: Equatable, Sendable {
         if let processes = sample.audioProcesses {
             let capturing = processes.filter { $0.isRunningInput && $0.pid != ownPID }
             microphone = !capturing.isEmpty
-            names = capturing.compactMap { displayName(bundleID: $0.bundleID, runningApps: runningApps) }
+            names = capturing.compactMap { displayName(bundleID: $0.bundleID, pid: $0.pid, runningApps: runningApps) }
         } else {
             microphone = sample.inputDeviceRunning
         }
@@ -88,12 +92,26 @@ struct PrivacyUsage: Equatable, Sendable {
 
     /// The name to show for a capturing process, or nil to leave it unnamed.
     ///
-    /// An exact bundle match wins; otherwise the longest running app whose
-    /// bundle ID is a dotted prefix (Chrome's and Electron apps' audio
-    /// helpers). WebKit's GPU process captures for Safari *and* for every
-    /// app with a web view, so it is never guessed: an unnamed line is
+    /// The pid decides first: when it belongs to a running app, that app's
+    /// own bundle ID (from LaunchServices) is used, never the one the
+    /// process reported to the HAL. A process cannot then borrow another
+    /// app's name ("Zoom") by claiming its bundle ID (security review L9).
+    /// Only a process LaunchServices does not list falls back to the
+    /// reported bundle ID; that name is as trustworthy as the claim.
+    ///
+    /// Either way, an exact bundle match wins; otherwise the longest running
+    /// app whose bundle ID is a dotted prefix (Chrome's and Electron apps'
+    /// audio helpers). WebKit's GPU process captures for Safari *and* for
+    /// every app with a web view, so it is never guessed: an unnamed line is
     /// better than a wrong one.
-    static func displayName(bundleID: String?, runningApps: [PrivacyRunningApp]) -> String? {
+    static func displayName(bundleID: String?, pid: Int32? = nil, runningApps: [PrivacyRunningApp]) -> String? {
+        if let pid, let owner = runningApps.first(where: { $0.pid == pid }) {
+            if owner.bundleID.hasPrefix("com.apple.WebKit.") { return nil }
+            let parent = runningApps
+                .filter { owner.bundleID.hasPrefix($0.bundleID + ".") }
+                .max { $0.bundleID.count < $1.bundleID.count }
+            return parent?.name ?? owner.name
+        }
         guard let bundleID, !bundleID.isEmpty else { return nil }
         if let exact = runningApps.first(where: { $0.bundleID == bundleID }) { return exact.name }
         if bundleID.hasPrefix("com.apple.WebKit.") { return nil }

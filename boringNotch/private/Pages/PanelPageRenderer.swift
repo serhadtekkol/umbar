@@ -53,9 +53,12 @@ enum PanelPageRenderer {
             render(ToolsPage(btFixture: btBatteryFixture()), selected: .tools, notch: notch,
                    to: out.appendingPathComponent("page-tools-btbattery-\(tag).png"))
             for (state, model, section) in clipboardFixtures() {
-                render(ShelfPage(clipboard: model, section: section), selected: .shelf, notch: notch,
+                render(ShelfPage(clipboard: model, section: section, clipboardEnabled: true), selected: .shelf, notch: notch,
                        to: out.appendingPathComponent("page-shelf-clipboard-\(state)-\(tag).png"))
             }
+            render(ShelfPage(clipboard: ClipboardHistoryModel(fixture: []), section: .clipboard, clipboardEnabled: false),
+                   selected: .shelf, notch: notch,
+                   to: out.appendingPathComponent("page-shelf-clipboard-off-\(tag).png"))
             for (state, agenda, live, usage) in privacyFixtures() {
                 render(nowPage(agenda: agenda, live: live, privacy: usage), selected: .home, notch: notch,
                        to: out.appendingPathComponent("page-home-privacy-\(state)-\(tag).png"))

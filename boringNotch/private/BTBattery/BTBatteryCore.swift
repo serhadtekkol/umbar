@@ -179,15 +179,30 @@ struct BTConnectGlancePolicy: Equatable {
 /// the whole Bluetooth stack (~0.3-1 s), so it only runs when an audio
 /// device is connected (nothing else needs it: HID levels come from
 /// IORegistry) and at most once per `minimumInterval`, unless a connect or
-/// disconnect just happened.
+/// disconnect just happened. Even then at most once per
+/// `forcedMinimumInterval`: a device that flaps (or a burst of connect
+/// notifications) must not turn into a system_profiler per event.
 enum BTProfilerPolicy {
     static let minimumInterval: TimeInterval = 60
+    static let forcedMinimumInterval: TimeInterval = 5
 
     static func shouldRun(hasConnectedAudio: Bool, lastRun: Date?, now: Date, forced: Bool) -> Bool {
         guard hasConnectedAudio else { return false }
-        if forced { return true }
         guard let lastRun else { return true }
-        return now.timeIntervalSince(lastRun) >= minimumInterval
+        let elapsed = now.timeIntervalSince(lastRun)
+        // A negative gap means the clock was set back; waiting for it to
+        // catch up could postpone the read by hours.
+        return elapsed < 0 || elapsed >= (forced ? forcedMinimumInterval : minimumInterval)
+    }
+
+    /// For a forced read that `shouldRun` refused because of the floor:
+    /// how long until it may run, so the caller can retry then instead of
+    /// losing the connect's fresh reading. `nil` when no retry is needed.
+    static func forcedRetryDelay(hasConnectedAudio: Bool, lastRun: Date?, now: Date) -> TimeInterval? {
+        guard hasConnectedAudio, let lastRun else { return nil }
+        let elapsed = now.timeIntervalSince(lastRun)
+        guard elapsed >= 0, elapsed < forcedMinimumInterval else { return nil }
+        return forcedMinimumInterval - elapsed
     }
 }
 

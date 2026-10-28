@@ -8422,13 +8422,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passwords and items apps mark as private are never saved."
+            "value" : "Items apps mark as private and copies from known password managers are not saved."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Parolalar ve uygulamaların gizli olarak işaretlediği öğeler hiç kaydedilmez."
+            "value" : "Uygulamaların gizli olarak işaretlediği öğeler ve bilinen parola yöneticilerinden yapılan kopyalar kaydedilmez."
           }
         }
       }
@@ -8513,6 +8513,54 @@
         }
       }
     },
+    "clipboard.off.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn it on to keep what you copy here and copy it again with a click. It stays on this Mac."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Açarsan kopyaladıkların burada durur, bir tıkla yeniden kopyalarsın. Bu Mac'ten çıkmaz."
+          }
+        }
+      }
+    },
+    "clipboard.off.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard history is off"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pano geçmişi kapalı"
+          }
+        }
+      }
+    },
+    "clipboard.off.turnOn" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aç"
+          }
+        }
+      }
+    },
     "clipboard.permission.title" : {
       "localizations" : {
         "en" : {
@@ -8582,13 +8630,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Text, links and images you copy appear on the Shelf page under Clipboard. Click one to copy it again. Passwords and items apps mark as private are never saved. Turning this off deletes the history."
+            "value" : "Text, links and images you copy appear on the Shelf page under Clipboard. Click one to copy it again. Items that apps mark as private or concealed, and copies from known password managers and the apps you exclude below, are not saved. Turning this off deletes the history."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kopyaladığın metin, bağlantı ve görseller Raf sayfasında Pano altında görünür. Birine tıklayınca yeniden kopyalanır. Parolalar ve uygulamaların gizli olarak işaretlediği öğeler hiç kaydedilmez. Kapatınca geçmiş silinir."
+            "value" : "Kopyaladığın metin, bağlantı ve görseller Raf sayfasında Pano altında görünür. Birine tıklayınca yeniden kopyalanır. Uygulamaların gizli olarak işaretlediği öğeler ile bilinen parola yöneticilerinden ve aşağıda hariç tuttuğun uygulamalardan yapılan kopyalar kaydedilmez. Kapatınca geçmiş silinir."
           }
         }
       }
@@ -8657,6 +8705,54 @@
         }
       }
     },
+    "settings.clipboard.excluded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never save copies from"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu uygulamalardan kopyalananları kaydetme"
+          }
+        }
+      }
+    },
+    "settings.clipboard.excluded.add" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add App…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uygulama Ekle…"
+          }
+        }
+      }
+    },
+    "settings.clipboard.excluded.remove" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaldır"
+          }
+        }
+      }
+    },
     "settings.clipboard.header" : {
       "localizations" : {
         "en" : {
@@ -8685,6 +8781,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geçmiş yalnızca bu Mac'te, yalnızca senin kullanıcı hesabının okuyabileceği şekilde saklanır ve Time Machine yedeklerine girmez. %lld MB'tan büyük görseller kaydedilmez."
+          }
+        }
+      }
+    },
+    "settings.clipboard.retention" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete items after"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu süreden sonra sil"
+          }
+        }
+      }
+    },
+    "settings.clipboard.retention.day" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 day"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 gün"
+          }
+        }
+      }
+    },
+    "settings.clipboard.retention.days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld days"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld gün"
+          }
+        }
+      }
+    },
+    "settings.clipboard.retention.never" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiçbir zaman"
           }
         }
       }

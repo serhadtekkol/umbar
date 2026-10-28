@@ -171,6 +171,54 @@ struct ClipboardHistoryTests {
         #expect(h.items.isEmpty)
     }
 
+    @Test func retentionChoicesMatchBR44() {
+        let day: TimeInterval = 86_400
+        #expect(ClipboardHistoryPolicy.retention(days: 1) == day)
+        #expect(ClipboardHistoryPolicy.retention(days: 7) == 7 * day)
+        #expect(ClipboardHistoryPolicy.retention(days: 30) == 30 * day)
+        #expect(ClipboardHistoryPolicy.retention(days: 0) == nil, "0 is unlimited")
+        #expect(ClipboardHistoryPolicy.retention(days: 3) == 7 * day, "unknown values fall back to the default, not to unlimited")
+    }
+
+    @Test func expireDropsOnlyItemsPastTheRetention() {
+        let day: TimeInterval = 86_400
+        var h = ClipboardHistory(limit: 100, retention: 7 * day)
+        let old = text("old", 0)
+        let edge = text("edge", day)
+        h.insert(old)
+        h.insert(edge)
+        h.insert(text("new", 7 * day))
+        let now = t0.addingTimeInterval(8 * day)
+        let evicted = h.expire(now: now)
+        #expect(evicted == [old])
+        #expect(texts(h) == ["new", "edge"], "exactly 7 days old is kept; strictly older goes")
+    }
+
+    @Test func insertExpiresAgainstTheNewCopysDate() {
+        let day: TimeInterval = 86_400
+        var h = ClipboardHistory(limit: 100, retention: day)
+        let old = text("old", 0)
+        h.insert(old)
+        let evicted = h.insert(text("next", 2 * day))
+        #expect(evicted == [old])
+    }
+
+    @Test func unlimitedRetentionKeepsEverything() {
+        var h = ClipboardHistory(limit: 100, retention: nil)
+        h.insert(text("ancient", -10_000 * 86_400))
+        #expect(h.expire(now: t0).isEmpty)
+        #expect(h.items.count == 1)
+    }
+
+    @Test func shorteningTheRetentionExpiresAtOnce() {
+        var h = ClipboardHistory(limit: 100, retention: nil)
+        h.insert(text("a", 0))
+        h.insert(text("b", 3 * 86_400))
+        let evicted = h.setRetention(86_400, now: t0.addingTimeInterval(3 * 86_400))
+        #expect(evicted.count == 1)
+        #expect(texts(h) == ["b"])
+    }
+
     @Test func initFromLoadedItemsAppliesTheLimit() {
         let loaded = (0..<20).map { text("\($0)") }
         #expect(ClipboardHistory(items: loaded, limit: 10).items.count == 10)
@@ -204,7 +252,7 @@ struct ClipboardHistoryStoreTests {
         #expect(store.load() == items)
         #expect(try mode(store.directory) == 0o700)
         #expect(try mode(store.directory.appendingPathComponent("index.json")) == 0o600)
-        #expect(try mode(store.imageURL(for: img.imageRef!)) == 0o600)
+        #expect(try mode(store.imageURL(for: img.imageRef!)!) == 0o600)
         let excluded = try store.directory.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup
         #expect(excluded == true)
     }
@@ -229,7 +277,7 @@ struct ClipboardHistoryStoreTests {
         store.writeImage(Data([1]), for: img.imageRef!)
         store.deleteImages(of: [img, text("no file")])
         store.flush()
-        #expect(!FileManager.default.fileExists(atPath: store.imageURL(for: img.imageRef!).path))
+        #expect(!FileManager.default.fileExists(atPath: store.imageURL(for: img.imageRef!)!.path))
     }
 
     /// A tampered index must not turn "delete this image" into "delete a
@@ -261,6 +309,97 @@ struct ClipboardHistoryStoreTests {
         try FileManager.default.createDirectory(at: store.directory, withIntermediateDirectories: true)
         try Data("not json".utf8).write(to: store.directory.appendingPathComponent("index.json"))
         #expect(store.load().isEmpty)
+    }
+
+    /// BR-4.4 at launch: an index left alone for longer than the retention
+    /// comes back without the aged items, and an aged image's file goes too.
+    @Test func agedItemsAreNotLoadedAndTheirFilesAreRemoved() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        let now = t0.addingTimeInterval(8 * 86_400)
+        let agedImage = image(bytes: 1, digest: "aged")
+        let agedText = text("aged secret")
+        let fresh = text("fresh", 8 * 86_400 - 60)
+        store.writeImage(Data([9]), for: agedImage.imageRef!)
+        store.save([fresh, agedText, agedImage])
+        store.flush()
+
+        #expect(store.load(now: now, retention: 7 * 86_400) == [fresh])
+        store.flush()
+        #expect(!FileManager.default.fileExists(atPath: store.imageURL(for: agedImage.imageRef!)!.path))
+        let index = try String(contentsOf: store.directory.appendingPathComponent("index.json"), encoding: .utf8)
+        #expect(!index.contains("aged secret"), "the index is rewritten without the aged text")
+        #expect(store.load(now: now, retention: 7 * 86_400) == [fresh])
+    }
+
+    @Test(arguments: ["", ".", "..", "../victim.txt", "index.json", "abc.png",
+                      "00000000-0000-0000-0000-000000000000.jpg",
+                      "00000000-0000-0000-0000-00000000000a.png",
+                      "00000000-0000-0000-0000-000000000000.png/../x"])
+    func invalidImageFileNamesNeverResolve(_ name: String) {
+        let ref = ClipboardItem.ImageRef(fileName: name, typeIdentifier: "public.png", byteCount: 1, digest: "x")
+        #expect(store.imageURL(for: ref) == nil)
+    }
+
+    @Test func validImageFileNamesResolveInsideTheStore() {
+        let name = "\(UUID().uuidString).tiff"
+        let ref = ClipboardItem.ImageRef(fileName: name, typeIdentifier: "public.tiff", byteCount: 1, digest: "x")
+        #expect(store.imageURL(for: ref) == store.directory.appendingPathComponent(name))
+    }
+
+    /// L7: a tampered index whose image names the store itself (empty name)
+    /// or the index is dropped on load, and nothing is deleted for it.
+    @Test func itemsWithInvalidFileNamesAreDroppedOnLoad() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        let good = text("good")
+        store.save([good])
+        store.flush()
+        let hostile = [
+            ClipboardItem(content: .image(.init(fileName: "", typeIdentifier: "public.png", byteCount: 1, digest: "e")), copiedAt: t0),
+            ClipboardItem(content: .image(.init(fileName: "index.json", typeIdentifier: "public.png", byteCount: 1, digest: "i")), copiedAt: t0),
+        ]
+        try JSONEncoder().encode([good] + hostile).write(to: store.directory.appendingPathComponent("index.json"))
+
+        #expect(store.load() == [good])
+        store.flush()
+        #expect(FileManager.default.fileExists(atPath: store.directory.path))
+        #expect(store.load() == [good])
+    }
+
+    @Test func writesLeaveNoTemporaryFiles() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        store.save([text("x")])
+        store.flush()
+        #expect(try mode(store.directory.appendingPathComponent("index.json")) == 0o600)
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: store.directory.path)
+        #expect(leftovers == ["index.json"], "no temporary file is left behind")
+    }
+
+    @Test func backupExclusionIsRestoredOnEveryWrite() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        store.save([text("a")])
+        store.flush()
+        var dir = store.directory
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = false
+        try dir.setResourceValues(values)
+        store.save([text("b")])
+        store.flush()
+        dir.removeAllCachedResourceValues()
+        #expect(try dir.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true)
+    }
+
+    @Test func aSymlinkedStoreIsNeitherReadNorWritten() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        let elsewhere = root.appendingPathComponent("elsewhere", isDirectory: true)
+        try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+        try JSONEncoder().encode([text("planted")]).write(to: elsewhere.appendingPathComponent("index.json"))
+        try FileManager.default.createSymbolicLink(at: store.directory, withDestinationURL: elsewhere)
+
+        #expect(store.load().isEmpty)
+        store.save([text("secret")])
+        store.flush()
+        let planted = try String(contentsOf: elsewhere.appendingPathComponent("index.json"), encoding: .utf8)
+        #expect(!planted.contains("secret"))
     }
 
     @Test func missingDirectoryLoadsEmpty() {

@@ -81,6 +81,27 @@ enum ClipboardHistoryPolicy {
     /// show only its first lines anyway.
     static let maxTextLength = 200_000
 
+    /// Retention choices offered in Settings, in days; 0 means unlimited.
+    /// BR-4.4: 1 / 7 / 30 days / unlimited, 7 when the user never chose.
+    static let retentionChoices = [1, 7, 30, 0]
+    static let defaultRetentionDays = 7
+
+    /// The retention for a stored day count, or `nil` for unlimited. An
+    /// unknown stored value (edited by hand) falls back to the default
+    /// rather than to "unlimited": the safe direction for BR-4.4.
+    static func retention(days: Int) -> TimeInterval? {
+        let days = retentionChoices.contains(days) ? days : defaultRetentionDays
+        return days == 0 ? nil : TimeInterval(days) * 86_400
+    }
+
+    /// True when `item` is older than `retention` at `now`. An item dated in
+    /// the future (the clock was set back) is not expired; it ages out once
+    /// the clock passes its date plus the retention.
+    static func isExpired(_ item: ClipboardItem, now: Date, retention: TimeInterval?) -> Bool {
+        guard let retention else { return false }
+        return now.timeIntervalSince(item.copiedAt) > retention
+    }
+
     /// Clamps a stored setting to one of the offered lengths' range.
     static func clampedLimit(_ value: Int) -> Int {
         min(max(value, 1), limitChoices.max() ?? defaultLimit)
@@ -123,11 +144,16 @@ enum ClipboardHistoryPolicy {
 struct ClipboardHistory: Equatable, Sendable {
     private(set) var items: [ClipboardItem] = []
     private(set) var limit: Int
+    /// BR-4.4 maximum age, `nil` for unlimited. Enforced by `expire(now:)`,
+    /// on insert (against the new copy's date) and when it is changed.
+    private(set) var retention: TimeInterval?
 
-    init(items: [ClipboardItem] = [], limit: Int = ClipboardHistoryPolicy.defaultLimit) {
+    init(items: [ClipboardItem] = [], limit: Int = ClipboardHistoryPolicy.defaultLimit,
+         retention: TimeInterval? = nil, now: Date? = nil) {
         self.limit = ClipboardHistoryPolicy.clampedLimit(limit)
+        self.retention = retention
         self.items = items
-        _ = enforceLimits()
+        _ = enforceLimits(now: now)
     }
 
     var totalImageBytes: Int {
@@ -148,7 +174,7 @@ struct ClipboardHistory: Equatable, Sendable {
             return true
         }
         items.insert(item, at: 0)
-        return removed + enforceLimits()
+        return removed + enforceLimits(now: item.copiedAt)
     }
 
     /// Moves an existing item to the top with a fresh date (it was copied
@@ -178,12 +204,36 @@ struct ClipboardHistory: Equatable, Sendable {
     @discardableResult
     mutating func setLimit(_ newLimit: Int) -> [ClipboardItem] {
         limit = ClipboardHistoryPolicy.clampedLimit(newLimit)
-        return enforceLimits()
+        return enforceLimits(now: nil)
     }
 
-    /// Drops from the bottom until both the count and the image budget fit.
-    private mutating func enforceLimits() -> [ClipboardItem] {
+    /// Changes the retention and drops whatever it makes too old at `now`.
+    @discardableResult
+    mutating func setRetention(_ newRetention: TimeInterval?, now: Date) -> [ClipboardItem] {
+        retention = newRetention
+        return enforceLimits(now: now)
+    }
+
+    /// Drops items older than the retention at `now` (BR-4.4). The app
+    /// calls it hourly, so an idle history still ages out without a copy.
+    @discardableResult
+    mutating func expire(now: Date) -> [ClipboardItem] {
+        enforceLimits(now: now)
+    }
+
+    /// Drops expired items (when `now` is given), then from the bottom
+    /// until both the count and the image budget fit.
+    private mutating func enforceLimits(now: Date?) -> [ClipboardItem] {
         var evicted: [ClipboardItem] = []
+        if let now, retention != nil {
+            // Not just the tail: `promote` keeps order by last copy, but a
+            // future-dated item (clock set back) can sit below older ones.
+            items.removeAll { item in
+                guard ClipboardHistoryPolicy.isExpired(item, now: now, retention: retention) else { return false }
+                evicted.append(item)
+                return true
+            }
+        }
         if items.count > limit {
             evicted.append(contentsOf: items[limit...])
             items.removeSubrange(limit...)

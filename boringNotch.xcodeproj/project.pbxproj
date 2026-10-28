@@ -365,6 +365,7 @@
 				Panel/NotchHoverPolicy.swift,
 				Panel/PanelKeyPolicy.swift,
 				PrivacyIndicator/PrivacyIndicatorCore.swift,
+				QuickToggles/QuickToggleProcess.swift,
 				QuickToggles/QuickTogglesCore.swift,
 				Settings/DefaultsMigration.swift,
 				ScreenshotShelf/ScreenshotShelfPolicy.swift,
