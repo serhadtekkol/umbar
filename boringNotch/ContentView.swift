@@ -261,6 +261,10 @@ struct ContentView: View {
         }
         .padding(.bottom, 8)
         .frame(maxWidth: windowSize.width, maxHeight: windowSize.height, alignment: .top)
+        // C7-H: the eye-break reminder hangs from the closed island as a
+        // banner; it does not open the panel or take the keyboard. Behind
+        // the island, so the island's ears and hover stay on top.
+        .background(alignment: .top) { EyeBreakBannerSlot(neckWidth: computedChinWidth) }
         .compositingGroup()
         .scaleEffect(
             x: gestureScale,
@@ -432,11 +436,6 @@ struct ContentView: View {
             }
         }
         .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], delegate: GeneralDropTargetDelegate(isTargeted: $vm.generalDropTargeting))
-        .onChange(of: eyeBreak.isPromptingInPanel) { _, prompting in
-            // F14: pop the notch open for the reminder; fold it again when the
-            // reminder ends unless the pointer is still on it.
-            if prompting { doOpen() } else if !isHovering && pointerMayClose { vm.close() }
-        }
         .onChange(of: focusTimer.isShowingBanner) { _, showing in
             // F18: same as the eye-break reminder; pop open for the banner, fold after.
             if showing { doOpen() } else if !isHovering && pointerMayClose { vm.close() }
@@ -676,7 +675,6 @@ struct ContentView: View {
     private var pointerExitMayClose: Bool {
         !vm.isBatteryPopoverActive
             && !SharingStateManager.shared.preventNotchClose
-            && !eyeBreak.isPromptingInPanel
             && !focusTimer.isShowingBanner
             // A key panel ignores the pointer leaving (AC-1.4 R1.2
             // exception): it closes on Esc, an outside click or the

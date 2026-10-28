@@ -38,6 +38,7 @@ enum PanelPageRenderer {
             render(nowPage(agenda: .off, live: []), selected: .home, notch: notch,
                    to: out.appendingPathComponent("page-home-musiconly-\(tag).png"))
         }
+        EyeBreakBannerRenderer.renderPages(to: out)
         exit(0)
     }
 

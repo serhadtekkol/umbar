@@ -32,6 +32,8 @@ extension Defaults.Keys {
     static let eyeBreakIdleResetMinutes = Key<Int>("eyeBreakIdleResetMinutes", default: 5)
     /// AC-14.5: hold the reminder while a full-screen video / presentation is active.
     static let eyeBreakDeferDuringVideo = Key<Bool>("eyeBreakDeferDuringVideo", default: true)
+    /// Set once the first reminder (which introduces the feature) has ended.
+    static let eyeBreakIntroShown = Key<Bool>("eyeBreakIntroShown", default: false)
 
     // Debug overrides for verification only. 0 = unused. Not exposed in Settings;
     // set with `defaults write <bundle id> eyeBreakDebugIntervalSeconds -int 30`.

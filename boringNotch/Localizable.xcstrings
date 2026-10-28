@@ -785,6 +785,22 @@
         }
       }
     },
+    "eyebreak.intro.body" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look 20 feet away for %1$lld seconds. This reminder comes every %2$lld minutes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi %1$lld saniye 6 metre uzağa bakın. Bu hatırlatma her %2$lld dakikada bir gelir."
+          }
+        }
+      }
+    },
     "eyebreak.notification.body" : {
       "localizations" : {
         "en" : {
@@ -797,6 +813,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gözlerinizi %lld saniye dinlendirin."
+          }
+        }
+      }
+    },
+    "eyebreak.remaining.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld seconds left"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld saniye kaldı"
           }
         }
       }
@@ -845,6 +877,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "6 metre uzağa bakın"
+          }
+        }
+      }
+    },
+    "eyebreak.turnOff" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off eye breaks"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Göz molasını kapat"
           }
         }
       }

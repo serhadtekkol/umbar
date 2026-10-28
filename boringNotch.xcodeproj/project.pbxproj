@@ -347,6 +347,7 @@
 				ArtworkCache/ArtworkDiskCache.swift,
 				Caffeinate/CaffeinatePolicy.swift,
 				Clipboard/ClipboardMonitor.swift,
+				EyeBreak/EyeBreakBannerHitPolicy.swift,
 				EyeBreak/EyeBreakEngine.swift,
 				FocusTimer/FocusTimerEngine.swift,
 				HUD/HUDAccessCardPolicy.swift,

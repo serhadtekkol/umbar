@@ -35,6 +35,7 @@ enum MotionFrameRenderer {
             renderIsland(notch: notch, out: out)
         }
         renderWiFiConfirm(out: out)
+        EyeBreakBannerRenderer.renderMotion(to: out)
         exit(0)
     }
 

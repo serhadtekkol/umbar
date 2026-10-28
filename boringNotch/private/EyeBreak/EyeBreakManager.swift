@@ -30,6 +30,14 @@ final class EyeBreakManager: ObservableObject {
         return false
     }
 
+    /// The first reminder this install shows introduces the feature and
+    /// offers to turn it off (C7-H). Fixed for the life of one prompt.
+    @Published private(set) var isIntroPrompt = false
+
+    /// For the countdown bar; the engine's copy is private.
+    var breakDurationSeconds: Int { Int(engine.config.breakDuration) }
+    var intervalMinutes: Int { max(1, Int(engine.config.interval / 60)) }
+
     private var engine = EyeBreakEngine()
     private var timer: Timer?
     private var showInPanel = true
@@ -80,6 +88,27 @@ final class EyeBreakManager: ObservableObject {
         dismissNotification()
         publish()
     }
+
+    /// "Turn off eye breaks" on the intro banner: the same switch as Settings.
+    func turnOff() {
+        markIntroShown()
+        Defaults[.eyeBreakEnabled] = false
+    }
+
+    private func markIntroShown() {
+        guard isIntroPrompt else { return }
+        Defaults[.eyeBreakIntroShown] = true
+        isIntroPrompt = false
+    }
+
+    #if DEBUG
+    /// Frame renderers only: draw the reminder without running the engine.
+    func showFixturePrompt(endsAt: Date, intro: Bool) {
+        isIntroPrompt = intro
+        showInPanel = true
+        phase = .prompting(endsAt: endsAt)
+    }
+    #endif
 
     // MARK: - Lifecycle
 
@@ -146,8 +175,13 @@ final class EyeBreakManager: ObservableObject {
         let old = phase
         phase = new
         if new != old { log.info("phase \(String(describing: old), privacy: .public) -> \(String(describing: new), privacy: .public)") }
-        guard timer != nil else { return }
         let wasPrompting = old.isPrompting
+        if new.isPrompting && !wasPrompting {
+            isIntroPrompt = !Defaults[.eyeBreakIntroShown]
+        } else if !new.isPrompting && wasPrompting {
+            markIntroShown()
+        }
+        guard timer != nil else { return }
         if new.isPrompting && !wasPrompting {
             scheduleTimer(interval: 1)
             deliver()
