@@ -40,7 +40,9 @@ struct TabSelectionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 2) {
+        // No gap between tabs: the icon-only tabs already carry their own
+        // 7 pt inset, and the room goes to the selected tab's padding.
+        HStack(spacing: 0) {
             ForEach(tabs) { tab in
                 TabButton(tab: tab, selected: tab.view == shownView) {
                     select(tab.view)
@@ -51,7 +53,10 @@ struct TabSelectionView: View {
         // tab and slides the neighbours on one spring, including the ⌘1…⌘5
         // shortcuts, which set the page without an animation of their own.
         .animation(UmbarMotion.tab(reduce: reduceMotion), value: shownView)
-        .padding(Self.inset)
+        .padding(.vertical, Self.inset)
+        // Never squeezed by the header: a compressed bar ate the selected
+        // tab's padding on narrow notch halves.
+        .fixedSize()
         // System focus ring (design-language §3.1 `island.focus`), not a drawn one.
         .focusable()
         .focused($tabGroupFocused)
