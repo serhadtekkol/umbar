@@ -73,6 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        ClipboardHistoryModel.shared.flush()
         NotificationCenter.default.removeObserver(self)
         if let observer = screenLockedObserver {
             DistributedNotificationCenter.default().removeObserver(observer)
@@ -244,8 +245,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         BTBatteryMonitor.shared.start()
         NetMonitor.shared.start()
         SysMonitor.shared.start()
-        // Spike A2 prototype; inert unless clipboardMonitorEnabled is set.
-        ClipboardMonitorController.shared.activate()
+        // F21: follows Settings > Shelf > Clipboard (on by default).
+        ClipboardHistoryModel.shared.activate()
         // F16: new screenshots land on the shelf; briefly show the shelf
         // without taking focus, and put the notch back unless the user is in it.
         ScreenshotShelfController.shared.start { [weak self] in

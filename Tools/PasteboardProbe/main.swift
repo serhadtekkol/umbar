@@ -253,6 +253,7 @@ final class FakeSource: PasteboardSource {
         if bumpOnRead { changeCount += 1 }
         return text
     }
+    func data(forType dataType: NSPasteboard.PasteboardType) -> Data? { reads += 1; return nil }
     func set(_ t: [NSPasteboard.PasteboardType], text: String?) { changeCount += 1; types = t; self.text = text }
 }
 
@@ -286,8 +287,8 @@ final class FakeSource: PasteboardSource {
     f.set([.string, transient], text: "otp")
     check("transient -> skipped", m.tick() == .skippedSensitive(marker: transient.rawValue, changeCount: 3))
 
-    f.set([.tiff], text: nil)
-    check("image only -> nonText", m.tick() == .skippedNonText(changeCount: 4))
+    f.set([.pdf], text: nil)
+    check("neither text nor image -> nonText", m.tick() == .skippedNonText(changeCount: 4))
 
     for b in [NSPasteboard.AccessBehavior.default, .ask, .alwaysDeny] {
         f.reads = 0; f.accessBehavior = b

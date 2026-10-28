@@ -347,6 +347,8 @@
 				ArtworkCache/ArtworkDiskCache.swift,
 				BTBattery/BTBatteryCore.swift,
 				Caffeinate/CaffeinatePolicy.swift,
+				Clipboard/ClipboardHistoryCore.swift,
+				Clipboard/ClipboardHistoryStore.swift,
 				Clipboard/ClipboardMonitor.swift,
 				EyeBreak/EyeBreakBannerHitPolicy.swift,
 				EyeBreak/EyeBreakEngine.swift,

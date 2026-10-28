@@ -2,16 +2,25 @@
 //  ClipboardDefaults.swift
 //  umbar
 //
-//  Kept out of Constants.swift on purpose: F4 is a separate feature with
+//  Kept out of Constants.swift on purpose: F21 is a separate feature with
 //  its own lifecycle, and Constants.swift is shared by every branch.
 //
 
 import Defaults
 
 extension Defaults.Keys {
-    /// Spike A2 (card #3) prototype switch for the clipboard monitor.
-    /// Off by default and deliberately not surfaced in Settings yet; the
-    /// real F4 toggle (AC-1.13) replaces it in #16/#17. Toggle manually with
-    /// `defaults write <bundle id> clipboardMonitorEnabled -bool YES`.
-    static let clipboardMonitorEnabled = Key<Bool>("clipboardMonitorEnabled", default: false)
+    /// F21: record copies and show them on the Raf page's "Pano" side.
+    /// Turning it off stops the monitor and deletes the saved history.
+    static let clipboardHistoryEnabled = Key<Bool>("clipboardHistoryEnabled", default: true)
+    /// How many copies to keep; one of `ClipboardHistoryPolicy.limitChoices`.
+    static let clipboardHistoryLimit = Key<Int>("clipboardHistoryLimit", default: ClipboardHistoryPolicy.defaultLimit)
+    /// Which side of the Raf page was last shown, so reopening the panel
+    /// comes back to it. Not a setting; not shown in Settings.
+    static let shelfPageSection = Key<ShelfPageSection>("shelfPageSection", default: .files)
+}
+
+/// The two sides of the Raf page.
+enum ShelfPageSection: String, Defaults.Serializable, CaseIterable {
+    case files
+    case clipboard
 }

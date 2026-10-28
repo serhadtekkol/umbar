@@ -73,7 +73,8 @@ struct PanelTab: Identifiable, Equatable {
     @MainActor static func isOn(_ view: NotchViews) -> Bool {
         switch view {
         case .home: true
-        case .shelf: Defaults[.boringShelf]
+        // Raf also holds the clipboard history (F21), so it stays while either is on.
+        case .shelf: Defaults[.boringShelf] || Defaults[.clipboardHistoryEnabled]
         case .calendar: Defaults[.showCalendar]
         case .network: Defaults[.netMonitorEnabled] || Defaults[.sysMonitorEnabled]
         case .tools:
@@ -133,7 +134,7 @@ struct PanelPageView: View {
             // so a tall budget (45 pt notch) leaves no empty band below it.
             NotchHomeView(albumArtNamespace: albumArtNamespace)
                 .frame(maxHeight: .infinity, alignment: .center)
-        case .shelf: ShelfView()
+        case .shelf: ShelfPage()
         case .calendar: CalendarPage()
         case .network: NetworkPage()
         case .tools: ToolsPage()

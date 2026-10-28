@@ -2,7 +2,7 @@
 //  ClipboardMonitor.swift
 //  umbar
 //
-//  Spike A2 (card #3) prototype. Findings and the reasoning behind the
+//  F21 clipboard history: the pasteboard watcher. Findings and the reasoning behind the
 //  read policy live in docs/spikes/A2-clipboard.md; keep the two in sync.
 //
 //  This file deliberately depends on AppKit and os only, so the spike
@@ -21,6 +21,7 @@ protocol PasteboardSource: AnyObject {
     var types: [NSPasteboard.PasteboardType]? { get }
     var accessBehavior: NSPasteboard.AccessBehavior { get }
     func string(forType dataType: NSPasteboard.PasteboardType) -> String?
+    func data(forType dataType: NSPasteboard.PasteboardType) -> Data?
 }
 
 extension NSPasteboard: PasteboardSource {}
@@ -32,8 +33,16 @@ enum ClipboardEvent: Equatable, Sendable {
     /// The writer marked the content as sensitive or short-lived
     /// (nspasteboard.org conventions, BR-4.3); contents were not read.
     case skippedSensitive(marker: String, changeCount: Int)
-    /// The change carried no plain-text representation (v1 text-only spike).
+    /// Image bytes were read (PNG preferred over TIFF). `data` is user
+    /// content: never log it. `type` is the representation that was read.
+    case capturedImage(data: Data, type: NSPasteboard.PasteboardType, changeCount: Int)
+    /// The change carried neither plain text nor a PNG/TIFF image, or it was
+    /// a file copy (Finder): files belong on the shelf, not in the history.
     case skippedNonText(changeCount: Int)
+    /// The app in front when the change was seen is a password manager
+    /// (`passwordManagerBundleIDs`); contents were not read. Covers managers
+    /// that do not set the nspasteboard.org markers.
+    case skippedSourceApp(bundleID: String, changeCount: Int)
     /// Reading would surface the system pasteboard alert, or the user chose
     /// "Deny"; contents were not read. Drives the AC-4.8 "permission
     /// required" state.
@@ -99,7 +108,35 @@ final class ClipboardMonitor {
         return sensitivityMarkers.first { present.contains($0) }
     }
 
+    /// Apps whose copies are never read, whatever markers they set. The
+    /// frontmost app is a heuristic for "who wrote this" (there is no public
+    /// source-app API, spike A2 §3): a copy made by a background helper while
+    /// another app is in front slips through, which is why the markers above
+    /// are checked first. IDs from the apps' own bundles; Dashlane, Enpass and
+    /// NordPass are not listed because their IDs could not be confirmed here.
+    nonisolated static let passwordManagerBundleIDs: Set<String> = [
+        "com.apple.Passwords",
+        "com.apple.keychainaccess",
+        "com.1password.1password",
+        "com.agilebits.onepassword7",
+        "com.agilebits.onepassword-osx",
+        "com.bitwarden.desktop",
+        "org.keepassxc.keepassxc",
+        "com.lastpass.LastPass",
+    ]
+
+    /// File copies from Finder also carry the file's name as text and its
+    /// icon as TIFF; recording either would be wrong, so these skip outright.
+    nonisolated static let fileTypes: [NSPasteboard.PasteboardType] = [
+        .fileURL,
+        .init("NSFilenamesPboardType"),
+    ]
+
+    /// Image representations read, in preference order.
+    nonisolated static let imageTypes: [NSPasteboard.PasteboardType] = [.png, .tiff]
+
     private let source: PasteboardSource
+    private let frontmostBundleID: () -> String?
     private let interval: DispatchTimeInterval
     private let leeway: DispatchTimeInterval
     private let policy: ReadPolicy
@@ -116,6 +153,8 @@ final class ClipboardMonitor {
     ///   - leeway: Timer slack granted to the kernel so wakeups coalesce
     ///     with other timers. Larger is cheaper; it adds directly to latency.
     ///   - policy: See `ReadPolicy`.
+    ///   - frontmostBundleID: Bundle ID of the app in front, checked against
+    ///     `passwordManagerBundleIDs` before any read. Tests inject it.
     ///   - onEvent: Called synchronously on the main actor, once per
     ///     observed change.
     init(
@@ -123,9 +162,11 @@ final class ClipboardMonitor {
         interval: DispatchTimeInterval = .milliseconds(500),
         leeway: DispatchTimeInterval = .milliseconds(100),
         policy: ReadPolicy = .onlyWhenAlwaysAllowed,
+        frontmostBundleID: @escaping () -> String? = { NSWorkspace.shared.frontmostApplication?.bundleIdentifier },
         onEvent: @escaping (ClipboardEvent) -> Void
     ) {
         self.source = source
+        self.frontmostBundleID = frontmostBundleID
         self.interval = interval
         self.leeway = leeway
         self.policy = policy
@@ -159,6 +200,13 @@ final class ClipboardMonitor {
         timer = nil
     }
 
+    /// Treats the pasteboard as already seen. Call right after umbar itself
+    /// writes to it (copy back from the history), so its own write is not
+    /// reported as a new copy.
+    func ignoreCurrentContents() {
+        lastChangeCount = source.changeCount
+    }
+
     /// One poll. Internal so the harness can drive it deterministically
     /// without a timer.
     @discardableResult
@@ -183,13 +231,30 @@ final class ClipboardMonitor {
         if let marker = Self.sensitivityMarker(in: types) {
             return .skippedSensitive(marker: marker.rawValue, changeCount: count)
         }
-        guard types.contains(.string) else {
+        if types.contains(where: Self.fileTypes.contains) {
             return .skippedNonText(changeCount: count)
+        }
+        // Text wins over an image: a copy from a spreadsheet or a rich text
+        // editor carries both, and the text is what the user meant.
+        let imageType = Self.imageTypes.first(where: types.contains)
+        guard types.contains(.string) || imageType != nil else {
+            return .skippedNonText(changeCount: count)
+        }
+        if let app = frontmostBundleID(), Self.passwordManagerBundleIDs.contains(app) {
+            return .skippedSourceApp(bundleID: app, changeCount: count)
         }
 
         let behavior = source.accessBehavior
         if policy == .onlyWhenAlwaysAllowed, behavior != .alwaysAllow {
             return .permissionRequired(behavior: behavior, changeCount: count)
+        }
+
+        if !types.contains(.string), let imageType {
+            guard let data = source.data(forType: imageType) else {
+                return .permissionRequired(behavior: source.accessBehavior, changeCount: count)
+            }
+            guard source.changeCount == count else { return nil }
+            return .capturedImage(data: data, type: imageType, changeCount: count)
         }
 
         guard let text = source.string(forType: .string) else {
@@ -209,6 +274,8 @@ final class ClipboardMonitor {
     nonisolated static func describe(_ event: ClipboardEvent) -> String {
         switch event {
         case .captured(let text, _): return "captured(len=\(text.count))"
+        case .capturedImage(let data, let type, _): return "capturedImage(\(type.rawValue), bytes=\(data.count))"
+        case .skippedSourceApp(let app, _): return "skippedSourceApp(\(app))"
         case .skippedSensitive(let marker, _): return "skippedSensitive(\(marker))"
         case .skippedNonText: return "skippedNonText"
         case .permissionRequired(let b, _): return "permissionRequired(behavior=\(b.rawValue))"

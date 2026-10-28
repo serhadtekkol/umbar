@@ -52,8 +52,13 @@ enum PanelPageRenderer {
                    to: out.appendingPathComponent("page-home-musiconly-\(tag).png"))
             render(ToolsPage(btFixture: btBatteryFixture()), selected: .tools, notch: notch,
                    to: out.appendingPathComponent("page-tools-btbattery-\(tag).png"))
+            for (state, model, section) in clipboardFixtures() {
+                render(ShelfPage(clipboard: model, section: section), selected: .shelf, notch: notch,
+                       to: out.appendingPathComponent("page-shelf-clipboard-\(state)-\(tag).png"))
+            }
             for (state, ghosts) in undoChipFixtures() {
-                render(ShelfView(undoChipFixture: ghosts), selected: .shelf, notch: notch,
+                render(ShelfPage(clipboard: ClipboardHistoryModel(fixture: []), undoChipFixture: ghosts, section: .files),
+                       selected: .shelf, notch: notch,
                        to: out.appendingPathComponent("page-shelf-undo-\(state)-\(tag).png"))
             }
         }
@@ -66,7 +71,7 @@ enum PanelPageRenderer {
     private static func page(_ view: NotchViews) -> some View {
         switch view {
         case .home: nowPage(agenda: .items(fixtureEvents()), live: fixtureLive())
-        case .shelf: ShelfView()
+        case .shelf: ShelfPage(clipboard: ClipboardHistoryModel(fixture: []), section: .files)
         case .calendar: CalendarPage()
         case .network:
             NetworkPageStack { NetworkPageContent(snapshot: fixtureNetwork(), onReset: {}) }
@@ -296,6 +301,37 @@ enum PanelPageRenderer {
             BTBatteryDevice(id: "C3", name: "Magic Keyboard with Touch ID and Numeric Keypad", kind: .keyboard,
                             battery: QuickBattery(single: 64)),
             BTBatteryDevice(id: "D4", name: "Magic Trackpad", kind: .trackpad, battery: QuickBattery(single: 100)),
+        ]
+    }
+
+    /// The Pano side (F21) in each state it can be in. Fixed dates relative
+    /// to now, so the cards' "2 min ago" footers read the same on every run.
+    private static func clipboardFixtures() -> [(String, ClipboardHistoryModel, ShelfPageSection)] {
+        let now = Date()
+        func text(_ s: String, _ ago: TimeInterval) -> ClipboardItem {
+            ClipboardItem(content: .text(s), copiedAt: now.addingTimeInterval(-ago))
+        }
+        let imageID = UUID()
+        let image = ClipboardItem(id: imageID, content: .image(.init(fileName: "x.png", typeIdentifier: "public.png",
+                                                                       byteCount: 1_240_000, digest: "d")),
+                                  copiedAt: now.addingTimeInterval(-300))
+        let art = NSImage(size: NSSize(width: 160, height: 100), flipped: false) { rect in
+            NSGradient(colors: [.systemTeal, .systemPurple])?.draw(in: rect, angle: 30)
+            return true
+        }
+        let items = [
+            text("Toplantı notu: Perşembe 14:00'te tasarım incelemesi, Hüsna sunacak.", 40),
+            ClipboardItem(content: .url("https://www.example.com/docs/clipboard-history?ref=umbar"), copiedAt: now.addingTimeInterval(-120)),
+            image,
+            text("    func copy(_ item: ClipboardItem) {\n\n        let pasteboard = NSPasteboard.general\n        pasteboard.clearContents()\n    }", 900),
+            text("Çok uzun bir metin: " + String(repeating: "öğrenci şemsiye ığdır çay ", count: 20), 3600),
+            text("TR42 0006 4000 0011 2345 6789 01", 7200),
+        ]
+        return [
+            ("items", ClipboardHistoryModel(fixture: items, images: [imageID: art]), .clipboard),
+            ("copied", ClipboardHistoryModel(fixture: items, images: [imageID: art], justCopied: items[0].id), .clipboard),
+            ("empty", ClipboardHistoryModel(fixture: []), .clipboard),
+            ("permission", ClipboardHistoryModel(fixture: Array(items.prefix(2)), permissionRequired: true), .clipboard),
         ]
     }
 
