@@ -2177,22 +2177,6 @@
         }
       }
     },
-    "Always show full event titles" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Always show full event titles"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Etkinlik başlıklarını her zaman tam göster"
-          }
-        }
-      }
-    },
     "App icon" : {
       "localizations" : {
         "en" : {
@@ -2221,22 +2205,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Görünüm"
-          }
-        }
-      }
-    },
-    "Auto-scroll to next event" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auto-scroll to next event"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sonraki etkinliğe otomatik kaydır"
           }
         }
       }

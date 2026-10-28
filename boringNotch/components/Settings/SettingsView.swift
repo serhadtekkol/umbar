@@ -617,7 +617,6 @@ struct CalendarSettings: View {
     @Default(.showCalendar) var showCalendar: Bool
     @Default(.showReminders) var showReminders
     @Default(.hideAllDayEvents) var hideAllDayEvents
-    @Default(.autoScrollToNextEvent) var autoScrollToNextEvent
 
     var body: some View {
         Form {
@@ -626,12 +625,6 @@ struct CalendarSettings: View {
             }
             Defaults.Toggle(key: .hideAllDayEvents) {
                 Text("Hide all-day events")
-            }
-            Defaults.Toggle(key: .autoScrollToNextEvent) {
-                Text("Auto-scroll to next event")
-            }
-            Defaults.Toggle(key: .showFullEventTitles) {
-                Text("Always show full event titles")
             }
             Section(header: Text("Calendars")) {
                 if calendarManager.calendarPermission != .granted {
