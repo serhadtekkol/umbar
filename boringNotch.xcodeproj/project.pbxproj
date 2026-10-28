@@ -351,6 +351,7 @@
 				FocusTimer/FocusTimerEngine.swift,
 				HUD/HUDAccessCardPolicy.swift,
 				NetMonitor/NetTrafficMath.swift,
+				MenuBarGeometry/MenuBarCollision.swift,
 				NetMonitor/NetUsageLedger.swift,
 				LiveActivities/DownloadParsing.swift,
 				LiveActivities/LiveActivityModel.swift,
