@@ -70,6 +70,9 @@ enum QuickTileState: Equatable {
     /// the Focus Status permission).
     case unknown
     case working
+    /// Wi-Fi is on and one tap has asked to turn it off; the next tap
+    /// within `QuickConfirmation.window` does it.
+    case confirmingOff
     /// The permission was never asked; tapping asks, in context.
     case askPermission
     /// The permission was declined or is restricted; tapping opens Settings.
@@ -85,6 +88,9 @@ enum QuickTileState: Equatable {
 /// What tapping a tile does.
 enum QuickTileAction: Equatable {
     case toggle
+    /// First tap on a switch whose "off" cuts the user off (Wi-Fi): asks
+    /// for a second tap instead of acting.
+    case armOff
     case requestPermission
     case openSettings(QuickSettingsPane)
     case showDevices
@@ -101,13 +107,19 @@ struct QuickTile: Equatable {
 /// Pure state-to-tile mapping. Kept free of the store so each rule can be
 /// tested on its own.
 enum QuickTogglesPolicy {
-    static func wifi(power: WiFiPower, busy: Bool, error: QuickToggleError?) -> QuickTile {
+    /// Turning Wi-Fi on is one tap; turning it off takes two (`armOff`,
+    /// then `toggle` while `armed`), because off drops the connection the
+    /// user may be on, including a call or a remote session.
+    static func wifi(power: WiFiPower, busy: Bool, error: QuickToggleError?, armed: Bool = false) -> QuickTile {
         if busy { return QuickTile(state: .working, action: .none) }
         if power == .noInterface { return QuickTile(state: .unavailable, action: .openSettings(.wifi)) }
         switch error {
         case .notPermitted?: return QuickTile(state: .denied, action: .openSettings(.wifi))
-        case .failed?, .automationDenied?: return QuickTile(state: .failed, action: .toggle)
-        case nil: return QuickTile(state: power == .on ? .on : .off, action: .toggle)
+        case .failed?, .automationDenied?, nil:
+            let resting: QuickTileState = error == nil ? (power == .on ? .on : .off) : .failed
+            // A retry that would turn Wi-Fi off asks too.
+            guard power == .on else { return QuickTile(state: resting, action: .toggle) }
+            return armed ? QuickTile(state: .confirmingOff, action: .toggle) : QuickTile(state: resting, action: .armOff)
         }
     }
 
@@ -149,6 +161,33 @@ enum QuickTogglesPolicy {
         case .failed?, .notPermitted?: return QuickTile(state: .failed, action: .toggle)
         case nil: return QuickTile(state: isDark ? .on : .off, action: .toggle)
         }
+    }
+}
+
+// MARK: - Confirmation
+
+/// The "tap again to confirm" window as a value: armed at one instant,
+/// valid until `window` has passed. Time comes in from the caller, so the
+/// rules are tested without waiting.
+struct QuickConfirmation: Equatable {
+    static let window: TimeInterval = 3
+
+    private(set) var armedAt: Date?
+
+    func isArmed(at now: Date) -> Bool {
+        guard let armedAt else { return false }
+        let elapsed = now.timeIntervalSince(armedAt)
+        return elapsed >= 0 && elapsed < Self.window
+    }
+
+    mutating func arm(at now: Date) { armedAt = now }
+    mutating func disarm() { armedAt = nil }
+
+    /// True when a tap at `now` confirms; always disarms, so a third tap
+    /// starts over instead of confirming twice.
+    mutating func confirm(at now: Date) -> Bool {
+        defer { armedAt = nil }
+        return isArmed(at: now)
     }
 }
 
@@ -305,6 +344,12 @@ final class QuickTogglesStore: ObservableObject {
     @Published private(set) var wifiPower: WiFiPower = .noInterface
     @Published private(set) var wifiBusy = false
     @Published private(set) var wifiError: QuickToggleError?
+    /// Mirrors `wifiConfirmation` for SwiftUI; the confirmation itself holds
+    /// the time so an expired arm never confirms, even before the timeout
+    /// task has run.
+    @Published private(set) var wifiOffArmed = false
+    private var wifiConfirmation = QuickConfirmation()
+    private var wifiDisarmTask: Task<Void, Never>?
 
     @Published private(set) var bluetoothPermission: QuickPermission = .notDetermined
     @Published private(set) var bluetoothPowered: Bool?
@@ -322,19 +367,24 @@ final class QuickTogglesStore: ObservableObject {
 
     let backend: QuickTogglesBackend
     private let focusShortcut: () -> String
+    private let now: () -> Date
 
     /// - Parameters:
     ///   - backend: system access; a fake in tests.
     ///   - focusShortcut: reads the chosen Shortcut name. Injected so the
     ///     store does not depend on Defaults.
-    init(backend: QuickTogglesBackend, focusShortcut: @escaping () -> String) {
+    ///   - now: the clock for the Wi-Fi off confirmation; a fake in tests.
+    init(backend: QuickTogglesBackend, focusShortcut: @escaping () -> String, now: @escaping () -> Date = Date.init) {
         self.backend = backend
         self.focusShortcut = focusShortcut
+        self.now = now
         backend.onChange = { [weak self] in self?.refresh() }
         refresh()
     }
 
-    var wifiTile: QuickTile { QuickTogglesPolicy.wifi(power: wifiPower, busy: wifiBusy, error: wifiError) }
+    var wifiTile: QuickTile {
+        QuickTogglesPolicy.wifi(power: wifiPower, busy: wifiBusy, error: wifiError, armed: wifiOffArmed)
+    }
     var bluetoothTile: QuickTile {
         QuickTogglesPolicy.bluetooth(
             configured: backend.bluetoothConfigured,
@@ -371,13 +421,35 @@ final class QuickTogglesStore: ObservableObject {
         // the panel is closed; clear it so the next tap tries again.
         if appearanceError != .automationDenied { appearanceError = nil }
         if showingDevices && bluetoothTile.state == .off { showingDevices = false }
+        if wifiPower != .on { disarmWiFiOff() }
+    }
+
+    /// Drops a pending "turn Wi-Fi off?" without acting. The row calls it
+    /// when it leaves the screen (panel closed, other page); any tap on
+    /// another toggle or device does too.
+    func disarmWiFiOff() {
+        wifiDisarmTask?.cancel()
+        wifiDisarmTask = nil
+        wifiConfirmation.disarm()
+        wifiOffArmed = false
+    }
+
+    /// Disarms once the window has passed. The timeout task calls it; tests
+    /// call it after moving the clock.
+    func disarmWiFiOffIfExpired() {
+        if !wifiConfirmation.isArmed(at: now()) { disarmWiFiOff() }
     }
 
     /// Runs the tile's action for a tap.
     func activate(_ kind: QuickToggleKind) async {
+        if kind != .wifi { disarmWiFiOff() }
+        // A tap after the window is a fresh first tap, not a confirmation.
+        if kind == .wifi { disarmWiFiOffIfExpired() }
         switch tile(for: kind).action {
         case .none:
             return
+        case .armOff:
+            armWiFiOff()
         case .openSettings(let pane):
             if kind == .appearance { appearanceError = nil }
             backend.open(pane)
@@ -393,7 +465,14 @@ final class QuickTogglesStore: ObservableObject {
             await runFocusShortcut()
         case .toggle:
             switch kind {
-            case .wifi: toggleWiFi()
+            case .wifi:
+                // Turning off needs a live arm; turning on never does.
+                if wifiPower == .on, !wifiConfirmation.confirm(at: now()) {
+                    disarmWiFiOff()
+                    return
+                }
+                disarmWiFiOff()
+                toggleWiFi()
             case .appearance: await toggleAppearance()
             case .bluetooth, .focus: return
             }
@@ -402,6 +481,7 @@ final class QuickTogglesStore: ObservableObject {
 
     /// Connects a disconnected device and disconnects a connected one.
     func toggleDevice(_ id: String) async {
+        disarmWiFiOff()
         guard deviceActivity[id] != .connecting, deviceActivity[id] != .disconnecting,
               let device = devices.first(where: { $0.id == id }) else { return }
         deviceActivity[id] = device.isConnected ? .disconnecting : .connecting
@@ -421,6 +501,17 @@ final class QuickTogglesStore: ObservableObject {
 
     private func reloadDevices() async {
         devices = QuickDeviceOrdering.sorted(await backend.bluetoothDevices())
+    }
+
+    private func armWiFiOff() {
+        wifiConfirmation.arm(at: now())
+        wifiOffArmed = true
+        wifiDisarmTask?.cancel()
+        wifiDisarmTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(QuickConfirmation.window))
+            guard !Task.isCancelled else { return }
+            self?.disarmWiFiOffIfExpired()
+        }
     }
 
     private func toggleWiFi() {

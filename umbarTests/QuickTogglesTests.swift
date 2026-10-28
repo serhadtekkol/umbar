@@ -104,9 +104,22 @@ private struct SomeError: Error {}
 
 @Suite("QuickTogglesPolicy", .timeLimit(.minutes(1)))
 struct QuickTogglesPolicyTests {
-    @Test func wifiOnAndOffToggle() {
-        #expect(QuickTogglesPolicy.wifi(power: .on, busy: false, error: nil) == QuickTile(state: .on, action: .toggle))
+    @Test func wifiOnArmsAndOffTogglesInOneTap() {
+        #expect(QuickTogglesPolicy.wifi(power: .on, busy: false, error: nil) == QuickTile(state: .on, action: .armOff))
+        #expect(QuickTogglesPolicy.wifi(power: .on, busy: false, error: nil, armed: true)
+            == QuickTile(state: .confirmingOff, action: .toggle))
         #expect(QuickTogglesPolicy.wifi(power: .off, busy: false, error: nil) == QuickTile(state: .off, action: .toggle))
+        #expect(QuickTogglesPolicy.wifi(power: .off, busy: false, error: nil, armed: true)
+            == QuickTile(state: .off, action: .toggle))
+    }
+
+    @Test func wifiRetryThatTurnsOffAsksToo() {
+        #expect(QuickTogglesPolicy.wifi(power: .on, busy: false, error: .failed)
+            == QuickTile(state: .failed, action: .armOff))
+        #expect(QuickTogglesPolicy.wifi(power: .on, busy: false, error: .failed, armed: true)
+            == QuickTile(state: .confirmingOff, action: .toggle))
+        #expect(QuickTogglesPolicy.wifi(power: .off, busy: false, error: .failed)
+            == QuickTile(state: .failed, action: .toggle))
     }
 
     @Test func wifiWithoutInterfaceIsUnavailable() {
@@ -117,7 +130,7 @@ struct QuickTogglesPolicyTests {
     @Test func wifiAdminRequirementSendsToSettings() {
         #expect(QuickTogglesPolicy.wifi(power: .on, busy: false, error: .notPermitted)
             == QuickTile(state: .denied, action: .openSettings(.wifi)))
-        #expect(QuickTogglesPolicy.wifi(power: .on, busy: false, error: .failed)
+        #expect(QuickTogglesPolicy.wifi(power: .off, busy: false, error: .failed)
             == QuickTile(state: .failed, action: .toggle))
     }
 
@@ -260,6 +273,7 @@ struct QuickTogglesStoreTests {
         let backend = FakeBackend()
         let store = makeStore(backend)
         await store.activate(.wifi)
+        await store.activate(.wifi)
         #expect(backend.wifiSetCalls == [false])
         #expect(store.wifiTile.state == .off)
         await store.activate(.wifi)
@@ -271,6 +285,7 @@ struct QuickTogglesStoreTests {
         let backend = FakeBackend()
         backend.wifiSetError = .notPermitted
         let store = makeStore(backend)
+        await store.activate(.wifi)
         await store.activate(.wifi)
         #expect(store.wifiTile.state == .denied)
         await store.activate(.wifi)
@@ -426,5 +441,161 @@ struct QuickTogglesStoreTests {
         backend.onChange?()
         #expect(store.appearanceTile.state == .off)
         #expect(store.wifiTile.state == .off)
+    }
+}
+
+// MARK: - Wi-Fi off confirmation
+
+@MainActor
+private final class FakeClock {
+    var now = Date(timeIntervalSinceReferenceDate: 1_000)
+    func advance(_ seconds: TimeInterval) { now = now.addingTimeInterval(seconds) }
+}
+
+@Suite("QuickConfirmation", .timeLimit(.minutes(1)))
+struct QuickConfirmationTests {
+    private let t0 = Date(timeIntervalSinceReferenceDate: 0)
+
+    @Test func confirmsOnlyInsideTheWindow() {
+        var c = QuickConfirmation()
+        #expect(!c.isArmed(at: t0))
+        c.arm(at: t0)
+        #expect(c.isArmed(at: t0.addingTimeInterval(QuickConfirmation.window - 0.01)))
+        #expect(!c.isArmed(at: t0.addingTimeInterval(QuickConfirmation.window)))
+        #expect(!c.isArmed(at: t0.addingTimeInterval(-1)))
+    }
+
+    @Test func confirmDisarmsEitherWay() {
+        var c = QuickConfirmation()
+        c.arm(at: t0)
+        let inside = c.confirm(at: t0.addingTimeInterval(1))
+        let again = c.confirm(at: t0.addingTimeInterval(1.1))
+        #expect(inside)
+        #expect(!again)
+        c.arm(at: t0)
+        let late = c.confirm(at: t0.addingTimeInterval(5))
+        #expect(!late)
+        #expect(c.armedAt == nil)
+    }
+}
+
+/// Wi-Fi off takes two taps; on takes one. Only the fake backend is
+/// switched, never the test machine's Wi-Fi.
+@Suite("QuickToggles Wi-Fi off confirmation", .timeLimit(.minutes(1)))
+@MainActor
+struct QuickTogglesWiFiConfirmTests {
+    private func makeStore(_ backend: FakeBackend, clock: FakeClock) -> QuickTogglesStore {
+        QuickTogglesStore(backend: backend, focusShortcut: { "DND" }, now: { clock.now })
+    }
+
+    @Test func firstTapOnlyArms() async {
+        let backend = FakeBackend()
+        let store = makeStore(backend, clock: FakeClock())
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls.isEmpty)
+        #expect(store.wifiOffArmed)
+        #expect(store.wifiTile == QuickTile(state: .confirmingOff, action: .toggle))
+    }
+
+    @Test func secondTapInsideWindowTurnsOff() async {
+        let backend = FakeBackend()
+        let clock = FakeClock()
+        let store = makeStore(backend, clock: clock)
+        await store.activate(.wifi)
+        clock.advance(2.9)
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls == [false])
+        #expect(!store.wifiOffArmed)
+        #expect(store.wifiTile.state == .off)
+    }
+
+    @Test func secondTapAfterWindowArmsAgainInsteadOfTurningOff() async {
+        let backend = FakeBackend()
+        let clock = FakeClock()
+        let store = makeStore(backend, clock: clock)
+        await store.activate(.wifi)
+        clock.advance(QuickConfirmation.window)
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls.isEmpty)
+        #expect(store.wifiOffArmed)
+        clock.advance(1)
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls == [false])
+    }
+
+    @Test func timeoutDisarms() async {
+        let backend = FakeBackend()
+        let clock = FakeClock()
+        let store = makeStore(backend, clock: clock)
+        await store.activate(.wifi)
+        store.disarmWiFiOffIfExpired()
+        #expect(store.wifiOffArmed)
+        clock.advance(QuickConfirmation.window + 0.1)
+        store.disarmWiFiOffIfExpired()
+        #expect(!store.wifiOffArmed)
+        #expect(store.wifiTile == QuickTile(state: .on, action: .armOff))
+    }
+
+    @Test func turningOnIsOneTap() async {
+        let backend = FakeBackend()
+        backend.wifi = .off
+        let store = makeStore(backend, clock: FakeClock())
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls == [true])
+        #expect(!store.wifiOffArmed)
+        #expect(store.wifiTile.state == .on)
+    }
+
+    @Test func tappingAnotherToggleDisarms() async {
+        let backend = FakeBackend()
+        let store = makeStore(backend, clock: FakeClock())
+        await store.activate(.wifi)
+        await store.activate(.appearance)
+        #expect(!store.wifiOffArmed)
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls.isEmpty)
+    }
+
+    @Test func tappingADeviceDisarms() async {
+        let backend = FakeBackend()
+        backend.devices = [QuickBluetoothDevice(id: "P", name: "AirPods", isConnected: false, isAudio: true)]
+        let store = makeStore(backend, clock: FakeClock())
+        await store.activate(.bluetooth)
+        await store.activate(.wifi)
+        await store.toggleDevice("P")
+        #expect(!store.wifiOffArmed)
+    }
+
+    @Test func leavingTheRowDisarms() async {
+        let backend = FakeBackend()
+        let store = makeStore(backend, clock: FakeClock())
+        await store.activate(.wifi)
+        store.disarmWiFiOff()
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls.isEmpty)
+        #expect(store.wifiOffArmed)
+    }
+
+    @Test func wifiGoingOffElsewhereDisarms() async {
+        let backend = FakeBackend()
+        let store = makeStore(backend, clock: FakeClock())
+        await store.activate(.wifi)
+        backend.wifi = .off
+        backend.onChange?()
+        #expect(!store.wifiOffArmed)
+        #expect(store.wifiTile.state == .off)
+    }
+
+    @Test func failedRetryThatTurnsOffAsksFirst() async {
+        let backend = FakeBackend()
+        backend.wifiSetError = .failed
+        let store = makeStore(backend, clock: FakeClock())
+        await store.activate(.wifi)
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls == [false])
+        #expect(store.wifiTile == QuickTile(state: .failed, action: .armOff))
+        await store.activate(.wifi)
+        #expect(backend.wifiSetCalls == [false])
+        #expect(store.wifiTile.state == .confirmingOff)
     }
 }

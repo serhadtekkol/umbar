@@ -1345,6 +1345,86 @@
         }
       }
     },
+    "quickToggles.hint.armOff" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to turn off. You will be asked to click again."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapatmak için tıklayın. Bir kez daha tıklamanız istenecek."
+          }
+        }
+      }
+    },
+    "quickToggles.hint.confirmOff" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click again to turn off Wi-Fi"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi'yi kapatmak için yeniden tıklayın"
+          }
+        }
+      }
+    },
+    "quickToggles.state.confirmOff" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapat?"
+          }
+        }
+      }
+    },
+    "quickToggles.value.confirmingOff" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On, waiting for confirmation to turn off"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Açık, kapatmak için onay bekleniyor"
+          }
+        }
+      }
+    },
+    "quickToggles.wifi.confirmOff.announcement" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off Wi-Fi? Click again to confirm."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi kapatılsın mı? Onaylamak için yeniden tıklayın."
+          }
+        }
+      }
+    },
     "umbar needs access to Reminders to list your reminders next to your events. Your reminders never leave your Mac." : {
       "localizations" : {
         "en" : {
