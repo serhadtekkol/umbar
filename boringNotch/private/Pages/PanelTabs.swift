@@ -45,7 +45,11 @@ struct PanelTab: Identifiable, Equatable {
         case .home: String(localized: "panel.tab.now", defaultValue: "Now")
         case .shelf: String(localized: "panel.tab.shelf", defaultValue: "Shelf")
         case .calendar: String(localized: "panel.tab.calendar", defaultValue: "Calendar")
-        case .network: String(localized: "panel.tab.network", defaultValue: "Network")
+        // With traffic off the page only shows the system row.
+        case .network:
+            Defaults[.netMonitorEnabled]
+                ? String(localized: "panel.tab.network", defaultValue: "Network")
+                : String(localized: "panel.tab.system", defaultValue: "System")
         case .tools: String(localized: "panel.tab.tools", defaultValue: "Tools")
         }
     }
@@ -69,7 +73,7 @@ struct PanelTab: Identifiable, Equatable {
         case .home: true
         case .shelf: Defaults[.boringShelf]
         case .calendar: Defaults[.showCalendar]
-        case .network: Defaults[.netMonitorEnabled]
+        case .network: Defaults[.netMonitorEnabled] || Defaults[.sysMonitorEnabled]
         case .tools:
             Defaults[.quickTogglesEnabled] || Defaults[.caffeinateEnabled]
                 || Defaults[.focusTimerEnabled] || Defaults[.eyeBreakEnabled]

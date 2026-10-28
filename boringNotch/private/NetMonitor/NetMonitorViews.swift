@@ -49,21 +49,42 @@ private enum NetStrings {
 
 // MARK: - Ağ page
 
-/// The open panel's Ağ page. Draws nothing when the feature is off (the tab
-/// is gone then too, see `PanelTab`).
+/// The open panel's Ağ page: network traffic on top, the F22 system row
+/// under it. Each part draws only when its feature is on; with both off
+/// the tab is gone too (see `PanelTab`).
 struct NetworkPage: View {
     @Default(.netMonitorEnabled) private var enabled
+    @Default(.sysMonitorEnabled) private var systemEnabled
     @ObservedObject private var monitor = NetMonitor.shared
 
     var body: some View {
-        if enabled {
-            NetworkPageContent(
-                snapshot: NetPageSnapshot(
-                    network: monitor.network, rxRate: monitor.rxRate, txRate: monitor.txRate,
-                    history: monitor.history, session: monitor.session, today: monitor.today, month: monitor.month),
-                onReset: { monitor.resetCurrentNetwork() })
-                .onAppear { monitor.beginObserving() }
-                .onDisappear { monitor.endObserving() }
+        NetworkPageStack {
+            if enabled {
+                NetworkPageContent(
+                    snapshot: NetPageSnapshot(
+                        network: monitor.network, rxRate: monitor.rxRate, txRate: monitor.txRate,
+                        history: monitor.history, session: monitor.session, today: monitor.today, month: monitor.month),
+                    onReset: { monitor.resetCurrentNetwork() })
+                    .onAppear { monitor.beginObserving() }
+                    .onDisappear { monitor.endObserving() }
+            }
+        } system: {
+            if systemEnabled { SysStatsSection() }
+        }
+    }
+}
+
+/// The page's arrangement, shared with the offscreen render so the PNG is
+/// the real layout. The network part takes what the system row leaves.
+struct NetworkPageStack<Network: View, System: View>: View {
+    @ViewBuilder let network: Network
+    @ViewBuilder let system: System
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            network
+                .frame(maxHeight: .infinity, alignment: .top)
+            system
         }
     }
 }

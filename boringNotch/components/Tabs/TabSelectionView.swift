@@ -21,6 +21,7 @@ struct TabSelectionView: View {
     @Default(.boringShelf) private var shelfOn
     @Default(.showCalendar) private var calendarOn
     @Default(.netMonitorEnabled) private var networkOn
+    @Default(.sysMonitorEnabled) private var systemOn
     @Default(.quickTogglesEnabled) private var togglesOn
     @Default(.caffeinateEnabled) private var caffeinateOn
     @Default(.focusTimerEnabled) private var focusOn

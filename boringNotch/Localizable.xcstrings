@@ -5409,6 +5409,294 @@
         }
       }
     },
+    "panel.tab.system" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem"
+          }
+        }
+      }
+    },
+    "sysmonitor.cpu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İşlemci"
+          }
+        }
+      }
+    },
+    "sysmonitor.memory" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bellek"
+          }
+        }
+      }
+    },
+    "sysmonitor.memory.warning" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory · high"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bellek · yüksek baskı"
+          }
+        }
+      }
+    },
+    "sysmonitor.memory.critical" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory · critical"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bellek · kritik baskı"
+          }
+        }
+      }
+    },
+    "sysmonitor.memory.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used memory as Activity Monitor counts it (app, wired and compressed). Memory pressure, not this figure, tells whether the Mac is short of memory."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etkinlik Monitörü'nün saydığı gibi kullanılan bellek (uygulamalar, sistemin ayırdığı ve sıkıştırılmış bellek). Mac'in belleğinin yetip yetmediğini bu sayı değil, bellek baskısı söyler."
+          }
+        }
+      }
+    },
+    "sysmonitor.thermal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thermal state"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isı durumu"
+          }
+        }
+      }
+    },
+    "sysmonitor.thermal.nominal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        }
+      }
+    },
+    "sysmonitor.thermal.fair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warm"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ilık"
+          }
+        }
+      }
+    },
+    "sysmonitor.thermal.serious" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hot"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıcak"
+          }
+        }
+      }
+    },
+    "sysmonitor.thermal.critical" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Critical"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kritik"
+          }
+        }
+      }
+    },
+    "sysmonitor.thermal.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The thermal state macOS reports. Above Warm the system slows itself down to cool off. macOS gives apps no temperature reading in degrees."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS'un bildirdiği ısı durumu. Ilık'ın üstünde sistem soğumak için kendini yavaşlatır. macOS uygulamalara derece cinsinden sıcaklık vermez."
+          }
+        }
+      }
+    },
+    "sysmonitor.top" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busiest apps"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En çok çalışan"
+          }
+        }
+      }
+    },
+    "sysmonitor.top.idle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All idle"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hepsi boşta"
+          }
+        }
+      }
+    },
+    "sysmonitor.top.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your apps using the most CPU over the last second, all of an app's processes together. 100% is one full core."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son bir saniyede işlemciyi en çok kullanan uygulamalarınız; bir uygulamanın tüm süreçleri birlikte sayılır. %100 bir tam çekirdektir."
+          }
+        }
+      }
+    },
+    "sysmonitor.settings.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem"
+          }
+        }
+      }
+    },
+    "sysmonitor.settings.enabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show system status"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem durumunu göster"
+          }
+        }
+      }
+    },
+    "sysmonitor.settings.enabled.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU, memory, thermal state and the busiest apps, under the network graph. Read once a second only while that page is open."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İşlemci, bellek, ısı durumu ve en çok çalışan uygulamalar, ağ grafiğinin altında. Yalnızca o sayfa açıkken saniyede bir okunur."
+          }
+        }
+      }
+    },
     "netmonitor.total.detail" : {
       "localizations" : {
         "en" : {

@@ -36,6 +36,21 @@ struct NetMonitorSettings: View {
             }
 
             Section {
+                Defaults.Toggle(key: .sysMonitorEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(String(localized: "sysmonitor.settings.enabled", defaultValue: "Show system status"))
+                        Text(String(localized: "sysmonitor.settings.enabled.detail",
+                                    defaultValue: "CPU, memory, thermal state and the busiest apps, under the network graph. Read once a second only while that page is open."))
+                            .font(.subheadline)
+                            .foregroundStyle(permissionMutedText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            } header: {
+                Text(String(localized: "sysmonitor.settings.header", defaultValue: "System"))
+            }
+
+            Section {
                 Toggle(isOn: Binding(
                     get: { showWiFiName },
                     set: { newValue in

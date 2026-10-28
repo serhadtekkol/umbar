@@ -362,6 +362,7 @@
 				QuickToggles/QuickTogglesCore.swift,
 				Settings/DefaultsMigration.swift,
 				ScreenshotShelf/ScreenshotShelfPolicy.swift,
+				SysMonitor/SysMonitorCore.swift,
 			);
 			target = A1837B1361C7F96E52B64318 /* umbarTests */;
 		};
