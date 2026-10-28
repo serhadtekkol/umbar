@@ -860,6 +860,7 @@ struct Shelf: View {
                 }
             }
             ScreenshotShelfSettingsSection()
+            ClipboardHistorySettingsSection()
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Shelf")

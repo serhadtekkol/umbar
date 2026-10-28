@@ -7376,6 +7376,358 @@
           }
         }
       }
+    },
+    "shelf.section.files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosyalar"
+          }
+        }
+      }
+    },
+    "shelf.section.clipboard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pano"
+          }
+        }
+      }
+    },
+    "clipboard.clearAll" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear all"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tümünü temizle"
+          }
+        }
+      }
+    },
+    "clipboard.clearAll.confirm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear all?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temizlensin mi?"
+          }
+        }
+      }
+    },
+    "clipboard.empty.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you copy shows up here"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopyaladıkların burada görünür"
+          }
+        }
+      }
+    },
+    "clipboard.empty.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwords and items apps mark as private are never saved."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parolalar ve uygulamaların gizli olarak işaretlediği öğeler hiç kaydedilmez."
+          }
+        }
+      }
+    },
+    "clipboard.delete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sil"
+          }
+        }
+      }
+    },
+    "clipboard.copy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopyala"
+          }
+        }
+      }
+    },
+    "clipboard.copy.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copies it again"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeniden kopyalar"
+          }
+        }
+      }
+    },
+    "clipboard.copied" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopyalandı"
+          }
+        }
+      }
+    },
+    "clipboard.image" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görsel"
+          }
+        }
+      }
+    },
+    "clipboard.permission.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permission needed"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İzin gerekli"
+          }
+        }
+      }
+    },
+    "clipboard.permission.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To save copies, set umbar to Allow under Paste from Other Apps."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopyaların kaydedilmesi için Diğer Uygulamalardan Yapıştır bölümünde umbar'a izin ver."
+          }
+        }
+      }
+    },
+    "clipboard.permission.open" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarları aç"
+          }
+        }
+      }
+    },
+    "settings.clipboard.toggle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep a clipboard history"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pano geçmişini tut"
+          }
+        }
+      }
+    },
+    "settings.clipboard.toggle.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text, links and images you copy appear on the Shelf page under Clipboard. Click one to copy it again. Passwords and items apps mark as private are never saved. Turning this off deletes the history."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopyaladığın metin, bağlantı ve görseller Raf sayfasında Pano altında görünür. Birine tıklayınca yeniden kopyalanır. Parolalar ve uygulamaların gizli olarak işaretlediği öğeler hiç kaydedilmez. Kapatınca geçmiş silinir."
+          }
+        }
+      }
+    },
+    "settings.clipboard.limit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep the last"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saklanacak"
+          }
+        }
+      }
+    },
+    "settings.clipboard.limit.items" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld items"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son %lld öğe"
+          }
+        }
+      }
+    },
+    "settings.clipboard.permission" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS asks before umbar reads what you copy, so nothing is being saved. Set umbar to Allow under System Settings > Privacy & Security > Paste from Other Apps."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS, umbar kopyaladıklarını okumadan önce izin istiyor; bu yüzden hiçbir şey kaydedilmiyor. Sistem Ayarları > Gizlilik ve Güvenlik > Diğer Uygulamalardan Yapıştır bölümünde umbar'a izin ver."
+          }
+        }
+      }
+    },
+    "settings.clipboard.clear" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear history"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geçmişi temizle"
+          }
+        }
+      }
+    },
+    "settings.clipboard.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pano"
+          }
+        }
+      }
+    },
+    "settings.clipboard.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The history is stored only on this Mac, readable only by your user account, and is not included in Time Machine backups. Images larger than %lld MB are not saved."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geçmiş yalnızca bu Mac'te, yalnızca senin kullanıcı hesabının okuyabileceği şekilde saklanır ve Time Machine yedeklerine girmez. %lld MB'tan büyük görseller kaydedilmez."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

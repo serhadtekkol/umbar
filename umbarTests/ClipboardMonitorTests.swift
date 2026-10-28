@@ -23,6 +23,7 @@ private final class FakePasteboard: PasteboardSource {
     var types: [NSPasteboard.PasteboardType]? = []
     var accessBehavior: NSPasteboard.AccessBehavior = .alwaysAllow
     var text: String?
+    var imageData: [NSPasteboard.PasteboardType: Data] = [:]
     private(set) var reads = 0
     /// Simulates another app writing while we read.
     var changesDuringRead = false
@@ -31,6 +32,12 @@ private final class FakePasteboard: PasteboardSource {
         reads += 1
         if changesDuringRead { changeCount += 1 }
         return text
+    }
+
+    func data(forType dataType: NSPasteboard.PasteboardType) -> Data? {
+        reads += 1
+        if changesDuringRead { changeCount += 1 }
+        return imageData[dataType]
     }
 
     func write(_ types: [NSPasteboard.PasteboardType], text: String?) {
@@ -53,7 +60,7 @@ struct ClipboardMonitorTests {
     @Test func contentAlreadyThereAtLaunchIsNotReported() {
         let pasteboard = FakePasteboard()
         pasteboard.write([.string], text: "from before launch")
-        let monitor = ClipboardMonitor(source: pasteboard) { _ in }
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
         #expect(monitor.tick() == nil)
         #expect(pasteboard.reads == 0)
     }
@@ -61,7 +68,7 @@ struct ClipboardMonitorTests {
     @Test func plainTextIsCapturedOncePerChange() {
         let pasteboard = FakePasteboard()
         var delivered: [ClipboardEvent] = []
-        let monitor = ClipboardMonitor(source: pasteboard) { delivered.append($0) }
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { delivered.append($0) }
         #expect(monitor.tick() == nil, "no change")
         pasteboard.write([.string], text: "hello")
         #expect(monitor.tick() == .captured(text: "hello", changeCount: 1))
@@ -72,17 +79,61 @@ struct ClipboardMonitorTests {
     @Test(arguments: [concealed, transient])
     func sensitiveContentIsSkippedWithoutBeingRead(_ marker: NSPasteboard.PasteboardType) {
         let pasteboard = FakePasteboard()
-        let monitor = ClipboardMonitor(source: pasteboard) { _ in }
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
         pasteboard.write([.string, marker], text: "secret")
         #expect(monitor.tick() == .skippedSensitive(marker: marker.rawValue, changeCount: 1))
         #expect(pasteboard.reads == 0, "a concealed item is never read, not merely dropped")
     }
 
-    @Test func nonTextIsSkipped() {
+    @Test func neitherTextNorImageIsSkipped() {
         let pasteboard = FakePasteboard()
-        let monitor = ClipboardMonitor(source: pasteboard) { _ in }
-        pasteboard.write([.tiff], text: nil)
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.write([.pdf], text: nil)
         #expect(monitor.tick() == .skippedNonText(changeCount: 1))
+        #expect(pasteboard.reads == 0)
+    }
+
+    @Test func imageIsCapturedPreferringPNG() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.imageData = [.png: Data([1, 2]), .tiff: Data([3])]
+        pasteboard.write([.tiff, .png], text: nil)
+        #expect(monitor.tick() == .capturedImage(data: Data([1, 2]), type: .png, changeCount: 1))
+    }
+
+    @Test func textWinsOverAnImage() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.imageData = [.tiff: Data([3])]
+        pasteboard.write([.string, .tiff], text: "cell")
+        #expect(monitor.tick() == .captured(text: "cell", changeCount: 1))
+    }
+
+    /// Finder puts the file name as text and the icon as TIFF next to the
+    /// file URL; neither is what the user copied.
+    @Test func fileCopiesAreSkippedWithoutBeingRead() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.write([.fileURL, .string, .tiff], text: "report.pdf")
+        #expect(monitor.tick() == .skippedNonText(changeCount: 1))
+        #expect(pasteboard.reads == 0)
+    }
+
+    @Test func copiesFromAPasswordManagerAreNotRead() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { "com.bitwarden.desktop" }) { _ in }
+        pasteboard.write([.string], text: "hunter2")
+        #expect(monitor.tick() == .skippedSourceApp(bundleID: "com.bitwarden.desktop", changeCount: 1))
+        #expect(pasteboard.reads == 0)
+    }
+
+    @Test func ownWriteIsIgnored() {
+        let pasteboard = FakePasteboard()
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
+        pasteboard.write([.string], text: "copied back")
+        monitor.ignoreCurrentContents()
+        #expect(monitor.tick() == nil)
+        #expect(pasteboard.reads == 0)
     }
 
     /// The production policy never reads unless the user chose "Allow", so
@@ -91,7 +142,7 @@ struct ClipboardMonitorTests {
     func withoutAlwaysAllowNothingIsRead(_ behavior: NSPasteboard.AccessBehavior) {
         let pasteboard = FakePasteboard()
         pasteboard.accessBehavior = behavior
-        let monitor = ClipboardMonitor(source: pasteboard) { _ in }
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
         pasteboard.write([.string], text: "x")
         #expect(monitor.tick() == .permissionRequired(behavior: behavior, changeCount: 1))
         #expect(pasteboard.reads == 0)
@@ -100,14 +151,14 @@ struct ClipboardMonitorTests {
     @Test func refusedReadIsReportedAsPermissionRequired() {
         let pasteboard = FakePasteboard()
         pasteboard.accessBehavior = .alwaysDeny
-        let monitor = ClipboardMonitor(source: pasteboard, policy: .always) { _ in }
+        let monitor = ClipboardMonitor(source: pasteboard, policy: .always, frontmostBundleID: { nil }) { _ in }
         pasteboard.write([.string], text: nil)
         #expect(monitor.tick() == .permissionRequired(behavior: .alwaysDeny, changeCount: 1))
     }
 
     @Test func changeDuringTheReadIsDropped() {
         let pasteboard = FakePasteboard()
-        let monitor = ClipboardMonitor(source: pasteboard) { _ in }
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
         pasteboard.changesDuringRead = true
         pasteboard.write([.string], text: "racy")
         #expect(monitor.tick() == nil, "the read belongs to neither generation")
@@ -122,7 +173,7 @@ struct ClipboardMonitorTests {
     @Test func privateNSPasteboardRoundTrip() {
         let pasteboard = NSPasteboard(name: .init("umbarTests.clipboard.\(UUID().uuidString)"))
         defer { pasteboard.releaseGlobally() }
-        let monitor = ClipboardMonitor(source: pasteboard) { _ in }
+        let monitor = ClipboardMonitor(source: pasteboard, frontmostBundleID: { nil }) { _ in }
         #expect(pasteboard.accessBehavior == .alwaysAllow, "private pasteboards are not privacy-gated")
 
         let item = NSPasteboardItem()
