@@ -36,6 +36,7 @@ struct ContentView: View {
     /// recorded whenever the notch is closed. Live activities and badges
     /// change it, so it is measured rather than computed.
     @State private var closedHoverFrame: CGRect = .zero
+    @State private var clickThrough = NotchClickThrough()
     @State private var anyDropDebounceTask: Task<Void, Never>?
 
     @State private var gestureProgress: CGFloat = .zero
@@ -173,6 +174,9 @@ struct ContentView: View {
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
                         if vm.notchState == .closed { closedHoverFrame = frame }
                     }
+                    .onChange(of: closedHoverFrame, initial: true) { updateClickThrough() }
+                    .onChange(of: vm.notchState) { updateClickThrough() }
+                    .onDisappear { clickThrough.stop() }
                     // Innermost wins: an open/close always uses motion.open /
                     // motion.close; the ear spring covers closed-island changes
                     // (music starts, a live strip, a HUD) in a transaction
@@ -662,6 +666,10 @@ struct ContentView: View {
     private var closedNotchScreenRect: CGRect? {
         guard let window = notchWindow, !closedHoverFrame.isEmpty else { return nil }
         return NotchHoverGeometry.screenRect(ofViewFrame: closedHoverFrame, inWindowFrame: window.frame)
+    }
+
+    private func updateClickThrough() {
+        clickThrough.update(window: notchWindow, isOpen: vm.notchState == .open, closedRect: closedNotchScreenRect)
     }
 
     private func pointerIsOnClosedNotch() -> Bool {

@@ -368,6 +368,9 @@ extension View {
 /// hit testing; the pointer is sampled instead (60 Hz, only while shown).
 @MainActor
 final class EyeBreakClickThrough {
+    /// While true, NotchClickThrough leaves the window's mouse handling alone.
+    static private(set) var isActive = false
+
     private weak var window: NSWindow?
     private var timer: Timer?
     private var banner: CGRect = .zero
@@ -377,6 +380,7 @@ final class EyeBreakClickThrough {
     func start(window: NSWindow?) {
         guard let window, timer == nil else { return }
         self.window = window
+        Self.isActive = true
         let t = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.sample() }
         }
@@ -394,6 +398,7 @@ final class EyeBreakClickThrough {
     func stop() {
         timer?.invalidate()
         timer = nil
+        Self.isActive = false
         // Never leave the notch deaf to the mouse.
         window?.ignoresMouseEvents = false
         window = nil
