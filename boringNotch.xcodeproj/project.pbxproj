@@ -360,6 +360,7 @@
 				EyeBreak/EyeBreakEngine.swift,
 				FocusTimer/FocusTimerEngine.swift,
 				HUD/HUDAccessCardPolicy.swift,
+				HeadphoneConnect/HeadphoneConnectCore.swift,
 				NetMonitor/NetTrafficMath.swift,
 				MenuBarGeometry/MenuBarCollision.swift,
 				Motion/NotchApproachPolicy.swift,

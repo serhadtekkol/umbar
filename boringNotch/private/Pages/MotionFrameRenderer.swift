@@ -21,6 +21,13 @@
 //    bt-glance-<notch>-<kind>-<ms>.png  the closed island when a Bluetooth
 //                                device connects (F24), and bt-glance-out-…
 //                                as it leaves after 3 s
+//    headphones-<case>-<notch>-<ms>.png  the headphone connect glance
+//                                widening out of the closed notch (case:
+//                                pro, max-low, beats-nolevel, disconnect,
+//                                late-battery, music, bare, reduce) and
+//                                headphones-<case>-out-… as it folds back;
+//                                headphones-static-<notch>.png  the shape at
+//                                progress 0, ¼, ½, ¾ and 1
 //    privacy-<state>-<notch>-<ms>.png  the camera/mic ear arriving on the
 //                                closed island (state: both, camera, mic)
 //    privacy-caffeinate-<notch>.png    that ear beside Caffeinate's ear
@@ -52,10 +59,14 @@ enum MotionFrameRenderer {
         let out = URL(fileURLWithPath: dir, isDirectory: true)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
         let notches = [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)]
-        // `-UmbarRenderMotionOnly hover` (or `glow`, `critter`) renders those frames alone.
+        // `-UmbarRenderMotionOnly hover` (or `glow`, `critter`, `headphones`)
+        // renders those frames alone.
         switch UserDefaults.standard.string(forKey: "UmbarRenderMotionOnly") {
         case "hover":
             notches.forEach { renderHover(notch: $0, out: out) }
+            exit(0)
+        case "headphones":
+            notches.forEach { renderHeadphoneGlance(notch: $0, out: out) }
             exit(0)
         case "glow":
             EdgeGlowRenderer.renderMotion(to: out)
@@ -70,6 +81,7 @@ enum MotionFrameRenderer {
             renderTabSwitches(notch: notch, out: out)
             renderIsland(notch: notch, out: out)
             renderBluetoothGlance(notch: notch, out: out)
+            renderHeadphoneGlance(notch: notch, out: out)
             renderPrivacyEar(notch: notch, out: out)
             renderTimerEar(notch: notch, out: out)
             renderHover(notch: notch, out: out)
@@ -329,6 +341,96 @@ enum MotionFrameRenderer {
         RunLoop.main.run(until: Date().addingTimeInterval(BTConnectGlancePolicy.duration))
         session.play(change: {}, name: { out.appendingPathComponent("bt-glance-out-\(tag)-\($0).png") })
         session.close()
+    }
+
+    // MARK: Headphone connect glance
+
+    nonisolated static let headphoneTimes: [Double] = [0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6]
+
+    /// The real closed island with fixture glances; the monitor is not
+    /// started in a render run, so nothing reads Core Audio. Each case is
+    /// played in and then out, so both directions of the morph are seen.
+    private static func renderHeadphoneGlance(notch: CGSize, out: URL) {
+        let tag = "\(Int(notch.width))x\(Int(notch.height))"
+        let monitor = HeadphoneConnectMonitor.shared
+        let music = MusicManager.shared
+        music.isPlaying = false
+        music.isPlayerIdle = true
+        let pro = HeadphoneOutput(id: "pro", name: "Serhad Bahadır (AirPods Pro)", model: .airPodsPro)
+        let maxOut = HeadphoneOutput(id: "max", name: "AirPods Max", model: .airPodsMax)
+        let beats = HeadphoneOutput(id: "beats", name: "Beats Studio Buds", model: .beatsStudioBuds)
+        var id = 1_000
+        func glance(_ phase: HeadphoneGlance.Phase, _ output: HeadphoneOutput, _ battery: QuickBattery?) -> HeadphoneGlance {
+            id += 1
+            return HeadphoneGlance(id: id, phase: phase, output: output, battery: battery)
+        }
+
+        func run(_ name: String, reduce: Bool = false, bare: Bool = false, seed: () -> Void = {}, _ steps: [(String, () -> Void)]) {
+            seed()
+            let vm = fixtureViewModel(notch: notch)
+            vm.notchSize = notch
+            // Reduce Motion is read-only in the environment, so that case
+            // draws the glance's own transition on a bare notch instead.
+            let island: AnyView = reduce || bare
+                ? AnyView(HeadphoneBareHarness(notch: notch, reduce: reduce))
+                : AnyView(ContentView().environmentObject(vm))
+            let root = island
+                .frame(width: windowSize.width, height: 80, alignment: .top)
+                .background(Color(white: 0.85))
+            let session = Session(root, size: NSSize(width: windowSize.width, height: 80))
+            for (suffix, change) in steps {
+                session.play(times: headphoneTimes, change: change,
+                             name: { out.appendingPathComponent("headphones-\(name)\(suffix)-\(tag)-\($0).png") })
+            }
+            session.play(times: headphoneTimes, change: { monitor.showFixture(nil) },
+                         name: { out.appendingPathComponent("headphones-\(name)-out-\(tag)-\($0).png") })
+            RunLoop.main.run(until: Date().addingTimeInterval(0.4))
+            session.close()
+        }
+
+        run("pro", [("", { monitor.showFixture(glance(.connected, pro, QuickBattery(left: 80, right: 75, caseLevel: 60))) })])
+        run("max-low", [("", { monitor.showFixture(glance(.connected, maxOut, QuickBattery(single: 15))) })])
+        run("beats-nolevel", [("", { monitor.showFixture(glance(.connected, beats, nil)) })])
+        run("disconnect", [("", { monitor.showFixture(glance(.disconnected, pro, nil)) })])
+        // The level arrives a moment after the glance is up.
+        let late = glance(.connected, pro, nil)
+        var filled = late
+        filled.battery = QuickBattery(left: 92, right: 92, caseLevel: 40)
+        run("late-battery", [("", { monitor.showFixture(late) }), ("-filled", { monitor.showFixture(filled) })])
+        run("music", seed: seedMusic, [("", { monitor.showFixture(glance(.connected, pro, QuickBattery(left: 80, right: 75, caseLevel: 60))) })])
+        music.isPlaying = false
+        music.isPlayerIdle = true
+        // Static geometry of the morph at fixed progress values.
+        let still = VStack(spacing: 8) {
+            ForEach([0.0, 0.25, 0.5, 0.75, 1.0], id: \.self) { p in
+                HeadphoneGlanceIsland(
+                    glance: glance(.connected, pro, QuickBattery(left: 80, right: 75, caseLevel: 60)),
+                    notchWidth: notch.width, height: notch.height, collapsedWidth: notch.width, progress: p)
+                    .frame(width: notch.width, height: notch.height)
+            }
+        }
+        .frame(width: windowSize.width, height: 5 * (notch.height + 8), alignment: .top)
+        .background(Color(white: 0.85))
+        let stillSession = Session(still, size: NSSize(width: windowSize.width, height: 5 * (notch.height + 8)))
+        capture(stillSession.host, to: out.appendingPathComponent("headphones-static-\(tag).png"))
+        stillSession.close()
+        run("bare", bare: true, [("", { monitor.showFixture(glance(.connected, pro, QuickBattery(left: 80, right: 75, caseLevel: 60))) })])
+        run("reduce", reduce: true, [("", { monitor.showFixture(glance(.connected, pro, QuickBattery(left: 80, right: 75, caseLevel: 60))) })])
+    }
+
+    /// The closed notch and the glance overlay alone, outside ContentView.
+    private struct HeadphoneBareHarness: View {
+        let notch: CGSize
+        let reduce: Bool
+
+        var body: some View {
+            NotchShape().fill(.black)
+                .frame(width: notch.width, height: notch.height)
+                .overlay(alignment: .top) {
+                    HeadphoneGlanceOverlay(isClosed: true, notchWidth: notch.width, height: notch.height, forceReduceMotion: reduce)
+                }
+                .environment(\.colorScheme, .dark)
+        }
     }
 
     // MARK: Wi-Fi off confirmation

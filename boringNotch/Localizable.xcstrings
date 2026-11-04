@@ -10208,6 +10208,118 @@
           }
         }
       }
+    },
+    "headphoneGlance.disconnected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnected"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı kesildi"
+          }
+        }
+      }
+    },
+    "headphoneGlance.a11y.connected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ connected"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bağlandı"
+          }
+        }
+      }
+    },
+    "headphoneGlance.a11y.disconnected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ disconnected"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bağlantısı kesildi"
+          }
+        }
+      }
+    },
+    "Show when headphones connect" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show when headphones connect"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kulaklık bağlanınca göster"
+          }
+        }
+      }
+    },
+    "The closed notch widens for a moment with the headphones and their battery, and briefly notes a disconnect." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The closed notch widens for a moment with the headphones and their battery, and briefly notes a disconnect."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapalı notch bir an genişleyip kulaklığı ve pilini gösterir; bağlantı kesildiğinde de kısaca belirtir."
+          }
+        }
+      }
+    },
+    "Show for %lld s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show for %lld s"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sn göster"
+          }
+        }
+      }
+    },
+    "Works without any permission. The battery appears when Bluetooth device batteries are on and the Bluetooth permission below is allowed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Works without any permission. The battery appears when Bluetooth device batteries are on and the Bluetooth permission below is allowed."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İzin gerektirmez. Pil düzeyi, Bluetooth cihaz pilleri açıkken ve aşağıdaki Bluetooth izni verildiğinde görünür."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

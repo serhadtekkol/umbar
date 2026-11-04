@@ -70,6 +70,12 @@ final class BTBatteryMonitor: NSObject, ObservableObject {
             .sink { [weak self] on in MainActor.assumeIsolated { self?.apply(enabled: on) } }
     }
 
+    /// Whether a connected audio device's level can show up in `devices`:
+    /// the setting is on and AirPods levels are readable (they need the
+    /// Bluetooth permission). HeadphoneConnectMonitor waits briefly for a
+    /// level only when one can come.
+    var canReadAudioBatteries: Bool { enabled && Self.bluetoothPermitted }
+
     /// The Araçlar line calls this from onAppear / onDisappear. Counted, so
     /// two lines on screen (renderer, previews) do not stop each other.
     func setVisible(_ visible: Bool) {
@@ -213,7 +219,11 @@ final class BTBatteryMonitor: NSObject, ObservableObject {
         disconnectNotifications[id]?.unregister()
         disconnectNotifications[id] = device.register(
             forDisconnectNotification: self, selector: #selector(deviceDisconnected(_:device:)))
-        if glance.shouldAnnounce(id, at: Date()) {
+        // Headphones get HeadphoneConnectMonitor's wider glance instead of
+        // this strip while that setting is on; one connect, one notice.
+        let headphoneGlanceOwnsIt = device.deviceClassMajor == kBluetoothDeviceClassMajorAudio
+            && Defaults[.headphoneGlanceEnabled]
+        if !headphoneGlanceOwnsIt, glance.shouldAnnounce(id, at: Date()) {
             pendingGlances[id] = device.name ?? address
         }
         scheduleRefresh(after: Self.connectSettle, forceProfiler: true)

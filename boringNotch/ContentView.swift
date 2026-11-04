@@ -225,6 +225,13 @@ struct ContentView: View {
                             TimerClosedBadge(isClosed: vm.notchState == .closed, height: vm.effectiveClosedNotchHeight)
                         }
                     }
+                    // Over the island and its ears for a few seconds when
+                    // headphones connect; draws nothing otherwise.
+                    .overlay(alignment: .top) {
+                        HeadphoneGlanceOverlay(
+                            isClosed: vm.notchState == .closed && !vm.hideOnClosed,
+                            notchWidth: vm.closedNotchSize.width, height: vm.effectiveClosedNotchHeight)
+                    }
                     // After the ears, so it lights their silhouette too; visual only.
                     .modifier(EdgeGlow(isOpen: vm.notchState == .open, islandHeight: vm.effectiveClosedNotchHeight))
                 

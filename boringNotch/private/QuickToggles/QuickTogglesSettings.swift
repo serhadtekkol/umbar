@@ -13,6 +13,8 @@ import SwiftUI
 struct QuickTogglesSettings: View {
     @Default(.quickTogglesEnabled) private var enabled
     @Default(.quickTogglesFocusShortcut) private var focusShortcut
+    @Default(.headphoneGlanceEnabled) private var headphoneGlanceEnabled
+    @Default(.headphoneGlanceDuration) private var headphoneGlanceDuration
     @ObservedObject private var store = QuickTogglesStore.shared
     @State private var shortcutNames: [String] = []
     @State private var loadingShortcuts = true
@@ -69,6 +71,27 @@ struct QuickTogglesSettings: View {
                 }
             } footer: {
                 Text("AirPods levels need the Bluetooth permission below; Magic devices show theirs without it. Per-ear levels appear only for models that report them to macOS.")
+                    .font(.caption)
+                    .foregroundStyle(permissionMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Section {
+                Defaults.Toggle(key: .headphoneGlanceEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Show when headphones connect")
+                        Text("The closed notch widens for a moment with the headphones and their battery, and briefly notes a disconnect.")
+                            .font(.subheadline)
+                            .foregroundStyle(permissionMutedText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Stepper(value: $headphoneGlanceDuration, in: HeadphoneGlancePolicy.durationRange, step: 1) {
+                    Text("Show for \(Int(headphoneGlanceDuration)) s")
+                }
+                .disabled(!headphoneGlanceEnabled)
+            } footer: {
+                Text("Works without any permission. The battery appears when Bluetooth device batteries are on and the Bluetooth permission below is allowed.")
                     .font(.caption)
                     .foregroundStyle(permissionMutedText)
                     .fixedSize(horizontal: false, vertical: true)
