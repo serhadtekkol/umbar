@@ -2,12 +2,32 @@
 //  AudioLevelDemand.swift
 //  boringNotch
 //
-//  The bookkeeping half of AudioLevelMonitor's public API: whether a
-//  permission request is still outstanding. A pure value, so the hostless
-//  umbarTests cover it; the monitor owns one on the main actor.
+//  The bookkeeping half of AudioLevelMonitor's public API: who wants the
+//  capture on, and whether a permission request is still outstanding. Pure
+//  values, so the hostless umbarTests cover them; the monitor owns one of
+//  each on the main actor.
 //
 
 import Foundation
+
+/// The set of callers that currently want capture. Capture is wanted while
+/// at least one owner holds it, so one screen's glow going away cannot
+/// switch off another screen's.
+struct AudioLevelOwners {
+    private var owners: Set<AnyHashable> = []
+
+    var isActive: Bool { !owners.isEmpty }
+
+    /// Adds `owner`; holding twice with the same owner is one hold.
+    mutating func acquire(_ owner: AnyHashable) {
+        owners.insert(owner)
+    }
+
+    /// Removes `owner`; releasing an owner that holds nothing is a no-op.
+    mutating func release(_ owner: AnyHashable) {
+        owners.remove(owner)
+    }
+}
 
 /// At most one audio-capture permission request at a time, without the
 /// risk of waiting forever.

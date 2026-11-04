@@ -18,10 +18,11 @@
 //  (the user still hears everything) and private (no device shows up
 //  anywhere).
 //
-//  When it runs: only between setActive(true) and setActive(false), and
-//  only while MusicManager reports playback. A pause tears the tap down
-//  after a short grace period; so does setActive(false), at once. Nothing
-//  about Core Audio is touched before the first setActive(true).
+//  When it runs: only while at least one caller holds it (acquire/release,
+//  or the older setActive(true)/setActive(false)), and only while
+//  MusicManager reports playback. A pause tears the tap down after a short
+//  grace period; the last release does, at once. Nothing about Core Audio
+//  is touched before the first hold.
 //
 
 import AppKit
@@ -68,6 +69,11 @@ final class AudioLevelMonitor: ObservableObject {
     private static let retargetInterval: TimeInterval = 3
 
     private let engine = AudioCaptureEngine()
+    private var owners = AudioLevelOwners()
+    /// The hold taken by setActive(_:), which predates acquire/release: all
+    /// its callers share it, exactly as they shared the old on/off switch.
+    private struct SetActiveHold: Hashable {}
+    /// `owners.isActive` as last acted on.
     private var requested = false
     private var permissionRequest = AudioPermissionRequestGate()
     private var musicPlaying = false
@@ -86,11 +92,39 @@ final class AudioLevelMonitor: ObservableObject {
     /// Starts or stops capture. Safe to call repeatedly; the glow calls it
     /// with `true` only while the mode is on and music is playing.
     ///
-    /// The first `true` asks for the audio-capture permission if the user
+    /// All setActive callers share one hold: `false` from any of them
+    /// releases it. Callers that can exist more than once at a time (one
+    /// glow per screen) use acquire/release instead; setActive(false) does
+    /// not override their holds.
+    ///
+    /// The first start asks for the audio-capture permission if the user
     /// has not decided yet; a denial sets `authorization = .denied` and
-    /// leaves everything stopped. Later `true` calls re-read the permission,
-    /// so granting it in System Settings takes effect on the next start.
+    /// leaves everything stopped. Later starts re-read the permission, so
+    /// granting it in System Settings takes effect on the next start.
     func setActive(_ active: Bool) {
+        if active { acquire(SetActiveHold()) } else { release(SetActiveHold()) }
+    }
+
+    /// Adds `owner` to the callers that want capture. Capture runs while at
+    /// least one owner holds it (and music plays). Acquiring again with an
+    /// equal owner is a no-op, so each owner needs one release.
+    ///
+    /// - Parameter owner: any stable identity of the caller, e.g. an
+    ///   `ObjectIdentifier` or a screen ID. Equal values are one owner.
+    func acquire(_ owner: AnyHashable) {
+        owners.acquire(owner)
+        applyOwners()
+    }
+
+    /// Removes `owner`. Capture stops when the last owner is gone; an owner
+    /// that holds nothing is ignored.
+    func release(_ owner: AnyHashable) {
+        owners.release(owner)
+        applyOwners()
+    }
+
+    private func applyOwners() {
+        let active = owners.isActive
         guard active != requested else { return }
         requested = active
         if active {

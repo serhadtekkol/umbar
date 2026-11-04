@@ -481,3 +481,45 @@ struct AudioPermissionRequestGateTests {
         #expect(currentExpired)
     }
 }
+
+@Suite("AudioLevelOwners", .timeLimit(.minutes(1)))
+struct AudioLevelOwnersTests {
+    /// Regression for two screens: one glow letting go must not switch off
+    /// the other's capture.
+    @Test func activeUntilTheLastOwnerReleases() {
+        var owners = AudioLevelOwners()
+        #expect(!owners.isActive)
+        owners.acquire("screen-1")
+        owners.acquire("screen-2")
+        owners.release("screen-1")
+        #expect(owners.isActive)
+        owners.release("screen-2")
+        #expect(!owners.isActive)
+    }
+
+    @Test func repeatedAcquireIsOneHold() {
+        var owners = AudioLevelOwners()
+        owners.acquire(7)
+        owners.acquire(7)
+        owners.release(7)
+        #expect(!owners.isActive)
+    }
+
+    @Test func releasingAStrangerChangesNothing() {
+        var owners = AudioLevelOwners()
+        owners.release("nobody")
+        #expect(!owners.isActive)
+        owners.acquire("screen-1")
+        owners.release("screen-2")
+        #expect(owners.isActive)
+    }
+
+    @Test func ownersOfDifferentTypesAreDistinct() {
+        // AnyHashable keeps the type: Int 1 and String "1" are two owners.
+        var owners = AudioLevelOwners()
+        owners.acquire(1)
+        owners.acquire("1")
+        owners.release(1)
+        #expect(owners.isActive)
+    }
+}
