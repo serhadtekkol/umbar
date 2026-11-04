@@ -224,3 +224,83 @@ struct NotchDripSimTests {
         }
     }
 }
+
+/// A fixed look, so these do not move when UmbarMotion.dripLook is retuned.
+let dripLook = NotchDripLook(maxLength: 32, bulbRadius: 8...12, rootHalfWidth: 20...27, neck: 0.88, lean: 6)
+
+@Suite("NotchDripShape", .timeLimit(.minutes(1)))
+struct NotchDripShapeTests {
+    let width: CGFloat = 200
+    let flat: CGFloat = 17
+    let dt = 1.0 / 60
+
+    func shape(_ sim: NotchDripSim) -> NotchDripShape? {
+        NotchDripShape(sim, width: width, flat: flat, look: dripLook)
+    }
+
+    func hanging(length: CGFloat, x: CGFloat = 0.5) -> NotchDripSim {
+        var sim = NotchDripSim()
+        sim.length = length
+        sim.x = x
+        return sim
+    }
+
+    @Test func nothingWhileNothingHangs() {
+        #expect(shape(NotchDripSim()) == nil)
+    }
+
+    @Test func aFullDripIsAWideSagNotAThread() throws {
+        let full = try #require(shape(hanging(length: 1)))
+        #expect(full.radius == 12)
+        #expect(2 * full.rootHalf == 54)
+        // The neck stays most of the bulb's width.
+        #expect(2 * full.neckHalf >= 20)
+        // The tip reaches the full length.
+        #expect(abs(full.bulb.y + full.radius - 32) < 1e-9)
+    }
+
+    @Test func aJustStartedDripIsAlreadyABulge() throws {
+        let start = try #require(shape(hanging(length: 0.05)))
+        #expect(start.radius >= 8)
+        #expect(2 * start.rootHalf >= 40)
+    }
+
+    @Test func theNeckHoldsItsThicknessAsItStretchesAndDrawsBack() throws {
+        for length in stride(from: CGFloat(0.1), through: 1, by: 0.1) {
+            let s = try #require(shape(hanging(length: length)))
+            #expect(s.neckHalf / s.radius > 0.85, "length \(length)")
+        }
+        // A slow retract (about one length per second) barely thins it.
+        var slow = hanging(length: 0.6)
+        slow.lengthVelocity = -1
+        let s = try #require(shape(slow))
+        #expect(s.neckHalf / s.radius > 0.75)
+    }
+
+    @Test func theNeckThinsAsItPinchesOff() throws {
+        var sim = NotchDripSim()
+        for _ in 0..<120 { sim.step(dt: dt, target: NotchDripReading(pull: 1, x: 0.5), tuning: dripTuning) }
+        let before = try #require(shape(sim))
+        sim.step(dt: dt, target: nil, tuning: dripTuning)
+        #expect(sim.drops.count == 1)
+        let after = try #require(shape(sim))
+        #expect(after.neckHalf < before.neckHalf * 0.5)
+    }
+
+    @Test func theRootStaysOnTheFlatEdge() throws {
+        // Every x the policy can hand it, down to the tightest inset.
+        for x in [dripTuning.inset / width, 0.3, 0.5, 1 - dripTuning.inset / width] {
+            let s = try #require(shape(hanging(length: 1, x: x)))
+            #expect(s.rootX - s.rootHalf >= flat - 1e-9, "x \(x)")
+            #expect(s.rootX + s.rootHalf <= width - flat + 1e-9, "x \(x)")
+            #expect(s.neckHalf <= s.rootHalf)
+        }
+    }
+
+    @Test func theBulbTrailsASlideByAtMostTheLean() throws {
+        var sim = hanging(length: 1)
+        sim.xVelocity = 50
+        let s = try #require(shape(sim))
+        #expect(abs(s.bulb.x - s.rootX - -6) < 1e-9)
+    }
+}
