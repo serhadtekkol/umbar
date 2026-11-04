@@ -164,7 +164,7 @@ final class ScreenEdgeGlowController {
 
     /// Bounds, layer and owner of every on-screen window. Needs no screen
     /// recording permission: window names are not read.
-    private static func onScreenWindows() -> [ScreenEdgeGlowPolicy.WindowInfo] {
+    static func onScreenWindows() -> [ScreenEdgeGlowPolicy.WindowInfo] {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return [] }
         return list.compactMap { info in
