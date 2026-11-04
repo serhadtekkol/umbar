@@ -99,6 +99,33 @@ struct EdgeGlowPolicyTests {
         #expect(EdgeGlowPolicy.capturesAudio(context(islandHeight: 0, music: true, audio: true)))
     }
 
+    /// The coordinator decides from the app-wide inputs alone; a screen's
+    /// glow, given the same inputs, must agree with it whatever its panel,
+    /// island or pulse.
+    @Test func theOwnersAnswerMatchesEveryScreensAnswer() {
+        for enabled in [false, true] {
+            for style in EdgeGlowStyle.allCases {
+                for audio in [false, true] {
+                    for music in [false, true] {
+                        for reduceMotion in [false, true] {
+                            let owner = EdgeGlowPolicy.capturesAudio(
+                                enabled: enabled, style: style, audioReactive: audio,
+                                musicPlaying: music, reduceMotion: reduceMotion)
+                            for (isOpen, height, pulse) in [(false, 37.0, nil), (true, 0.0, EdgeGlowEvent.camera)] {
+                                let screen = EdgeGlowPolicy.capturesAudio(context(
+                                    enabled: enabled, style: style, reduceMotion: reduceMotion, isOpen: isOpen,
+                                    islandHeight: height, music: music, pulse: pulse, audio: audio))
+                                #expect(screen == owner)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        #expect(EdgeGlowPolicy.capturesAudio(enabled: true, style: .soft, audioReactive: true,
+                                             musicPlaying: true, reduceMotion: false))
+    }
+
     @Test func theAudioGlowHasNoClockOfItsOwn() {
         #expect(EdgeGlowPolicy.frameInterval(.audio) == nil)
         #expect(EdgeGlowPolicy.level(.audio, time: 0, pulseElapsed: 0, audio: 0.8) == 0.8)

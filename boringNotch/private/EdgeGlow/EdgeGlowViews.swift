@@ -121,6 +121,9 @@ struct EdgeGlow: ViewModifier {
     @State private var audio = EdgeGlowAudioFollower()
     @State private var audioLive = false
     @State private var silenceWatch: Task<Void, Never>?
+    /// Read, never set: EdgeGlowAudioCoordinator alone starts and stops the
+    /// capture, so one screen's glow going away cannot stop another's.
+    @State private var capturesAudio = false
 
     /// Delivered on the next run-loop turn, so `bass` and `treble`, set in
     /// the same tick as `level`, are read as one sample.
@@ -134,7 +137,6 @@ struct EdgeGlow: ViewModifier {
     }
 
     private var target: EdgeGlowState? { EdgeGlowPolicy.state(context) }
-    private var capturesAudio: Bool { EdgeGlowPolicy.capturesAudio(context) }
 
     func body(content: Content) -> some View {
         let envelope = envelope
@@ -156,8 +158,8 @@ struct EdgeGlow: ViewModifier {
                                          spread: reacting ? audio.spread : 1))
         }
         .onChange(of: target, initial: true) { _, new in retarget(new) }
-        .onChange(of: capturesAudio, initial: true) { _, on in
-            AudioLevelMonitor.shared.setActive(on)
+        .onReceive(EdgeGlowAudioCoordinator.shared.$capturesAudio) { capturesAudio = $0 }
+        .onChange(of: capturesAudio) { _, on in
             if !on { audioLive = false }
         }
         .onReceive(Self.audioSamples) { _ in sample() }
@@ -196,7 +198,7 @@ struct EdgeGlow: ViewModifier {
         }
     }
 
-    /// One audio sample. Ignored unless this glow asked for the capture,
+    /// One audio sample. Ignored unless the capture is meant to be running,
     /// so the subscription costs nothing while the setting is off.
     private func sample() {
         guard capturesAudio else { return }
@@ -400,7 +402,7 @@ struct EdgeGlowSettingsSection: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(String(localized: "edgeGlow.settings.audio", defaultValue: "React to sound"))
                 Text(String(localized: "edgeGlow.settings.audio.detail",
-                            defaultValue: "While music plays, the glow follows how loud it is and widens on the bass. To hear it, macOS asks you to allow audio recording for umbar. umbar does not record or send the sound anywhere; it only measures how loud it is, moment to moment. Off by default."))
+                            defaultValue: "While music plays, the glow follows how loud it is and widens on the bass. umbar measures only the loudness: of the app playing the music, or of all system sound if it cannot find that app. Nothing is recorded or sent anywhere. While the microphone is in use, as in a call, system sound is not measured. macOS asks you to allow audio recording for umbar. Off by default."))
                     .font(.subheadline)
                     .foregroundStyle(permissionMutedText)
                     .fixedSize(horizontal: false, vertical: true)
