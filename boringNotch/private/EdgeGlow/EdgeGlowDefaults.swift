@@ -29,4 +29,12 @@ extension Defaults.Keys {
     static let edgeGlowCameraColor = Key<String?>("edgeGlowCameraColor", default: nil)
     static let edgeGlowMicrophoneColor = Key<String?>("edgeGlowMicrophoneColor", default: nil)
     static let edgeGlowHUDColor = Key<String?>("edgeGlowHUDColor", default: nil)
+    /// The same glow along the screen's edges (ScreenEdgeGlow), under the
+    /// notch glow's switch, style, colours and triggers. On by default.
+    static let screenEdgeGlowEnabled = Key<Bool>("screenEdgeGlowEnabled", default: true)
+    /// The band's width on screen in points; ScreenEdgeGlowPolicy.thicknessRange.
+    static let screenEdgeGlowThickness = Key<Double>("screenEdgeGlowThickness", default: 5)
+    /// Its own opacity, apart from the notch's: a whole screen's rim at the
+    /// notch's strength is a lot. ScreenEdgeGlowPolicy.intensityRange.
+    static let screenEdgeGlowIntensity = Key<Double>("screenEdgeGlowIntensity", default: 0.7)
 }

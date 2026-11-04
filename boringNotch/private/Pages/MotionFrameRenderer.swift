@@ -50,6 +50,7 @@
 //    hover-close-<notch>-<ms>.png  and closing, the pointer gone
 //    hover-out-<notch>-<ms>.png  the pointer leaving the closed island
 //    glow-…                      the edge glow; see EdgeGlowRenderer
+//    screenedge-…                the screen edge glow; see ScreenEdgeGlowRenderer
 //    critter-…                   the idle critter crossing; see CritterRenderer
 //    drip-…                      the liquid drip under the island; see DripRenderer
 //    music-still-<case>-<notch>-<bg>.png  the closed island playing, with the
@@ -75,7 +76,7 @@ enum MotionFrameRenderer {
         let out = URL(fileURLWithPath: dir, isDirectory: true)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
         let notches = [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)]
-        // `-UmbarRenderMotionOnly hover` (or `glow`, `critter`, `headphones`, `drip`, `music`)
+        // `-UmbarRenderMotionOnly hover` (or `glow`, `screenedge`, `critter`, `headphones`, `drip`, `music`)
         // renders those frames alone.
         switch UserDefaults.standard.string(forKey: "UmbarRenderMotionOnly") {
         case "hover":
@@ -86,6 +87,9 @@ enum MotionFrameRenderer {
             exit(0)
         case "glow":
             EdgeGlowRenderer.renderMotion(to: out)
+            exit(0)
+        case "screenedge":
+            ScreenEdgeGlowRenderer.renderMotion(to: out)
             exit(0)
         case "critter":
             CritterRenderer.renderMotion(to: out)
@@ -116,6 +120,7 @@ enum MotionFrameRenderer {
         renderUndoChip(out: out)
         EyeBreakBannerRenderer.renderMotion(to: out)
         EdgeGlowRenderer.renderMotion(to: out)
+        ScreenEdgeGlowRenderer.renderMotion(to: out)
         CritterRenderer.renderMotion(to: out)
         DripRenderer.renderMotion(to: out)
         exit(0)
