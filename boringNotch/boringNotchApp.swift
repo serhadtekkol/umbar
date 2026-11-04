@@ -243,6 +243,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HUDAccessCard.shared.start()
         LiveActivityCenter.shared.start()
         BTBatteryMonitor.shared.start()
+        HeadphoneConnectMonitor.shared.start()
         NetMonitor.shared.start()
         SysMonitor.shared.start()
         // F21: follows Settings > Shelf > Clipboard (on by default).
