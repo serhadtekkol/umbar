@@ -40,6 +40,9 @@ struct ContentView: View {
     @State private var approachMonitor = NotchApproachMonitor()
     /// The pointer's nearness to the closed island, 0...1 (NotchApproachPolicy).
     @State private var pointerApproach: CGFloat = 0
+    /// The pointer's pull on the drip (NotchDripPolicy), straight from the
+    /// monitor to DripLayer; ContentView never reads it.
+    @State private var dripPointer = DripPointer()
     /// The hover hint's progress on each axis, 0...1. Two values so width
     /// and depth can run on their own springs (UmbarMotion.hoverHintWiden /
     /// hoverHintDeepen); see animateHoverHint(to:).
@@ -59,6 +62,8 @@ struct ContentView: View {
     @Default(.useMusicVisualizer) var useMusicVisualizer
 
     @Default(.showNotHumanFace) var showNotHumanFace
+
+    @Default(.dripEffectEnabled) private var dripEffectEnabled
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -234,6 +239,18 @@ struct ContentView: View {
                     }
                     // After the ears, so it lights their silhouette too; visual only.
                     .modifier(EdgeGlow(isOpen: vm.notchState == .open, islandHeight: vm.effectiveClosedNotchHeight))
+                    // After the glow, so the glow stays the island's silhouette
+                    // and the drip's black sits in front of it. Pinned to the
+                    // closed edge (and the hint's depth): when the panel opens
+                    // it stays there and fades inside the growing shape.
+                    .overlay(alignment: .top) {
+                        if dripEffectEnabled && !reduceMotion && vm.effectiveClosedNotchHeight > 0 {
+                            DripLayer(width: closedHoverFrame.width,
+                                      isClosed: vm.notchState == .closed && !coordinator.helloAnimationRunning,
+                                      pointer: dripPointer)
+                                .offset(y: vm.effectiveClosedNotchHeight - DripArt.top + hintDown)
+                        }
+                    }
                 
                 mainLayout
                     .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
@@ -242,6 +259,7 @@ struct ContentView: View {
                     }
                     .onChange(of: closedHoverFrame, initial: true) { updateClickThrough() }
                     .onChange(of: vm.notchState) { updateClickThrough() }
+                    .onChange(of: dripEffectEnabled) { updateClickThrough() }
                     .onChange(of: hoverHintTarget) { _, target in animateHoverHint(to: target) }
                     .onDisappear {
                         clickThrough.stop()
@@ -755,7 +773,12 @@ struct ContentView: View {
         // The approach lean is the closed island's alone, and only when there
         // is an island to see (not hidden for a fullscreen app).
         let leans = vm.notchState == .closed && !reduceMotion && vm.effectiveClosedNotchHeight > 0
-        approachMonitor.update(closedRect: leans ? closedNotchScreenRect : nil) { pointerApproach = $0 }
+        let pointer = dripPointer
+        approachMonitor.update(
+            closedRect: leans ? closedNotchScreenRect : nil,
+            onChange: { pointerApproach = $0 },
+            onDrip: dripEffectEnabled ? { pointer.reading = $0 } : nil
+        )
     }
 
     private func pointerIsOnClosedNotch() -> Bool {

@@ -10320,6 +10320,38 @@
           }
         }
       }
+    },
+    "drip.settings.enabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liquid drip under the notch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çentiğin altında sıvı damla"
+          }
+        }
+      }
+    },
+    "drip.settings.enabled.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As the pointer comes up under the closed notch, a drop of it stretches toward the pointer and follows it. Move away quickly and it falls with a small ripple. Off with Reduce Motion."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İmleç kapalı çentiğin altına yaklaştıkça çentikten bir damla imlece doğru uzar ve onu izler. Hızlıca uzaklaşırsanız küçük bir dalgayla düşer. Hareketi Azalt açıkken görünmez."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

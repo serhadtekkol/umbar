@@ -79,6 +79,33 @@ enum UmbarMotion {
     static let hoverApproachShare: CGFloat = 0.35
     static let hoverApproachSteps = 6
 
+    // MARK: Drip
+
+    /// The liquid drip under the closed island (NotchDripPolicy, DripLayer).
+    /// Reach is wider than the hint's so the drip starts before the hint
+    /// leans; the inset keeps it on the flat edge past the 14 pt bottom
+    /// radius plus the hint's 3.
+    static let drip = NotchDripTuning(
+        reach: 48, near: 14, inset: 22,
+        stretchResponse: 0.42, stretchDamping: 0.55,
+        retractResponse: 0.3, retractDamping: 0.9,
+        followResponse: 0.28, followDamping: 0.82,
+        detachLength: 0.55, detachGap: 0.4,
+        recoil: 6, refractory: 0.3,
+        dropSpeed: 1.5, gravity: 34, fall: 2.6,
+        rippleLife: 0.6, maxDrops: 3
+    )
+    /// Points below the edge at full pull (the tip), and the bulb's radius
+    /// at no and full length.
+    static let dripMaxLength: CGFloat = 20
+    static let dripBulbRadius: ClosedRange<CGFloat> = 3...5.5
+    /// Gooey merge: the blur the alpha threshold cuts at half coverage.
+    static let dripGoo: CGFloat = 2.2
+    /// How far the bulb trails the root while it slides, at most.
+    static let dripLean: CGFloat = 4
+    /// The drip leaving when the panel opens over it.
+    static let dripOut: Animation = .easeIn(duration: 0.1)
+
     // MARK: Content
 
     /// Panel content arriving: scale and drop on a spring, staggered, once

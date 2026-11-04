@@ -1029,6 +1029,16 @@ struct Appearance: View {
                 Defaults.Toggle(key: .settingsIconInNotch) {
                     Text("Show settings icon in notch")
                 }
+                Defaults.Toggle(key: .dripEffectEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(String(localized: "drip.settings.enabled", defaultValue: "Liquid drip under the notch"))
+                        Text(String(localized: "drip.settings.enabled.detail",
+                                    defaultValue: "As the pointer comes up under the closed notch, a drop of it stretches toward the pointer and follows it. Move away quickly and it falls with a small ripple. Off with Reduce Motion."))
+                            .font(.subheadline)
+                            .foregroundStyle(permissionMutedText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
 
             } header: {
                 Text("General")
