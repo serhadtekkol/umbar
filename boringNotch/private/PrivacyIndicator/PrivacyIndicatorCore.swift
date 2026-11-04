@@ -138,8 +138,14 @@ struct PrivacyUsage: Equatable, Sendable {
 ///    would also make the edge glow flash "camera on" when the panel closes.
 ///  - After the release the HAL can report "running somewhere" for a
 ///    moment longer. The mask holds until a sample says the camera is off,
-///    or `releaseGrace` has passed, whichever is first. After the grace a
-///    camera that is still running is someone else's, and it is shown.
+///    or the monitor's `releaseGrace` timer calls `expire`, whichever is
+///    first. After the grace a camera that is still running is someone
+///    else's, and it is shown.
+///
+/// No wall-clock time is kept here. An earlier version compared a `Date`
+/// deadline with `Date()` while the timer slept on the monotonic clock, so
+/// a clock stepped back during the grace left the mask on until the next
+/// HAL event (Muhittin L1). The timer firing now ends the grace by itself.
 ///
 /// The cost, accepted: while the mirror itself runs, another app turning a
 /// camera on is not reported until the mirror stops. The user is looking
@@ -152,34 +158,43 @@ struct OwnCameraClaim: Equatable, Sendable {
 
     private(set) var masksCamera = false
     private var holding = false
-    /// Set between the release and the first "camera off" sample.
-    private(set) var releaseDeadline: Date?
+    /// Between the release and the first "camera off" sample or `expire`.
+    private(set) var releasing = false
 
     /// The mirror is about to start the capture.
     /// - Parameter cameraRunningElsewhere: the last sample's camera flag.
     mutating func begin(cameraRunningElsewhere: Bool) {
         // Restarting during a release: the camera never went off, so
         // whatever was masked is still the mirror's.
-        if !holding && releaseDeadline == nil {
+        if !holding && !releasing {
             masksCamera = !cameraRunningElsewhere
         }
         holding = true
-        releaseDeadline = nil
+        releasing = false
     }
 
-    /// The mirror's capture has stopped.
-    mutating func end(now: Date) {
+    /// The mirror's capture has stopped. The caller starts a
+    /// `releaseGrace` timer that ends in `expire` when `releasing`.
+    mutating func end() {
         guard holding else { return }
         holding = false
-        releaseDeadline = masksCamera ? now.addingTimeInterval(Self.releaseGrace) : nil
+        releasing = masksCamera
     }
 
-    /// Call after every sample and when `releaseDeadline` passes.
-    mutating func observe(cameraRunning: Bool, now: Date) {
-        guard !holding, let deadline = releaseDeadline else { return }
-        if !cameraRunning || now >= deadline {
-            masksCamera = false
-            releaseDeadline = nil
-        }
+    /// Call after every sample.
+    mutating func observe(cameraRunning: Bool) {
+        guard releasing, !cameraRunning else { return }
+        finishRelease()
+    }
+
+    /// The grace timer fired: a camera still running now is not umbar's.
+    mutating func expire() {
+        guard releasing else { return }
+        finishRelease()
+    }
+
+    private mutating func finishRelease() {
+        masksCamera = false
+        releasing = false
     }
 }

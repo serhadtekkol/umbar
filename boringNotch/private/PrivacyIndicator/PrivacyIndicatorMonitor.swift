@@ -80,16 +80,17 @@ final class PrivacyIndicatorMonitor: ObservableObject {
 
     /// The mirror's capture has stopped (`stopRunning` returned).
     func mirrorDidReleaseCamera() {
-        ownCamera.end(now: .now)
+        ownCamera.end()
         republish()
-        guard ownCamera.releaseDeadline != nil else { return }
+        guard ownCamera.releasing else { return }
         // No HAL callback may come if the camera stays on for someone
-        // else, so the grace end is checked on a timer too.
+        // else, so the grace is ended by a timer too, unconditionally.
         releaseCheck?.cancel()
         releaseCheck = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(OwnCameraClaim.releaseGrace))
-            guard !Task.isCancelled else { return }
-            self?.republish()
+            guard !Task.isCancelled, let self else { return }
+            self.ownCamera.expire()
+            self.republish()
         }
     }
 
@@ -99,7 +100,7 @@ final class PrivacyIndicatorMonitor: ObservableObject {
 
     private func publish(_ sample: PrivacySample) {
         lastSample = sample
-        ownCamera.observe(cameraRunning: sample.cameraRunning, now: .now)
+        ownCamera.observe(cameraRunning: sample.cameraRunning)
         let apps = NSWorkspace.shared.runningApplications.compactMap { app -> PrivacyRunningApp? in
             guard let id = app.bundleIdentifier, let name = app.localizedName else { return nil }
             return PrivacyRunningApp(bundleID: id, name: name, pid: app.processIdentifier)
