@@ -26,7 +26,10 @@ class BoringViewModel: NSObject, ObservableObject {
     @Published var anyDropZoneTargeting: Bool = false
     var cancellables: Set<AnyCancellable> = []
     
-    @Published var hideOnClosed: Bool = true
+    /// Starts visible: the fullscreen detector may never report (seen on
+    /// macOS 27, where its space stream stays silent), and a `true` here
+    /// would then hide the closed live activity and face forever.
+    @Published var hideOnClosed: Bool = false
 
     @Published var edgeAutoOpenActive: Bool = false
     @Published var isHoveringCalendar: Bool = false
