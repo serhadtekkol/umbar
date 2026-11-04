@@ -16,23 +16,20 @@ final class CritterSystemState: ObservableObject {
 
     @Published private(set) var userAway = false
 
-    private var asleep = false { didSet { update() } }
-    private var displaysAsleep = false { didSet { update() } }
-    private var locked = false { didSet { update() } }
-    private var sessionInactive = false { didSet { update() } }
+    private var presence = UserPresence() { didSet { update() } }
     private var tokens: [(NotificationCenter, NSObjectProtocol)] = []
 
     private init() {
         let ws = NSWorkspace.shared.notificationCenter
         let dist = DistributedNotificationCenter.default()
-        observe(ws, NSWorkspace.willSleepNotification) { $0.asleep = true }
-        observe(ws, NSWorkspace.didWakeNotification) { $0.asleep = false }
-        observe(ws, NSWorkspace.screensDidSleepNotification) { $0.displaysAsleep = true }
-        observe(ws, NSWorkspace.screensDidWakeNotification) { $0.displaysAsleep = false }
-        observe(ws, NSWorkspace.sessionDidResignActiveNotification) { $0.sessionInactive = true }
-        observe(ws, NSWorkspace.sessionDidBecomeActiveNotification) { $0.sessionInactive = false }
-        observe(dist, Notification.Name("com.apple.screenIsLocked")) { $0.locked = true }
-        observe(dist, Notification.Name("com.apple.screenIsUnlocked")) { $0.locked = false }
+        observe(ws, NSWorkspace.willSleepNotification) { $0.presence.asleep = true }
+        observe(ws, NSWorkspace.didWakeNotification) { $0.presence.asleep = false }
+        observe(ws, NSWorkspace.screensDidSleepNotification) { $0.presence.displaysAsleep = true }
+        observe(ws, NSWorkspace.screensDidWakeNotification) { $0.presence.displaysAsleep = false }
+        observe(ws, NSWorkspace.sessionDidResignActiveNotification) { $0.presence.sessionInactive = true }
+        observe(ws, NSWorkspace.sessionDidBecomeActiveNotification) { $0.presence.sessionInactive = false }
+        observe(dist, Notification.Name("com.apple.screenIsLocked")) { $0.presence.locked = true }
+        observe(dist, Notification.Name("com.apple.screenIsUnlocked")) { $0.presence.locked = false }
     }
 
     private func observe(_ center: NotificationCenter, _ name: Notification.Name,
@@ -47,7 +44,7 @@ final class CritterSystemState: ObservableObject {
     }
 
     private func update() {
-        let away = asleep || displaysAsleep || locked || sessionInactive
+        let away = presence.away
         if away != userAway { userAway = away }
     }
 }
