@@ -169,13 +169,18 @@ struct OwnCameraClaim: Equatable, Sendable {
 
     /// The mirror is about to start the capture. Returns the token to pass
     /// to `end` and `expire` for this capture.
-    /// - Parameter cameraRunningElsewhere: the last sample's camera flag.
+    /// - Parameter cameraRunningElsewhere: the last sample's camera flag,
+    ///   nil when there is no sample (the indicator was off). Unknown is
+    ///   treated as "running elsewhere": nothing is masked, so a camera
+    ///   that was already on before the indicator was turned on stays
+    ///   visible (Muhittin L4). The cost is the mirror showing as "camera
+    ///   in use" for that one preview.
     @discardableResult
-    mutating func begin(cameraRunningElsewhere: Bool) -> UInt64 {
+    mutating func begin(cameraRunningElsewhere: Bool?) -> UInt64 {
         // Restarting during a release: the camera never went off, so
         // whatever was masked is still the mirror's.
         if !holding && !releasing {
-            masksCamera = !cameraRunningElsewhere
+            masksCamera = cameraRunningElsewhere == false
         }
         holding = true
         releasing = false

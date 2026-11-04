@@ -155,4 +155,13 @@ struct OwnCameraClaimTests {
         #expect(claim.releasing)
         #expect(claim.masksCamera)
     }
+
+    /// Muhittin L4: indicator off, FaceTime on, mirror opened, indicator
+    /// turned on. With no sample at claim time nothing may be masked.
+    @Test func anUnknownCameraStateAtClaimTimeMasksNothing() {
+        var claim = OwnCameraClaim()
+        claim.begin(cameraRunningElsewhere: nil)
+        #expect(!claim.masksCamera)
+        #expect(usage(claim, camera: true).camera)
+    }
 }

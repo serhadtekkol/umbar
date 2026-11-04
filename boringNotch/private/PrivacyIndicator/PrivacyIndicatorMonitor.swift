@@ -75,7 +75,7 @@ final class PrivacyIndicatorMonitor: ObservableObject {
     /// for `mirrorDidReleaseCamera`.
     func mirrorDidClaimCamera() -> UInt64 {
         releaseCheck?.cancel()
-        let token = ownCamera.begin(cameraRunningElsewhere: lastSample?.cameraRunning ?? false)
+        let token = ownCamera.begin(cameraRunningElsewhere: lastSample?.cameraRunning)
         republish()
         return token
     }
