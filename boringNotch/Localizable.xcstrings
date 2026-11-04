@@ -10070,13 +10070,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The same light also runs out from the notch along the edges of the screen, in the same colour and at the same moments. It is hidden while an app is full screen and never gets in the way of clicks."
+            "value" : "The same light also runs a short way out from both sides of the notch, along the top edge of the screen, in the same colour and at the same moments. It is hidden while an app is full screen and never gets in the way of clicks."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aynı ışık çentikten ekranın kenarlarına da akar; aynı renkte, aynı anlarda. Bir uygulama tam ekrandayken gizlenir ve tıklamalara hiç engel olmaz."
+            "value" : "Aynı ışık çentiğin iki yanından ekranın üst kenarı boyunca kısa bir mesafe dışa doğru akar; aynı renkte, aynı anlarda. Bir uygulama tam ekrandayken gizlenir ve tıklamalara hiç engel olmaz."
           }
         }
       }
@@ -10125,6 +10125,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kenar yoğunluğu"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.screenEdge.spread" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edge spread"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kenar yayılması"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.screenEdge.spread.value" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ notch widths"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ çentik genişliği"
           }
         }
       }

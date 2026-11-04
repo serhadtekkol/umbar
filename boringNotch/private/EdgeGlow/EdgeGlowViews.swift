@@ -318,6 +318,7 @@ struct EdgeGlowSettingsSection: View {
     @Default(.screenEdgeGlowEnabled) private var screenEdgeEnabled
     @Default(.screenEdgeGlowThickness) private var screenEdgeThickness
     @Default(.screenEdgeGlowIntensity) private var screenEdgeIntensity
+    @Default(.screenEdgeGlowSpread) private var screenEdgeSpread
     /// Mirrored, not observed: observing the monitor would redraw Settings
     /// with every audio sample.
     @State private var authorization = AudioLevelMonitor.Authorization.unknown
@@ -402,14 +403,14 @@ struct EdgeGlowSettingsSection: View {
         .onReceive(AudioLevelMonitor.shared.$authorization) { authorization = $0 }
     }
 
-    /// The rim along the screen's edges (ScreenEdgeGlow): the same glow,
-    /// its own width and strength.
+    /// The bands beside the notch along the screen's top edge
+    /// (ScreenEdgeGlow): the same glow, its own width, strength and reach.
     @ViewBuilder private var screenEdge: some View {
         Defaults.Toggle(key: .screenEdgeGlowEnabled) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(String(localized: "edgeGlow.settings.screenEdge", defaultValue: "Screen edge light"))
                 Text(String(localized: "edgeGlow.settings.screenEdge.detail",
-                            defaultValue: "The same light also runs out from the notch along the edges of the screen, in the same colour and at the same moments. It is hidden while an app is full screen and never gets in the way of clicks."))
+                            defaultValue: "The same light also runs a short way out from both sides of the notch, along the top edge of the screen, in the same colour and at the same moments. It is hidden while an app is full screen and never gets in the way of clicks."))
                     .font(.subheadline)
                     .foregroundStyle(permissionMutedText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -421,6 +422,14 @@ struct EdgeGlowSettingsSection: View {
                 .frame(maxWidth: 200)
                 .accessibilityValue(Text(String(format: String(localized: "edgeGlow.settings.screenEdge.thickness.value",
                                                                defaultValue: "%d points"), Int(screenEdgeThickness.rounded()))))
+        }
+        .disabled(!enabled || !screenEdgeEnabled)
+        LabeledContent(String(localized: "edgeGlow.settings.screenEdge.spread", defaultValue: "Edge spread")) {
+            Slider(value: $screenEdgeSpread, in: ScreenEdgeGlowPolicy.spreadRange)
+                .frame(maxWidth: 200)
+                .accessibilityValue(Text(String(format: String(localized: "edgeGlow.settings.screenEdge.spread.value",
+                                                               defaultValue: "%@ notch widths"),
+                                                screenEdgeSpread.formatted(.number.precision(.fractionLength(0...2))))))
         }
         .disabled(!enabled || !screenEdgeEnabled)
         LabeledContent(String(localized: "edgeGlow.settings.screenEdge.intensity", defaultValue: "Edge intensity")) {
