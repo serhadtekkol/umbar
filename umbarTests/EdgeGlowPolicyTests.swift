@@ -2,8 +2,9 @@
 //  EdgeGlowPolicyTests.swift
 //  umbarTests
 //
-//  The edge glow: which signal changes fire a pulse, what glows when, and
-//  the shape of the breath and the flashes over time.
+//  The edge glow: which signal changes fire a pulse, what glows when, the
+//  shape of the breath and the flashes over time, the audio-reactive glow
+//  (fed fake levels; nothing is captured or played) and the colours.
 //
 
 import Foundation
@@ -65,9 +66,43 @@ struct EdgeGlowTriggerTests {
 struct EdgeGlowPolicyTests {
     private func context(enabled: Bool = true, style: EdgeGlowStyle = .soft, reduceMotion: Bool = false,
                          isOpen: Bool = false, islandHeight: Double = 37, music: Bool = false,
-                         pulse: EdgeGlowEvent? = nil) -> EdgeGlowContext {
+                         pulse: EdgeGlowEvent? = nil, audio: Bool = false, audioLive: Bool = false) -> EdgeGlowContext {
         EdgeGlowContext(enabled: enabled, style: style, reduceMotion: reduceMotion, isOpen: isOpen,
-                        islandHeight: islandHeight, musicPlaying: music, pulse: pulse)
+                        islandHeight: islandHeight, musicPlaying: music, pulse: pulse,
+                        audioReactive: audio, audioLive: audioLive)
+    }
+
+    @Test func soundDrivesTheMusicGlowOnlyWhileLevelsArrive() {
+        #expect(EdgeGlowPolicy.state(context(music: true, audio: true, audioLive: true))
+                == EdgeGlowState(tint: .album, animation: .audio))
+        // No permission, the stub, silence: the breath, as before.
+        #expect(EdgeGlowPolicy.state(context(music: true, audio: true))?.animation == .breathing)
+        // Levels from a capture the setting no longer wants are ignored.
+        #expect(EdgeGlowPolicy.state(context(music: true, audioLive: true))?.animation == .breathing)
+        // An event still wins.
+        #expect(EdgeGlowPolicy.state(context(music: true, pulse: .camera, audio: true, audioLive: true))?.animation == .pulse)
+    }
+
+    @Test func reduceMotionNeverReactsToSound() {
+        #expect(EdgeGlowPolicy.state(context(reduceMotion: true, music: true, audio: true, audioLive: true))?.animation == .steady)
+        #expect(!EdgeGlowPolicy.capturesAudio(context(reduceMotion: true, music: true, audio: true)))
+    }
+
+    @Test func captureRunsOnlyWhenTheGlowCouldUseIt() {
+        #expect(EdgeGlowPolicy.capturesAudio(context(music: true, audio: true)))
+        #expect(!EdgeGlowPolicy.capturesAudio(context(music: true)), "off by default")
+        #expect(!EdgeGlowPolicy.capturesAudio(context(audio: true)), "no music")
+        #expect(!EdgeGlowPolicy.capturesAudio(context(enabled: false, music: true, audio: true)))
+        #expect(!EdgeGlowPolicy.capturesAudio(context(style: .pulse, music: true, audio: true)))
+        // Every screen's island must give the same answer.
+        #expect(EdgeGlowPolicy.capturesAudio(context(isOpen: true, music: true, audio: true)))
+        #expect(EdgeGlowPolicy.capturesAudio(context(islandHeight: 0, music: true, audio: true)))
+    }
+
+    @Test func theAudioGlowHasNoClockOfItsOwn() {
+        #expect(EdgeGlowPolicy.frameInterval(.audio) == nil)
+        #expect(EdgeGlowPolicy.level(.audio, time: 0, pulseElapsed: 0, audio: 0.8) == 0.8)
+        #expect(EdgeGlowPolicy.level(.audio, time: 0, pulseElapsed: 0, audio: 3) == 1)
     }
 
     @Test func idleIslandDrawsNothing() {
@@ -204,5 +239,163 @@ struct EdgeGlowEnvelopeTests {
         e.update(to: EdgeGlowState(tint: .camera, animation: .pulse), now: t0, reduceMotion: false)
         let peak = EdgeGlowPolicy.pulseDuration / 4
         #expect(abs(e.level(at: t0.addingTimeInterval(peak), pulseElapsed: peak) - 1) < 1e-9)
+    }
+}
+
+@Suite("EdgeGlowAudio", .timeLimit(.minutes(1)))
+struct EdgeGlowAudioTests {
+    private let t0 = Date(timeIntervalSinceReferenceDate: 2_000)
+    private let frame = 1.0 / 30
+
+    /// Feeds `count` frames of the same sample from `start`; returns the time after.
+    private func feed(_ f: inout EdgeGlowAudioFollower, level: Double, bass: Double, treble: Double = 0,
+                      frames count: Int, from start: Date) -> Date {
+        var now = start
+        for _ in 0..<count {
+            f.feed(level: level, bass: bass, treble: treble, now: now)
+            now = now.addingTimeInterval(frame)
+        }
+        return now
+    }
+
+    @Test func silenceIsNotLiveAndSitsOnTheFloor() {
+        var f = EdgeGlowAudioFollower()
+        #expect(!f.isLive(now: t0))
+        _ = feed(&f, level: 0, bass: 0, frames: 60, from: t0)
+        #expect(!f.isLive(now: t0.addingTimeInterval(2)))
+        #expect(f.brightness == EdgeGlowAudioFollower.floor)
+        #expect(f.spread == 1)
+    }
+
+    @Test func louderIsBrighterAndStaysInRange() {
+        var previous = -1.0
+        for level in stride(from: 0.0, through: 1.0, by: 0.1) {
+            var f = EdgeGlowAudioFollower()
+            f.feed(level: level, bass: 0, treble: 0, now: t0)
+            #expect(f.brightness > previous)
+            #expect(f.brightness >= EdgeGlowAudioFollower.floor && f.brightness <= 1)
+            previous = f.brightness
+        }
+        var wild = EdgeGlowAudioFollower()
+        wild.feed(level: .nan, bass: 7, treble: -2, now: t0)
+        #expect(wild.brightness.isFinite && wild.brightness <= 1 && wild.sparkle >= 0)
+    }
+
+    @Test func aBassHitPunchesThenDecays() {
+        var f = EdgeGlowAudioFollower()
+        var now = feed(&f, level: 0.5, bass: 0.1, frames: 60, from: t0)
+        #expect(f.punch < 0.01, "a steady bass is not a hit")
+        f.feed(level: 0.6, bass: 0.7, treble: 0, now: now)
+        #expect(f.punch > 0.5)
+        #expect(f.spread > 1 && f.spread <= 1 + EdgeGlowAudioFollower.maxSpread)
+        let peak = f.punch
+        now = feed(&f, level: 0.5, bass: 0.1, frames: 15, from: now.addingTimeInterval(frame))
+        #expect(f.punch < peak * 0.2, "gone within half a second")
+    }
+
+    @Test func aHeldBassStopsPunching() {
+        var f = EdgeGlowAudioFollower()
+        _ = feed(&f, level: 0.6, bass: 0.8, frames: 90, from: t0)
+        #expect(f.punch < 0.05)
+    }
+
+    @Test func soundGoesLiveAndSilenceHandsBack() {
+        var f = EdgeGlowAudioFollower()
+        let end = feed(&f, level: 0.4, bass: 0.2, frames: 3, from: t0)
+        #expect(f.isLive(now: end))
+        #expect(f.isLive(now: end.addingTimeInterval(EdgeGlowAudioFollower.silenceHold / 2)))
+        // Samples that stop arriving count as silence too.
+        #expect(!f.isLive(now: end.addingTimeInterval(EdgeGlowAudioFollower.silenceHold)))
+    }
+
+    @Test func trebleLiftsTowardWhiteAFewTenths() {
+        var f = EdgeGlowAudioFollower()
+        f.feed(level: 0.5, bass: 0, treble: 1, now: t0)
+        #expect(f.sparkle == EdgeGlowAudioFollower.maxSparkle)
+        let red = EdgeGlowRGB(red: 1, green: 0, blue: 0)
+        let lifted = EdgeGlowColor.sparkle(red, amount: f.sparkle)
+        #expect(lifted.red == 1 && abs(lifted.green - 0.3) < 1e-9 && lifted.green == lifted.blue)
+        #expect(EdgeGlowColor.sparkle(red, amount: 0) == red)
+    }
+
+    @Test func breathAndAudioCrossfadeWithoutADip() {
+        let breath = EdgeGlowState(tint: .album, animation: .breathing)
+        let reacting = EdgeGlowState(tint: .album, animation: .audio)
+        var e = EdgeGlowEnvelope()
+        e.update(to: breath, now: t0, reduceMotion: false)
+        let switchAt = t0.addingTimeInterval(3)
+        let before = e.level(at: switchAt, pulseElapsed: 0)
+        e.update(to: reacting, now: switchAt, reduceMotion: false, audio: 0.9)
+        #expect(abs(e.level(at: switchAt, pulseElapsed: 0, audio: 0.9) - before) < 1e-9, "starts where the breath was")
+        #expect(abs(e.level(at: switchAt.addingTimeInterval(EdgeGlowEnvelope.fade), pulseElapsed: 0, audio: 0.9) - 0.9) < 1e-9)
+        #expect(e.frameInterval == nil, "samples draw it")
+
+        let back = switchAt.addingTimeInterval(5)
+        e.update(to: breath, now: back, reduceMotion: false, audio: 0.4)
+        #expect(abs(e.level(at: back, pulseElapsed: 0) - 0.4) < 1e-9)
+        #expect(e.frameInterval != nil)
+    }
+
+    @Test func theAudioGlowFadesOutOnAClock() {
+        var e = EdgeGlowEnvelope()
+        e.update(to: EdgeGlowState(tint: .album, animation: .audio), now: t0, reduceMotion: false, audio: 0.8)
+        #expect(e.frameInterval == nil)
+        let off = t0.addingTimeInterval(2)
+        e.update(to: nil, now: off, reduceMotion: false, audio: 0.8)
+        #expect(e.frameInterval == EdgeGlowPolicy.audioFadeInterval, "the music stopped, so no samples will draw the fade")
+        e.settle(now: off.addingTimeInterval(EdgeGlowEnvelope.fade))
+        #expect(e.frameInterval == nil)
+    }
+}
+
+@Suite("EdgeGlowColor", .timeLimit(.minutes(1)))
+struct EdgeGlowColorTests {
+    @Test func hexRoundTrips() {
+        let c = EdgeGlowColor.rgb(hex: "#30D158")
+        #expect(c == EdgeGlowRGB(red: 0x30 / 255, green: 0xD1 / 255, blue: 0x58 / 255))
+        #expect(c.map(EdgeGlowColor.hex) == "#30D158")
+        #expect(EdgeGlowColor.rgb(hex: "ff9f0a") == EdgeGlowColor.rgb(hex: "#FF9F0A"))
+        #expect(EdgeGlowColor.hex(EdgeGlowRGB(red: 2, green: -1, blue: .nan)) == "#FF0000")
+    }
+
+    @Test(arguments: ["", "#", "#12345", "#1234567", "#GGGGGG", "rgb(1,2,3)", "#+12345"])
+    func badHexIsRejected(_ hex: String) {
+        #expect(EdgeGlowColor.rgb(hex: hex) == nil)
+    }
+
+    @Test func cycleIsInGamutContinuousAndPeriodic() {
+        let period = EdgeGlowColor.cyclePeriod
+        var previous = EdgeGlowColor.cycle(time: 0)
+        for i in 1...300 {
+            let c = EdgeGlowColor.cycle(time: Double(i) * period / 300)
+            for v in [c.red, c.green, c.blue] { #expect(v >= 0 && v <= 1) }
+            let step = max(abs(c.red - previous.red), abs(c.green - previous.green), abs(c.blue - previous.blue))
+            #expect(step < 0.05, "no jump between frames")
+            previous = c
+        }
+        let a = EdgeGlowColor.cycle(time: 7), b = EdgeGlowColor.cycle(time: 7 + period)
+        #expect(abs(a.red - b.red) < 1e-9 && abs(a.green - b.green) < 1e-9 && abs(a.blue - b.blue) < 1e-9)
+        #expect(EdgeGlowColor.cycle(time: -3).red.isFinite)
+        #expect(period >= 20, "a mood, not a signal")
+    }
+
+    @Test func cycleKeepsAnEvenBrightness() {
+        // Rec. 709 luma on the sRGB values, as albumGlow uses: an HSL wheel
+        // swings ~0.07 (blue) to ~0.93 (yellow); the cycle stays near one value.
+        let lumas = (0..<36).map { i -> Double in
+            let c = EdgeGlowColor.cycle(time: Double(i) * EdgeGlowColor.cyclePeriod / 36)
+            return 0.2126 * c.red + 0.7152 * c.green + 0.0722 * c.blue
+        }
+        #expect(lumas.max()! - lumas.min()! < 0.25)
+        #expect(lumas.min()! >= 0.45, "as bright as a lifted album colour")
+    }
+
+    @Test func outOfGamutKeepsLightnessByDroppingChroma() {
+        // Far outside sRGB: it must still land inside, grey at worst.
+        let c = EdgeGlowColor.oklch(lightness: 0.9, chroma: 0.5, hue: 264)
+        for v in [c.red, c.green, c.blue] { #expect(v >= 0 && v <= 1) }
+        #expect(c.blue > c.red, "hue kept")
+        let grey = EdgeGlowColor.oklch(lightness: 0.5, chroma: 0, hue: 0)
+        #expect(abs(grey.red - grey.green) < 1e-6 && abs(grey.green - grey.blue) < 1e-6)
     }
 }
