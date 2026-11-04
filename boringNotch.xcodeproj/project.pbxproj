@@ -345,6 +345,9 @@
 			membershipExceptions = (
 				ArtworkCache/ArtworkCacheLocation.swift,
 				ArtworkCache/ArtworkDiskCache.swift,
+				AudioLevel/AudioLevelMath.swift,
+				AudioLevel/AudioLevelMeter.swift,
+				AudioLevel/AudioTapTargeting.swift,
 				BTBattery/BTBatteryCore.swift,
 				Caffeinate/CaffeinatePolicy.swift,
 				Clipboard/ClipboardHistoryCore.swift,

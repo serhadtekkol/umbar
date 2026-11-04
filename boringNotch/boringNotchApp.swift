@@ -366,6 +366,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         #if DEBUG
         runKeyPanelProbeIfRequested()
+        AudioLevelMonitor.runProbeIfRequested()
         #endif
 
         // No launch ever plays a sound, onboarding included (card #76).
