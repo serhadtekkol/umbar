@@ -60,6 +60,8 @@ final class MirrorCamera: ObservableObject {
     private var enabledSubscription: AnyCancellable?
     private var accessRequestInFlight = false
     private var runCap: Task<Void, Never>?
+    /// The privacy indicator's claim token for the latest start.
+    private var claimToken: UInt64 = 0
 
     private init() {}
 
@@ -246,7 +248,7 @@ final class MirrorCamera: ObservableObject {
             return
         }
         let capture = self.capture ?? makeCapture()
-        PrivacyIndicatorMonitor.shared.mirrorDidClaimCamera()
+        claimToken = PrivacyIndicatorMonitor.shared.mirrorDidClaimCamera()
         capture.start(device: device) { [weak self] started in
             Task { @MainActor in
                 guard let self, !started else { return }
@@ -262,8 +264,11 @@ final class MirrorCamera: ObservableObject {
     }
 
     private func stopCapture() {
+        // The token of the capture being stopped, taken now: by the time
+        // the queue finishes, a new start may hold a newer one.
+        let token = claimToken
         capture?.stop {
-            Task { @MainActor in PrivacyIndicatorMonitor.shared.mirrorDidReleaseCamera() }
+            Task { @MainActor in PrivacyIndicatorMonitor.shared.mirrorDidReleaseCamera(token) }
         }
     }
 

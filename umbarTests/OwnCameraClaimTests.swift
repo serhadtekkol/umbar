@@ -43,8 +43,8 @@ struct OwnCameraClaimTests {
 
     @Test func maskHoldsThroughTheHALsLagAfterStop() {
         var claim = OwnCameraClaim()
-        claim.begin(cameraRunningElsewhere: false)
-        claim.end()
+        let token = claim.begin(cameraRunningElsewhere: false)
+        claim.end(token)
         // The HAL still says "running" just after stopRunning.
         claim.observe(cameraRunning: true)
         #expect(claim.masksCamera)
@@ -55,10 +55,10 @@ struct OwnCameraClaimTests {
 
     @Test func aCameraStillOnAfterTheGraceIsSomeoneElses() {
         var claim = OwnCameraClaim()
-        claim.begin(cameraRunningElsewhere: false)
-        claim.end()
+        let token = claim.begin(cameraRunningElsewhere: false)
+        claim.end(token)
         claim.observe(cameraRunning: true)
-        claim.expire() // the grace timer
+        claim.expire(token) // the grace timer
         #expect(!claim.masksCamera)
         #expect(usage(claim, camera: true).camera)
     }
@@ -73,22 +73,22 @@ struct OwnCameraClaimTests {
 
     @Test func restartDuringTheReleaseKeepsTheMask() {
         var claim = OwnCameraClaim()
-        claim.begin(cameraRunningElsewhere: false)
-        claim.end()
+        let token = claim.begin(cameraRunningElsewhere: false)
+        claim.end(token)
         // Re-tap before the HAL reported off: the last sample still says on,
         // but that is the mirror's own camera.
         claim.begin(cameraRunningElsewhere: true)
         #expect(claim.masksCamera)
         #expect(!claim.releasing)
         // The old grace timer firing no longer applies while holding.
-        claim.expire()
+        claim.expire(token)
         #expect(claim.masksCamera)
     }
 
     @Test func endWithoutBeginIsANoOp() {
         var claim = OwnCameraClaim()
-        claim.end()
-        claim.expire()
+        claim.end(1)
+        claim.expire(1)
         #expect(!claim.masksCamera)
         #expect(!claim.releasing)
     }
@@ -108,21 +108,51 @@ struct OwnCameraClaimTests {
     /// timer firing is enough, whatever samples came in between.
     @Test func theGraceTimerEndsTheMaskWhateverTheWallClockDid() {
         var claim = OwnCameraClaim()
-        claim.begin(cameraRunningElsewhere: false)
-        claim.end()
+        let token = claim.begin(cameraRunningElsewhere: false)
+        claim.end(token)
         for _ in 0..<5 { claim.observe(cameraRunning: true) }
         #expect(claim.masksCamera)
-        claim.expire()
+        claim.expire(token)
         #expect(!claim.masksCamera)
         #expect(usage(claim, camera: true).camera)
     }
 
     @Test func aCameraStillMaskedBeforeTheTimerIsStillMasked() {
         var claim = OwnCameraClaim()
-        claim.begin(cameraRunningElsewhere: false)
-        claim.end()
+        let token = claim.begin(cameraRunningElsewhere: false)
+        claim.end(token)
         claim.observe(cameraRunning: true)
         #expect(claim.releasing)
         #expect(!usage(claim, camera: true).camera)
+    }
+
+    /// Muhittin L2: start1, stop1 queued, start2 claims, then stop1's
+    /// release arrives. It must not end start2's claim.
+    @Test func aLateReleaseFromAnEarlierCaptureIsIgnored() {
+        var claim = OwnCameraClaim()
+        let first = claim.begin(cameraRunningElsewhere: false)
+        let second = claim.begin(cameraRunningElsewhere: true)
+        claim.end(first)
+        #expect(claim.masksCamera)
+        #expect(!claim.releasing)
+        claim.observe(cameraRunning: false)
+        claim.expire(first)
+        #expect(claim.masksCamera)
+        // start2's own stop still releases.
+        claim.end(second)
+        #expect(claim.releasing)
+        claim.expire(second)
+        #expect(!claim.masksCamera)
+    }
+
+    @Test func anOldGraceTimerDoesNotEndANewRelease() {
+        var claim = OwnCameraClaim()
+        let first = claim.begin(cameraRunningElsewhere: false)
+        claim.end(first)
+        let second = claim.begin(cameraRunningElsewhere: true)
+        claim.end(second)
+        claim.expire(first)
+        #expect(claim.releasing)
+        #expect(claim.masksCamera)
     }
 }

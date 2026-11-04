@@ -71,16 +71,20 @@ final class PrivacyIndicatorMonitor: ObservableObject {
         usage = .idle
     }
 
-    /// The mirror is about to start its capture.
-    func mirrorDidClaimCamera() {
+    /// The mirror is about to start its capture. Returns the claim's token
+    /// for `mirrorDidReleaseCamera`.
+    func mirrorDidClaimCamera() -> UInt64 {
         releaseCheck?.cancel()
-        ownCamera.begin(cameraRunningElsewhere: lastSample?.cameraRunning ?? false)
+        let token = ownCamera.begin(cameraRunningElsewhere: lastSample?.cameraRunning ?? false)
         republish()
+        return token
     }
 
-    /// The mirror's capture has stopped (`stopRunning` returned).
-    func mirrorDidReleaseCamera() {
-        ownCamera.end()
+    /// The capture claimed with `token` has stopped (`stopRunning`
+    /// returned). A stale token, from a stop that arrived after the next
+    /// start, changes nothing.
+    func mirrorDidReleaseCamera(_ token: UInt64) {
+        ownCamera.end(token)
         republish()
         guard ownCamera.releasing else { return }
         // No HAL callback may come if the camera stays on for someone
@@ -89,7 +93,7 @@ final class PrivacyIndicatorMonitor: ObservableObject {
         releaseCheck = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(OwnCameraClaim.releaseGrace))
             guard !Task.isCancelled, let self else { return }
-            self.ownCamera.expire()
+            self.ownCamera.expire(token)
             self.republish()
         }
     }

@@ -160,10 +160,18 @@ struct OwnCameraClaim: Equatable, Sendable {
     private var holding = false
     /// Between the release and the first "camera off" sample or `expire`.
     private(set) var releasing = false
+    /// The latest `begin`'s token. A stop's release travels through the
+    /// capture queue and can reach the main actor after the next start
+    /// claimed the camera; an old token's `end` or `expire` is ignored, so
+    /// that late release cannot unmask the mirror's new preview and have
+    /// umbar report its own camera (Muhittin L2).
+    private var generation: UInt64 = 0
 
-    /// The mirror is about to start the capture.
+    /// The mirror is about to start the capture. Returns the token to pass
+    /// to `end` and `expire` for this capture.
     /// - Parameter cameraRunningElsewhere: the last sample's camera flag.
-    mutating func begin(cameraRunningElsewhere: Bool) {
+    @discardableResult
+    mutating func begin(cameraRunningElsewhere: Bool) -> UInt64 {
         // Restarting during a release: the camera never went off, so
         // whatever was masked is still the mirror's.
         if !holding && !releasing {
@@ -171,12 +179,14 @@ struct OwnCameraClaim: Equatable, Sendable {
         }
         holding = true
         releasing = false
+        generation &+= 1
+        return generation
     }
 
     /// The mirror's capture has stopped. The caller starts a
     /// `releaseGrace` timer that ends in `expire` when `releasing`.
-    mutating func end() {
-        guard holding else { return }
+    mutating func end(_ token: UInt64) {
+        guard holding, token == generation else { return }
         holding = false
         releasing = masksCamera
     }
@@ -188,8 +198,8 @@ struct OwnCameraClaim: Equatable, Sendable {
     }
 
     /// The grace timer fired: a camera still running now is not umbar's.
-    mutating func expire() {
-        guard releasing else { return }
+    mutating func expire(_ token: UInt64) {
+        guard releasing, token == generation else { return }
         finishRelease()
     }
 
