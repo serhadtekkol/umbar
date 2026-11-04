@@ -4,7 +4,8 @@
 //
 //  Which Core Audio process objects belong to the now-playing app, so the
 //  tap hears that app and nothing else (no notification sounds, no call in
-//  another app). Pure, so the hostless umbarTests cover it.
+//  another app), and when the all-system fallback is allowed at all.
+//  Pure, so the hostless umbarTests cover it.
 //
 
 import Foundation
@@ -15,11 +16,15 @@ enum AudioTapTargeting {
         var objectID: UInt32
         var bundleID: String?
         var isRunningOutput: Bool
+        /// kAudioProcessPropertyIsRunningInput: the process is capturing
+        /// (a microphone, in practice). Same source as the privacy
+        /// indicator's microphone light.
+        var isRunningInput: Bool = false
     }
 
     /// What the tap should listen to.
     enum Target: Equatable, Sendable {
-        /// Only these process objects (stereo mixdown of their output).
+        /// Only these process objects (mono mixdown of their output).
         case processes([UInt32])
         /// Everything the system plays, except umbar itself.
         case global
@@ -45,52 +50,68 @@ enum AudioTapTargeting {
         return audioHosts[app]?.contains(process) ?? false
     }
 
-    /// Chooses the tap target for `nowPlaying`.
+    /// Chooses the tap target for `nowPlaying`, or nil for "capture
+    /// nothing".
     ///
     /// Per-app only when at least one of the app's processes is producing
     /// output right now; those processes, and only those, are tapped. An app
     /// with no outputting process (not found, not yet started, or playing
     /// through a process this table does not know) falls back to `.global`,
     /// so the glow still moves instead of tapping silence.
+    ///
+    /// Except while another process uses the microphone: that is a call or a
+    /// recording, and a global tap would measure the other party's voice
+    /// too. Then the answer is nil, never `.global`; a per-app tap is still
+    /// fine because it hears only the music app. umbar itself is not
+    /// counted: its own tap shows up as input on its process object.
     static func target(
         nowPlaying: String?,
         candidates: [Candidate],
         ownBundleID: String?
-    ) -> Target {
-        guard let app = nowPlaying, !app.isEmpty else { return .global }
+    ) -> Target? {
         let own = ownBundleID?.lowercased()
-        let matches = candidates.filter { candidate in
-            guard let id = candidate.bundleID, candidate.isRunningOutput else { return false }
-            return id.lowercased() != own && belongs(process: id, to: app)
+        let isOwn = { (candidate: Candidate) in candidate.bundleID?.lowercased() == own && own != nil }
+        if let app = nowPlaying, !app.isEmpty {
+            let matches = candidates.filter { candidate in
+                guard let id = candidate.bundleID, candidate.isRunningOutput, !isOwn(candidate) else { return false }
+                return belongs(process: id, to: app)
+            }
+            if !matches.isEmpty { return .processes(matches.map(\.objectID).sorted()) }
         }
-        return matches.isEmpty ? .global : .processes(matches.map(\.objectID).sorted())
+        let microphoneInUse = candidates.contains { $0.isRunningInput && !isOwn($0) }
+        return microphoneInUse ? nil : .global
     }
 
     /// Whether a live tap aimed at `current` (built while `currentApp` was
-    /// playing) must be replaced by one aimed at `proposed`.
+    /// playing) must be replaced by one aimed at `proposed`, or, when
+    /// `proposed` is nil, torn down.
     ///
     /// The process list is re-read every few seconds, and a player's
     /// "running output" flag drops for a moment between tracks. Rebuilding on
     /// every such blip would make the glow stutter, so for the same app a
     /// per-app tap only grows: it is rebuilt when a new process of the app
     /// starts playing, never because one of its processes went quiet or
-    /// because the app briefly had none (which proposes `.global`).
+    /// because the app briefly had none (which proposes `.global`, or nil
+    /// while the microphone is in use). A global tap facing nil always goes:
+    /// that is the microphone rule, and it must not wait for anything.
     static func shouldRebuild(
         current: Target,
         currentApp: String?,
-        proposed: Target,
+        proposed: Target?,
         app: String?
     ) -> Bool {
         let sameApp = currentApp?.lowercased() == app?.lowercased()
         guard sameApp else { return current != proposed }
         switch (current, proposed) {
-        case (.global, .global):
-            return false
-        case (.global, .processes):
+        case (.global, nil):
             return true
-        case (.processes, .global):
+        case (.global, .global?):
             return false
-        case (.processes(let live), .processes(let wanted)):
+        case (.global, .processes?):
+            return true
+        case (.processes, nil), (.processes, .global?):
+            return false
+        case (.processes(let live), .processes(let wanted)?):
             return !Set(wanted).isSubset(of: Set(live))
         }
     }

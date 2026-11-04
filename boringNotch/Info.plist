@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>umbar listens to the music you play so the glow around the notch can move with it. Only its loudness is measured, in memory; nothing is recorded, saved or sent anywhere.</string>
+	<string>umbar measures how loud the music you play is, so the glow around the notch can move with it. When it cannot tell which app is playing, it measures the loudness of all system sound instead, but never while another app is using the microphone. Only the loudness is measured, in memory; the sound itself is never recorded, saved or sent anywhere.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>umbar lists your paired Bluetooth devices so you can connect headphones from the notch.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>

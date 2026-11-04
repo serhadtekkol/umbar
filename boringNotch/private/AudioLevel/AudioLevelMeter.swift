@@ -67,11 +67,20 @@ final class AudioLevelMeter: @unchecked Sendable {
 
     /// Feeds one IO cycle of 32-bit float samples, interleaved or not, any
     /// channel count; channels are averaged to mono. Real-time safe.
-    func ingest(_ bufferList: UnsafePointer<AudioBufferList>) {
-        let buffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: bufferList))
+    ///
+    /// Only the buffers in `buffers` are read. The aggregate device that
+    /// carries the tap can also deliver its sub-device's input streams (a
+    /// headset's microphone) in the same list; those must never reach the
+    /// meter, so the session passes the tap's own range (see
+    /// AudioTapStreamLayout). A range that does not fit the list delivered
+    /// in this cycle reads as nothing rather than as some other stream.
+    func ingest(_ bufferList: UnsafePointer<AudioBufferList>, buffers wanted: Range<Int>) {
+        let list = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: bufferList))
+        guard !wanted.isEmpty, wanted.lowerBound >= 0, wanted.upperBound <= list.count else { return }
         var totalChannels = 0
         var frames = Int.max
-        for buffer in buffers {
+        for index in wanted {
+            let buffer = list[index]
             let channels = Int(buffer.mNumberChannels)
             guard channels > 0, buffer.mData != nil else { return }
             totalChannels += channels
@@ -82,7 +91,8 @@ final class AudioLevelMeter: @unchecked Sendable {
 
         for frame in 0..<frames {
             var sum: Float = 0
-            for buffer in buffers {
+            for index in wanted {
+                let buffer = list[index]
                 let channels = Int(buffer.mNumberChannels)
                 let samples = buffer.mData!.assumingMemoryBound(to: Float.self)
                 let start = frame * channels
@@ -122,5 +132,31 @@ final class AudioLevelMeter: @unchecked Sendable {
     static func unpack(_ word: UInt64) -> AudioLevelReading {
         func f(_ shift: UInt64) -> Float { Float((word >> shift) & 0xFFFF) / 65_535 }
         return AudioLevelReading(level: f(48), bass: f(32), mid: f(16), treble: f(0))
+    }
+}
+
+/// Which of the aggregate device's input streams carry the tap.
+///
+/// An aggregate built around an output device that also has inputs (a
+/// USB or Bluetooth headset, an audio interface, a loopback driver)
+/// exposes those inputs next to the tap. Observed on macOS 27 (HAL smoke,
+/// no IO started): the sub-device's input streams come first, then one
+/// stream per tap; a mono tap is one single-channel stream. Pure, so the
+/// hostless umbarTests cover it.
+enum AudioTapStreamLayout {
+    /// The IOProc input buffers that belong to the tap, or nil when the
+    /// stream counts do not match the expected layout. nil means "do not
+    /// capture": guessing could feed a microphone into the meter.
+    ///
+    /// - Parameters:
+    ///   - aggregateInputStreams: kAudioDevicePropertyStreams (input scope)
+    ///     of the aggregate device.
+    ///   - subdeviceInputStreams: the same property summed over the
+    ///     aggregate's sub-devices; 0 for a tap-only aggregate.
+    ///   - tapStreams: streams the taps contribute; 1 for one mono tap.
+    static func tapBuffers(aggregateInputStreams: Int, subdeviceInputStreams: Int, tapStreams: Int) -> Range<Int>? {
+        guard subdeviceInputStreams >= 0, tapStreams > 0,
+              aggregateInputStreams == subdeviceInputStreams + tapStreams else { return nil }
+        return subdeviceInputStreams..<aggregateInputStreams
     }
 }

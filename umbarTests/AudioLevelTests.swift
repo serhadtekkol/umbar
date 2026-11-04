@@ -170,7 +170,7 @@ struct AudioLevelMeterTests {
                             mNumberChannels: UInt32(channels.count),
                             mDataByteSize: UInt32(raw.count),
                             mData: raw.baseAddress))
-                    meter.ingest(&list)
+                    meter.ingest(&list, buffers: 0..<1)
                 }
             } else {
                 let list = AudioBufferList.allocate(maximumBuffers: channels.count)
@@ -188,7 +188,7 @@ struct AudioLevelMeterTests {
                         mDataByteSize: UInt32(count * MemoryLayout<Float>.size),
                         mData: UnsafeMutableRawPointer(samples))
                 }
-                meter.ingest(list.unsafePointer)
+                meter.ingest(list.unsafePointer, buffers: 0..<channels.count)
             }
             offset += count
         }
@@ -243,9 +243,47 @@ struct AudioLevelMeterTests {
         let meter = AudioLevelMeter(sampleRate: sampleRate)!
         var empty = AudioBufferList(
             mNumberBuffers: 1, mBuffers: AudioBuffer(mNumberChannels: 0, mDataByteSize: 0, mData: nil))
-        meter.ingest(&empty)
+        meter.ingest(&empty, buffers: 0..<1)
         #expect(meter.analysisCount == 0)
         #expect(AudioLevelMeter(sampleRate: 0) == nil)
+    }
+
+    /// Regression for the headset case: the aggregate delivers the
+    /// microphone's buffer first and the tap's second. Only the tap's may
+    /// move the meter, and a range the list cannot satisfy reads nothing.
+    @Test func readsOnlyTheTapsBuffers() {
+        let microphone = sine(1_000, amplitude: 0.5, count: 4096)
+        let tap = [Float](repeating: 0, count: 4096)
+        let list = AudioBufferList.allocate(maximumBuffers: 2)
+        let storage = [microphone, tap].map { channel -> UnsafeMutablePointer<Float> in
+            let samples = UnsafeMutablePointer<Float>.allocate(capacity: channel.count)
+            samples.initialize(from: channel, count: channel.count)
+            return samples
+        }
+        defer {
+            storage.forEach { $0.deallocate() }
+            free(list.unsafeMutablePointer)
+        }
+        for index in storage.indices {
+            list[index] = AudioBuffer(
+                mNumberChannels: 1,
+                mDataByteSize: UInt32(4096 * MemoryLayout<Float>.size),
+                mData: UnsafeMutableRawPointer(storage[index]))
+        }
+
+        let tapOnly = AudioLevelMeter(sampleRate: sampleRate)!
+        tapOnly.ingest(list.unsafePointer, buffers: 1..<2)
+        #expect(tapOnly.analysisCount > 0)
+        #expect(tapOnly.latest() == .silent)
+
+        let micOnly = AudioLevelMeter(sampleRate: sampleRate)!
+        micOnly.ingest(list.unsafePointer, buffers: 0..<1)
+        #expect(micOnly.latest().level > 0.5)
+
+        let outOfRange = AudioLevelMeter(sampleRate: sampleRate)!
+        outOfRange.ingest(list.unsafePointer, buffers: 2..<3)
+        outOfRange.ingest(list.unsafePointer, buffers: 1..<1)
+        #expect(outOfRange.analysisCount == 0)
     }
 
     @Test func packingKeepsFourValuesTogether() {
@@ -258,6 +296,29 @@ struct AudioLevelMeterTests {
         let wild = AudioLevelMeter.unpack(AudioLevelMeter.pack(
             AudioLevelReading(level: 2, bass: -1, mid: .nan, treble: 1)))
         #expect(wild == AudioLevelReading(level: 1, bass: 0, mid: 0, treble: 1))
+    }
+}
+
+@Suite("AudioTapStreamLayout", .timeLimit(.minutes(1)))
+struct AudioTapStreamLayoutTests {
+    /// Stream counts as read from the HAL smoke on macOS 27 (no IO).
+    @Test func outputOnlyDeviceHasTheTapAlone() {
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 1, subdeviceInputStreams: 0, tapStreams: 1) == 0..<1)
+    }
+
+    @Test func duplexDeviceInputsComeFirstAndAreSkipped() {
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 2, subdeviceInputStreams: 1, tapStreams: 1) == 1..<2)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 4, subdeviceInputStreams: 3, tapStreams: 1) == 3..<4)
+    }
+
+    @Test func unexpectedLayoutsRefuseToCapture() {
+        // More or fewer streams than sub-device + tap: something else is
+        // in the list, so no index can be trusted.
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 2, subdeviceInputStreams: 0, tapStreams: 1) == nil)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 0, subdeviceInputStreams: 0, tapStreams: 1) == nil)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 1, subdeviceInputStreams: 1, tapStreams: 1) == nil)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 1, subdeviceInputStreams: 1, tapStreams: 0) == nil)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 0, subdeviceInputStreams: -1, tapStreams: 1) == nil)
     }
 }
 
@@ -306,6 +367,43 @@ struct AudioTapTargetingTests {
             ownBundleID: "com.serhadbahadir.umbar") == .global)
     }
 
+    @Test func neverFallsBackToGlobalWhileTheMicrophoneIsInUse() {
+        let call = C(objectID: 6, bundleID: "us.zoom.xos", isRunningOutput: true, isRunningInput: true)
+        let quietPlayer = C(objectID: 3, bundleID: "com.spotify.client", isRunningOutput: false)
+        #expect(AudioTapTargeting.target(nowPlaying: "com.spotify.client", candidates: [quietPlayer, call], ownBundleID: nil) == nil)
+        #expect(AudioTapTargeting.target(nowPlaying: nil, candidates: [call], ownBundleID: nil) == nil)
+        // A capturing process without a bundle ID still counts.
+        let anonymous = C(objectID: 8, bundleID: nil, isRunningOutput: false, isRunningInput: true)
+        #expect(AudioTapTargeting.target(nowPlaying: nil, candidates: [anonymous], ownBundleID: nil) == nil)
+    }
+
+    @Test func perAppTapIsStillAllowedWhileTheMicrophoneIsInUse() {
+        let candidates = [
+            C(objectID: 3, bundleID: "com.spotify.client", isRunningOutput: true),
+            C(objectID: 6, bundleID: "us.zoom.xos", isRunningOutput: true, isRunningInput: true),
+        ]
+        #expect(AudioTapTargeting.target(nowPlaying: "com.spotify.client", candidates: candidates, ownBundleID: nil) == .processes([3]))
+    }
+
+    @Test func umbarsOwnTapDoesNotCountAsMicrophoneUse() {
+        // The live tap shows up as input on umbar's process object; it
+        // must not make the global fallback switch itself off.
+        let own = C(objectID: 4, bundleID: "com.serhadbahadir.umbar", isRunningOutput: false, isRunningInput: true)
+        #expect(AudioTapTargeting.target(
+            nowPlaying: nil, candidates: [own],
+            ownBundleID: "com.serhadbahadir.umbar") == .global)
+    }
+
+    @Test func microphoneTearsDownAGlobalTapButKeepsAPerAppOne() {
+        let app = "com.spotify.client"
+        #expect(AudioTapTargeting.shouldRebuild(current: .global, currentApp: app, proposed: nil, app: app))
+        #expect(AudioTapTargeting.shouldRebuild(current: .global, currentApp: nil, proposed: nil, app: nil))
+        #expect(!AudioTapTargeting.shouldRebuild(current: .processes([3]), currentApp: app, proposed: nil, app: app))
+        // Another app with no per-app target during a call: the old app's
+        // tap goes.
+        #expect(AudioTapTargeting.shouldRebuild(current: .processes([3]), currentApp: app, proposed: nil, app: "com.apple.Music"))
+    }
+
     @Test func sameAppTapOnlyGrows() {
         let app = "com.google.Chrome"
         // A helper went quiet or the app briefly had none: keep the tap.
@@ -327,5 +425,101 @@ struct AudioTapTargetingTests {
         #expect(!AudioTapTargeting.shouldRebuild(
             current: .global, currentApp: "com.google.Chrome",
             proposed: .global, app: "com.spotify.client"))
+    }
+}
+
+@Suite("AudioPermissionRequestGate", .timeLimit(.minutes(1)))
+struct AudioPermissionRequestGateTests {
+    // The gate's methods are mutating, which #expect cannot call inline.
+
+    @Test func oneRequestAtATime() {
+        var gate = AudioPermissionRequestGate()
+        let first = gate.begin()
+        let whileOutstanding = gate.begin()
+        #expect(first != nil)
+        #expect(whileOutstanding == nil)
+        gate.finish(first!)
+        let afterAnswer = gate.begin()
+        #expect(afterAnswer != nil)
+    }
+
+    /// Regression: with a bool flag, a completion that never fired kept
+    /// every later start from asking. Deactivating now clears it.
+    @Test func cancelLetsTheNextStartAskAgain() {
+        var gate = AudioPermissionRequestGate()
+        _ = gate.begin()
+        gate.cancel()
+        let next = gate.begin()
+        #expect(next != nil)
+    }
+
+    @Test func expiryEndsOnlyAnUnansweredRequest() {
+        var gate = AudioPermissionRequestGate()
+        let lost = gate.begin()!
+        let expired = gate.expire(lost)
+        let expiredAgain = gate.expire(lost)
+        #expect(expired)
+        #expect(!expiredAgain)
+
+        let answered = gate.begin()!
+        gate.finish(answered)
+        let expiredAfterAnswer = gate.expire(answered)
+        #expect(!expiredAfterAnswer)
+    }
+
+    @Test func staleAnswersAndTimersLeaveANewerRequestAlone() {
+        var gate = AudioPermissionRequestGate()
+        let old = gate.begin()!
+        gate.cancel()
+        let current = gate.begin()!
+        gate.finish(old)
+        let oldExpired = gate.expire(old)
+        let anotherWhileCurrent = gate.begin()
+        let currentExpired = gate.expire(current)
+        #expect(!oldExpired)
+        #expect(anotherWhileCurrent == nil)
+        #expect(currentExpired)
+    }
+}
+
+@Suite("AudioLevelOwners", .timeLimit(.minutes(1)))
+struct AudioLevelOwnersTests {
+    /// Regression for two screens: one glow letting go must not switch off
+    /// the other's capture.
+    @Test func activeUntilTheLastOwnerReleases() {
+        var owners = AudioLevelOwners()
+        #expect(!owners.isActive)
+        owners.acquire("screen-1")
+        owners.acquire("screen-2")
+        owners.release("screen-1")
+        #expect(owners.isActive)
+        owners.release("screen-2")
+        #expect(!owners.isActive)
+    }
+
+    @Test func repeatedAcquireIsOneHold() {
+        var owners = AudioLevelOwners()
+        owners.acquire(7)
+        owners.acquire(7)
+        owners.release(7)
+        #expect(!owners.isActive)
+    }
+
+    @Test func releasingAStrangerChangesNothing() {
+        var owners = AudioLevelOwners()
+        owners.release("nobody")
+        #expect(!owners.isActive)
+        owners.acquire("screen-1")
+        owners.release("screen-2")
+        #expect(owners.isActive)
+    }
+
+    @Test func ownersOfDifferentTypesAreDistinct() {
+        // AnyHashable keeps the type: Int 1 and String "1" are two owners.
+        var owners = AudioLevelOwners()
+        owners.acquire(1)
+        owners.acquire("1")
+        owners.release(1)
+        #expect(owners.isActive)
     }
 }

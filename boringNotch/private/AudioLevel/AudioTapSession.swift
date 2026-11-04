@@ -101,33 +101,60 @@ final class AudioTapSession: @unchecked Sendable {
             self.meter = meter
             let tapUID = try Self.step("read tap UID") { try tap.uid }
 
-            // The output device is the clock source (and the drift-corrected
-            // tap follows it); the aggregate itself is private and never
-            // becomes anyone's default device.
-            let composition: [String: Any] = [
+            // Two shapes, chosen by whether the output device also has
+            // inputs:
+            //  - Output-only (built-in speakers, a display, most DACs): the
+            //    device is the aggregate's sub-device and clock source, and
+            //    the drift-corrected tap follows it.
+            //  - Output with inputs (a Bluetooth or USB headset, an audio
+            //    interface): adding it as a sub-device also adds its
+            //    microphone streams, and starting the aggregate would start
+            //    that input: the microphone indicator lights, a Bluetooth
+            //    headset drops to its call profile, and the microphone
+            //    permission is checked. So the aggregate holds the tap
+            //    alone and no device input is ever part of it.
+            // If the device's streams cannot be read, it is treated as
+            // having inputs: a glow that does not move is the safe failure.
+            let outputInputStreams = Self.inputStreamCount(of: output.id)
+            let tapOnly = outputInputStreams != 0
+            var composition: [String: Any] = [
                 kAudioAggregateDeviceNameKey: "umbar level",
                 kAudioAggregateDeviceUIDKey: "com.serhadbahadir.umbar.level.\(UUID().uuidString)",
-                kAudioAggregateDeviceMainSubDeviceKey: outputDeviceUID,
                 kAudioAggregateDeviceIsPrivateKey: true,
                 kAudioAggregateDeviceIsStackedKey: false,
                 kAudioAggregateDeviceTapAutoStartKey: true,
-                kAudioAggregateDeviceSubDeviceListKey: [[kAudioSubDeviceUIDKey: outputDeviceUID]],
                 kAudioAggregateDeviceTapListKey: [[
                     kAudioSubTapDriftCompensationKey: true,
                     kAudioSubTapUIDKey: tapUID,
                 ]],
             ]
+            if !tapOnly {
+                composition[kAudioAggregateDeviceMainSubDeviceKey] = outputDeviceUID
+                composition[kAudioAggregateDeviceSubDeviceListKey] = [[kAudioSubDeviceUIDKey: outputDeviceUID]]
+            }
             guard let aggregate = try Self.step("create aggregate device", { try AudioHardwareSystem.shared.makeAggregateDevice(description: composition) }) else {
                 throw AudioTapError(step: "create aggregate device", status: nil)
             }
             createdAggregate = aggregate
+
+            // Belt and braces for the shape above: the IOProc reads the
+            // tap's buffer and nothing else, so even an aggregate that
+            // carries an input stream cannot feed it into the meter.
+            guard let aggregateInputs = Self.inputStreamCount(of: aggregate.id),
+                  let tapBuffers = AudioTapStreamLayout.tapBuffers(
+                      aggregateInputStreams: aggregateInputs,
+                      subdeviceInputStreams: tapOnly ? 0 : (outputInputStreams ?? 0),
+                      tapStreams: 1) else {
+                throw AudioTapError(step: "find the tap's stream in the aggregate device", status: nil)
+            }
+            Self.log.debug("aggregate built (tap only: \(tapOnly, privacy: .public), tap buffers: \(tapBuffers, privacy: .public))")
 
             // nil queue: the block runs on the HAL's real-time IO thread
             // with no extra copy or hop. It must not allocate or lock;
             // AudioLevelMeter.ingest is written to that rule.
             var procID: AudioDeviceIOProcID?
             let status = AudioDeviceCreateIOProcIDWithBlock(&procID, aggregate.id, nil) { _, inputData, _, _, _ in
-                meter.ingest(inputData)
+                meter.ingest(inputData, buffers: tapBuffers)
             }
             guard status == noErr, let procID else {
                 throw AudioTapError(step: "create IOProc", status: status)
@@ -173,6 +200,18 @@ final class AudioTapSession: @unchecked Sendable {
         tap = nil
     }
 
+    /// Number of input streams `device` exposes, or nil when the HAL does
+    /// not answer.
+    private static func inputStreamCount(of device: AudioObjectID) -> Int? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyStreams,
+            mScope: kAudioObjectPropertyScopeInput,
+            mElement: kAudioObjectPropertyElementMain)
+        var size: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(device, &address, 0, nil, &size) == noErr else { return nil }
+        return Int(size) / MemoryLayout<AudioStreamID>.size
+    }
+
     /// Runs one HAL step, turning the overlay's error into one that names
     /// the step, so the log says which call failed and with which status.
     private static func step<T>(_ name: String, _ body: () throws -> T) throws -> T {
@@ -195,7 +234,8 @@ enum AudioProcessList {
             AudioTapTargeting.Candidate(
                 objectID: process.id,
                 bundleID: (try? process.bundleID) ?? nil,
-                isRunningOutput: (try? process.isRunningOutput) ?? false)
+                isRunningOutput: (try? process.isRunningOutput) ?? false,
+                isRunningInput: (try? process.isRunningInput) ?? false)
         }
     }
 }

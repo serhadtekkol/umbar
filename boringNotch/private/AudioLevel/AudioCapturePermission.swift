@@ -3,7 +3,10 @@
 //  boringNotch
 //
 //  The "audio recording" (system audio capture) permission behind process
-//  taps. macOS has no public API to read or request it: a tap made without
+//  taps. macOS has no public API to read or request it (checked against the
+//  macOS 27 SDK: AVAudioApplication.recordPermission and
+//  AVCaptureDevice.authorizationStatus(for: .audio) are the microphone,
+//  kTCCServiceMicrophone, not this service): a tap made without
 //  it simply delivers silence, so a denial would be indistinguishable from
 //  a quiet song. The TCC framework's preflight/request calls are the only
 //  way to know (the open-source AudioCap sample by Guilherme Rambo uses the
@@ -17,13 +20,19 @@
 //
 
 import Foundation
+import os
 
 enum AudioCapturePermission {
     enum Status: Equatable { case granted, denied, notDetermined, unavailable }
 
     private static let service = "kTCCServiceAudioCapture" as CFString
 
-    private typealias PreflightFunction = @convention(c) (CFString, CFDictionary?) -> Int
+    private static let log = Logger(subsystem: "umbar", category: "AudioLevel")
+
+    /// `int TCCAccessPreflight(CFStringRef, CFDictionaryRef)`. The return is
+    /// a C int: typed as Swift `Int` it would read all of x0 on arm64, whose
+    /// upper 32 bits the callee leaves undefined.
+    private typealias PreflightFunction = @convention(c) (CFString, CFDictionary?) -> Int32
     private typealias RequestFunction = @convention(c) (CFString, CFDictionary?, @escaping @convention(block) (Bool) -> Void) -> Void
 
     private static let framework: UnsafeMutableRawPointer? =
@@ -39,10 +48,17 @@ enum AudioCapturePermission {
     /// granted, 1 for denied and 2 when the user has not been asked.
     static func status() -> Status {
         guard let preflight else { return .unavailable }
-        switch preflight(service, nil) {
+        let result = preflight(service, nil)
+        switch result {
         case 0: return .granted
         case 1: return .denied
-        default: return .notDetermined
+        case 2: return .notDetermined
+        default:
+            // A value this private API never returned before: the ABI or
+            // the meaning moved. Asking is the safe reading (the system
+            // answers from the stored decision); the log says which value.
+            log.error("TCCAccessPreflight returned unexpected \(result, privacy: .public); treating as not determined")
+            return .notDetermined
         }
     }
 

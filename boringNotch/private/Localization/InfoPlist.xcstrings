@@ -92,19 +92,19 @@
       }
     },
     "NSAudioCaptureUsageDescription": {
-      "comment": "System audio capture prompt: the edge glow's audio-reactive mode. Only loudness is computed, in memory.",
+      "comment": "System audio capture prompt: the edge glow's audio-reactive mode. Only loudness is computed, in memory; the all-system fallback is skipped while another app uses the microphone.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "umbar listens to the music you play so the glow around the notch can move with it. Only its loudness is measured, in memory; nothing is recorded, saved or sent anywhere."
+            "value": "umbar measures how loud the music you play is, so the glow around the notch can move with it. When it cannot tell which app is playing, it measures the loudness of all system sound instead, but never while another app is using the microphone. Only the loudness is measured, in memory; the sound itself is never recorded, saved or sent anywhere."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "umbar, notch çevresindeki ışığın müzikle birlikte hareket edebilmesi için çaldığınız müziği dinler. Yalnızca ses yüksekliği bellekte ölçülür; hiçbir şey kaydedilmez, saklanmaz ya da bir yere gönderilmez."
+            "value": "umbar, notch çevresindeki ışığın müzikle birlikte hareket edebilmesi için çaldığınız müziğin ses yüksekliğini ölçer. Hangi uygulamanın çaldığını ayırt edemezse onun yerine tüm sistem sesinin yüksekliğini ölçer; başka bir uygulama mikrofonu kullanırken bunu hiçbir zaman yapmaz. Yalnızca ses yüksekliği bellekte ölçülür; sesin kendisi hiçbir zaman kaydedilmez, saklanmaz ya da bir yere gönderilmez."
           }
         }
       }

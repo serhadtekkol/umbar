@@ -12,13 +12,17 @@
 //  How it hears: a Core Audio process tap on the now-playing app's
 //  processes (MusicManager's bundle ID, helpers included; see
 //  AudioTapTargeting), or on all system output except umbar when that app
-//  has no outputting process. The tap is unmuted (the user still hears
-//  everything) and private (no device shows up anywhere).
+//  has no outputting process. The all-system fallback is never used while
+//  another app has the microphone open (a call or a recording would be
+//  measured along with the music); capture then waits. The tap is unmuted
+//  (the user still hears everything) and private (no device shows up
+//  anywhere).
 //
-//  When it runs: only between setActive(true) and setActive(false), and
-//  only while MusicManager reports playback. A pause tears the tap down
-//  after a short grace period; so does setActive(false), at once. Nothing
-//  about Core Audio is touched before the first setActive(true).
+//  When it runs: only while at least one caller holds it (acquire/release,
+//  or the older setActive(true)/setActive(false)), and only while
+//  MusicManager reports playback. A pause tears the tap down after a short
+//  grace period; the last release does, at once. Nothing about Core Audio
+//  is touched before the first hold.
 //
 
 import AppKit
@@ -65,8 +69,13 @@ final class AudioLevelMonitor: ObservableObject {
     private static let retargetInterval: TimeInterval = 3
 
     private let engine = AudioCaptureEngine()
+    private var owners = AudioLevelOwners()
+    /// The hold taken by setActive(_:), which predates acquire/release: all
+    /// its callers share it, exactly as they shared the old on/off switch.
+    private struct SetActiveHold: Hashable {}
+    /// `owners.isActive` as last acted on.
     private var requested = false
-    private var permissionRequestInFlight = false
+    private var permissionRequest = AudioPermissionRequestGate()
     private var musicPlaying = false
     private var nowPlaying: String?
     private var meter: AudioLevelMeter?
@@ -83,16 +92,48 @@ final class AudioLevelMonitor: ObservableObject {
     /// Starts or stops capture. Safe to call repeatedly; the glow calls it
     /// with `true` only while the mode is on and music is playing.
     ///
-    /// The first `true` asks for the audio-capture permission if the user
+    /// All setActive callers share one hold: `false` from any of them
+    /// releases it. Callers that can exist more than once at a time (one
+    /// glow per screen) use acquire/release instead; setActive(false) does
+    /// not override their holds.
+    ///
+    /// The first start asks for the audio-capture permission if the user
     /// has not decided yet; a denial sets `authorization = .denied` and
-    /// leaves everything stopped. Later `true` calls re-read the permission,
-    /// so granting it in System Settings takes effect on the next start.
+    /// leaves everything stopped. Later starts re-read the permission, so
+    /// granting it in System Settings takes effect on the next start.
     func setActive(_ active: Bool) {
+        if active { acquire(SetActiveHold()) } else { release(SetActiveHold()) }
+    }
+
+    /// Adds `owner` to the callers that want capture. Capture runs while at
+    /// least one owner holds it (and music plays). Acquiring again with an
+    /// equal owner is a no-op, so each owner needs one release.
+    ///
+    /// - Parameter owner: any stable identity of the caller, e.g. an
+    ///   `ObjectIdentifier` or a screen ID. Equal values are one owner.
+    func acquire(_ owner: AnyHashable) {
+        owners.acquire(owner)
+        applyOwners()
+    }
+
+    /// Removes `owner`. Capture stops when the last owner is gone; an owner
+    /// that holds nothing is ignored.
+    func release(_ owner: AnyHashable) {
+        owners.release(owner)
+        applyOwners()
+    }
+
+    private func applyOwners() {
+        let active = owners.isActive
         guard active != requested else { return }
         requested = active
         if active {
             authorizeThenStart()
         } else {
+            // An unanswered request must not block the next start; if its
+            // answer still arrives it is recorded, and starts nothing
+            // because `requested` is false.
+            permissionRequest.cancel()
             stopObserving()
             reconcile()
         }
@@ -112,18 +153,29 @@ final class AudioLevelMonitor: ObservableObject {
             Self.log.notice("audio capture permission cannot be read on this system; starting anyway")
             startObserving()
         case .notDetermined:
-            guard !permissionRequestInFlight else { return }
-            permissionRequestInFlight = true
+            guard let requestID = permissionRequest.begin() else { return }
             AudioCapturePermission.requestAccess { status in
                 MainActor.assumeIsolated {
                     let monitor = AudioLevelMonitor.shared
-                    monitor.permissionRequestInFlight = false
+                    monitor.permissionRequest.finish(requestID)
                     switch status {
                     case .granted: monitor.authorization = .granted
                     case .denied: monitor.authorization = .denied
                     case .notDetermined, .unavailable: break
                     }
                     if status != .denied, monitor.requested { monitor.startObserving() }
+                }
+            }
+            // If the answer never comes, look again once the request counts
+            // as lost: the preflight then reads whatever the user decided
+            // (or asks again if they still have not), instead of capture
+            // staying off until the glow is toggled.
+            DispatchQueue.main.asyncAfter(deadline: .now() + AudioPermissionRequestGate.timeout) {
+                MainActor.assumeIsolated {
+                    let monitor = AudioLevelMonitor.shared
+                    guard monitor.permissionRequest.expire(requestID), monitor.requested else { return }
+                    Self.log.notice("audio capture permission request unanswered; checking again")
+                    monitor.authorizeThenStart()
                 }
             }
         }
@@ -159,6 +211,21 @@ final class AudioLevelMonitor: ObservableObject {
         // starting or stopping audio may move the now-playing app's sound.
         addHALListener(kAudioHardwarePropertyDefaultOutputDevice)
         addHALListener(kAudioHardwarePropertyProcessObjectList)
+        // A process starting its microphone flips a per-process property,
+        // which neither listener above reports; the retarget timer would
+        // catch it within a few seconds. The privacy indicator already
+        // listens to exactly that property, so when it is enabled its
+        // change triggers a re-check at once. It is only a trigger: the
+        // decision reads the HAL itself, so it holds with the indicator off.
+        PrivacyIndicatorMonitor.shared.$usage
+            .map(\.microphone)
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                MainActor.assumeIsolated { AudioLevelMonitor.shared.reconcile() }
+            }
+            .store(in: &musicCancellables)
 
         let retarget = Timer(timeInterval: Self.retargetInterval, repeats: true) { _ in
             MainActor.assumeIsolated { AudioLevelMonitor.shared.reconcile() }
@@ -241,9 +308,11 @@ final class AudioLevelMonitor: ObservableObject {
         if newTarget != target {
             switch newTarget {
             case .processes(let ids)?:
-                Self.log.notice("tapping now-playing app \(self.nowPlaying ?? "?", privacy: .public) (\(ids.count) process(es))")
+                // The app's bundle ID says what the user is listening to: hashed,
+                // so two log lines can still be matched without naming it.
+                Self.log.notice("tapping now-playing app \(self.nowPlaying ?? "?", privacy: .private(mask: .hash)) (\(ids.count) process(es))")
             case .global?:
-                Self.log.notice("tapping all system output (no outputting process for \(self.nowPlaying ?? "nil", privacy: .public))")
+                Self.log.notice("tapping all system output (no outputting process for \(self.nowPlaying ?? "nil", privacy: .private(mask: .hash)))")
             case nil:
                 Self.log.notice("capture stopped")
             }
@@ -301,6 +370,9 @@ private final class AudioCaptureEngine: @unchecked Sendable {
     /// app, the target or the output device changes.
     private var lastFailure: (target: AudioTapTargeting.Target, output: String?, at: Date)?
     private static let retryDelay: TimeInterval = 30
+    /// True while capture is held back by the microphone rule; only so the
+    /// log says it once, not every few seconds.
+    private var withheld = false
     private static let log = Logger(subsystem: "umbar", category: "AudioLevel")
 
     func apply(
@@ -315,6 +387,7 @@ private final class AudioCaptureEngine: @unchecked Sendable {
                 session = nil
                 sessionApp = nil
                 lastFailure = nil
+                withheld = false
                 completion(nil, nil)
                 return
             }
@@ -335,6 +408,15 @@ private final class AudioCaptureEngine: @unchecked Sendable {
             }
             session?.invalidate()
             session = nil
+            guard let proposed else {
+                // Microphone in use and no per-app tap possible.
+                if !withheld { Self.log.notice("microphone in use; not tapping all system output") }
+                withheld = true
+                sessionApp = nil
+                completion(nil, nil)
+                return
+            }
+            withheld = false
             if let lastFailure, lastFailure.target == proposed, lastFailure.output == outputUID,
                Date().timeIntervalSince(lastFailure.at) < Self.retryDelay {
                 completion(nil, nil)
