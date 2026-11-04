@@ -259,9 +259,11 @@ final class AudioLevelMonitor: ObservableObject {
         if newTarget != target {
             switch newTarget {
             case .processes(let ids)?:
-                Self.log.notice("tapping now-playing app \(self.nowPlaying ?? "?", privacy: .public) (\(ids.count) process(es))")
+                // The app's bundle ID says what the user is listening to: hashed,
+                // so two log lines can still be matched without naming it.
+                Self.log.notice("tapping now-playing app \(self.nowPlaying ?? "?", privacy: .private(mask: .hash)) (\(ids.count) process(es))")
             case .global?:
-                Self.log.notice("tapping all system output (no outputting process for \(self.nowPlaying ?? "nil", privacy: .public))")
+                Self.log.notice("tapping all system output (no outputting process for \(self.nowPlaying ?? "nil", privacy: .private(mask: .hash)))")
             case nil:
                 Self.log.notice("capture stopped")
             }
