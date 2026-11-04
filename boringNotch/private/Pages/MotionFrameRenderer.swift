@@ -30,6 +30,7 @@
 //                                the owner's ear shows (LeadingTimeEarPolicy)
 //    timer-net-<state>-<notch>.png     the network ear beside the time ear
 //                                (run with -netMonitorShowInClosedNotch YES)
+//    glow-…                      the edge glow; see EdgeGlowRenderer
 //
 
 #if DEBUG
@@ -54,6 +55,7 @@ enum MotionFrameRenderer {
         renderWiFiConfirm(out: out)
         renderUndoChip(out: out)
         EyeBreakBannerRenderer.renderMotion(to: out)
+        EdgeGlowRenderer.renderMotion(to: out)
         exit(0)
     }
 
