@@ -199,3 +199,48 @@ struct MirrorRunCapTests {
         #expect(MirrorSession.maxRunDuration == 300)
     }
 }
+
+@Suite("MirrorTileOwners", .timeLimit(.minutes(1)))
+struct MirrorTileOwnersTests {
+    private final class Panel {}
+
+    @Test func aRemovedOwnerStopsTheCamera() {
+        // Muhittin L3: the external display's panel had the live tile and
+        // its window was closed without onDisappear.
+        let external = Panel()
+        var owners = MirrorTileOwners()
+        var session = MirrorSession()
+        let added = owners.set(true, for: ObjectIdentifier(external))
+        #expect(added)
+        _ = session.tap(conditions(visible: owners.anyVisible))
+        #expect(session.running)
+        let removed = owners.remove(ObjectIdentifier(external))
+        #expect(removed)
+        #expect(session.update(conditions(visible: owners.anyVisible)) == .stop)
+    }
+
+    @Test func anotherScreensTileKeepsItVisible() {
+        let builtIn = Panel(), external = Panel()
+        var owners = MirrorTileOwners()
+        _ = owners.set(true, for: ObjectIdentifier(builtIn))
+        _ = owners.set(true, for: ObjectIdentifier(external))
+        _ = owners.remove(ObjectIdentifier(external))
+        #expect(owners.anyVisible)
+    }
+
+    @Test func repeatsAndUnknownOwnersChangeNothing() {
+        let panel = Panel(), stranger = Panel()
+        var owners = MirrorTileOwners()
+        let added = owners.set(true, for: ObjectIdentifier(panel))
+        #expect(added)
+        let addedAgain = owners.set(true, for: ObjectIdentifier(panel))
+        #expect(!addedAgain)
+        let removedStranger = owners.remove(ObjectIdentifier(stranger))
+        #expect(!removedStranger)
+        let removed = owners.remove(ObjectIdentifier(panel))
+        #expect(removed)
+        let removedAgain = owners.remove(ObjectIdentifier(panel))
+        #expect(!removedAgain)
+        #expect(!owners.anyVisible)
+    }
+}

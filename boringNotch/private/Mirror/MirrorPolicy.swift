@@ -156,6 +156,27 @@ struct MirrorSession: Equatable, Sendable {
     }
 }
 
+/// Which screens' panels show the tile right now, keyed by their view
+/// model. The tile reports itself from onAppear/onDisappear, but a window
+/// closed because its display was unplugged may never get onDisappear; the
+/// app delegate then says the owner is gone (Muhittin L3), or the camera
+/// would keep running for a panel nobody can see.
+struct MirrorTileOwners: Equatable, Sendable {
+    private var visible: Set<ObjectIdentifier> = []
+
+    var anyVisible: Bool { !visible.isEmpty }
+
+    /// Returns whether anything changed.
+    mutating func set(_ isVisible: Bool, for owner: ObjectIdentifier) -> Bool {
+        isVisible ? visible.insert(owner).inserted : visible.remove(owner) != nil
+    }
+
+    /// The owner's window was closed. Returns whether anything changed.
+    mutating func remove(_ owner: ObjectIdentifier) -> Bool {
+        set(false, for: owner)
+    }
+}
+
 enum MirrorAccessPolicy {
     /// Whether turning the setting from `wasEnabled` to `isEnabled` should
     /// show the macOS camera prompt. Only the user's own off-to-on flip

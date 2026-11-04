@@ -50,7 +50,7 @@ final class MirrorCamera: ObservableObject {
     private var session = MirrorSession()
     private var cameraAvailable = false
     /// Tiles on screen, one per display's panel.
-    private var visibleTiles: Set<AnyHashable> = []
+    private var tiles = MirrorTileOwners()
     private var userPresent = true
 
     private var capture: MirrorCapture?
@@ -91,10 +91,15 @@ final class MirrorCamera: ObservableObject {
         }
     }
 
-    /// A tile appeared on, or left, an open panel's Şimdi page.
-    func setTileVisible(_ visible: Bool, owner: AnyHashable) {
-        let changed = visible ? visibleTiles.insert(owner).inserted : visibleTiles.remove(owner) != nil
-        if changed { apply() }
+    /// A tile appeared on, or left, the open Şimdi page of `owner`'s panel.
+    func setTileVisible(_ visible: Bool, owner: BoringViewModel) {
+        if tiles.set(visible, for: ObjectIdentifier(owner)) { apply() }
+    }
+
+    /// `owner`'s notch window is being closed (its display went away, or
+    /// "show on all displays" changed). Its tile may never see onDisappear.
+    func panelWentAway(_ owner: BoringViewModel) {
+        if tiles.remove(ObjectIdentifier(owner)) { apply() }
     }
 
     func tap() {
@@ -168,7 +173,7 @@ final class MirrorCamera: ObservableObject {
 
     private var conditions: MirrorConditions {
         MirrorConditions(enabled: Defaults[.mirrorEnabled], access: access,
-                         cameraAvailable: cameraAvailable, tileVisible: !visibleTiles.isEmpty,
+                         cameraAvailable: cameraAvailable, tileVisible: tiles.anyVisible,
                          userPresent: userPresent)
     }
 
