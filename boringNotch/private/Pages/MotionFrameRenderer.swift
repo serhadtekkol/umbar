@@ -45,6 +45,14 @@
 //    glow-…                      the edge glow; see EdgeGlowRenderer
 //    critter-…                   the idle critter crossing; see CritterRenderer
 //    drip-…                      the liquid drip under the island; see DripRenderer
+//    music-still-<case>-<notch>-<bg>.png  the closed island playing, with the
+//                                song name (case: long, short; bg: light,
+//                                dark). Run with -closedSongTitleEnabled NO
+//                                for the island without it.
+//    music-<step>-<notch>-<ms>.png  the music ears folding on a pause and
+//                                coming back on play (step: pause, play,
+//                                flicker = pause then play 0.3 s later,
+//                                reduce-pause, reduce-play)
 //
 
 #if DEBUG
@@ -60,7 +68,7 @@ enum MotionFrameRenderer {
         let out = URL(fileURLWithPath: dir, isDirectory: true)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
         let notches = [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)]
-        // `-UmbarRenderMotionOnly hover` (or `glow`, `critter`, `headphones`, `drip`)
+        // `-UmbarRenderMotionOnly hover` (or `glow`, `critter`, `headphones`, `drip`, `music`)
         // renders those frames alone.
         switch UserDefaults.standard.string(forKey: "UmbarRenderMotionOnly") {
         case "hover":
@@ -78,6 +86,9 @@ enum MotionFrameRenderer {
         case "drip":
             DripRenderer.renderMotion(to: out)
             exit(0)
+        case "music":
+            notches.forEach { renderClosedMusic(notch: $0, out: out) }
+            exit(0)
         default:
             break
         }
@@ -89,6 +100,7 @@ enum MotionFrameRenderer {
             renderPrivacyEar(notch: notch, out: out)
             renderTimerEar(notch: notch, out: out)
             renderHover(notch: notch, out: out)
+            renderClosedMusic(notch: notch, out: out)
         }
         renderWiFiConfirm(out: out)
         renderUndoChip(out: out)
@@ -204,6 +216,64 @@ enum MotionFrameRenderer {
             fixture.approach = 0
         }, name: { out.appendingPathComponent("hover-out-\(tag)-\($0).png") })
         session.close()
+    }
+
+    // MARK: Closed music ears
+
+    /// ContentView's Reduce Motion for a render run (the environment's is read-only).
+    static var forceReduceMotion = false
+
+    static let musicTimes: [Double] = [0, 0.3, 0.6, 0.65, 0.7, 0.8, 0.9, 1.0, 1.2]
+    static let musicInTimes: [Double] = [0, 0.03, 0.06, 0.1, 0.15, 0.2, 0.3, 0.5]
+
+    private static func renderClosedMusic(notch: CGSize, out: URL) {
+        let tag = "\(Int(notch.width))x\(Int(notch.height))"
+        let music = MusicManager.shared
+        let size = NSSize(width: windowSize.width, height: 80)
+        // The real player reports this Mac's (paused) state once, shortly
+        // after launch; let that pass before the fixture track is seeded.
+        RunLoop.main.run(until: Date().addingTimeInterval(1))
+        func session(_ bg: Color) -> Session {
+            let vm = fixtureViewModel(notch: notch)
+            vm.notchSize = notch
+            BoringViewCoordinator.shared.currentView = .home
+            let root = ContentView()
+                .environmentObject(vm)
+                .frame(width: windowSize.width, height: 80, alignment: .top)
+                .background(bg)
+            return Session(root, size: size)
+        }
+        for (name, title) in [("long", "Yine Yazı Bekleriz (Akustik)"), ("short", "Sia")] {
+            for (bgName, bg) in [("light", Color(white: 0.85)), ("dark", Color(white: 0.12))] {
+                seedMusic()
+                music.songTitle = title
+                let s = session(bg)
+                RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+                capture(s.host, to: out.appendingPathComponent("music-still-\(name)-\(tag)-\(bgName).png"))
+                s.close()
+            }
+        }
+        for reduce in [false, true] {
+            forceReduceMotion = reduce
+            let prefix = reduce ? "music-reduce" : "music"
+            seedMusic()
+            music.songTitle = "Yine Yazı Bekleriz (Akustik)"
+            let s = session(Color(white: 0.85))
+            s.play(times: musicTimes, change: { music.isPlaying = false },
+                   name: { out.appendingPathComponent("\(prefix)-pause-\(tag)-\($0).png") })
+            s.play(times: musicInTimes, change: { music.isPlaying = true },
+                   name: { out.appendingPathComponent("\(prefix)-play-\(tag)-\($0).png") })
+            if !reduce {
+                s.play(times: musicTimes, change: {
+                    music.isPlaying = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { music.isPlaying = true }
+                }, name: { out.appendingPathComponent("music-flicker-\(tag)-\($0).png") })
+            }
+            s.close()
+        }
+        forceReduceMotion = false
+        music.isPlaying = false
+        music.isPlayerIdle = true
     }
 
     // MARK: Camera / microphone ear

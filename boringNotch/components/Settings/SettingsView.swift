@@ -570,6 +570,10 @@ struct Media: View {
                     "Show music live activity",
                     isOn: $coordinator.musicLiveActivityEnabled.animation()
                 )
+                Defaults.Toggle(key: .closedSongTitleEnabled) {
+                    Text("Show song name beside the album art")
+                }
+                .disabled(!coordinator.musicLiveActivityEnabled)
                 Toggle("Show sneak peek on playback changes", isOn: $enableSneakPeek)
                 Picker("Sneak Peek Style", selection: $sneakPeekStyles) {
                     ForEach(SneakPeekStyle.allCases) { style in

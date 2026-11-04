@@ -4833,6 +4833,22 @@
         }
       }
     },
+    "Show song name beside the album art" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show song name beside the album art"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şarkı adını albüm kapağının yanında göster"
+          }
+        }
+      }
+    },
     "Slider color" : {
       "localizations" : {
         "en" : {

@@ -65,7 +65,31 @@ struct ContentView: View {
 
     @Default(.dripEffectEnabled) private var dripEffectEnabled
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Default(.closedSongTitleEnabled) private var closedSongTitleEnabled
+
+    /// The closed island's music ears (ClosedMusicPresence): a pause folds
+    /// them `hideDelay` later instead of after the media inactivity
+    /// timeout, which still governs the open panel through `isPlayerIdle`.
+    @State private var musicPresence = ClosedMusicPresence(playing: MusicManager.shared.isPlaying)
+    /// Whether the ears are in the layout; stays true while they fold.
+    @State private var musicEarsActive = MusicManager.shared.isPlaying
+    /// The ears' content (opacity, album art scale) and width, 0...1. Two
+    /// values so Reduce Motion can fade the content without moving the shape.
+    @State private var musicContent: CGFloat = MusicManager.shared.isPlaying ? 1 : 0
+    @State private var musicWidth: CGFloat = MusicManager.shared.isPlaying ? 1 : 0
+    /// True while the ears come back after a pause: they grow out of the
+    /// notch on their own values, so the closed-content transition (made
+    /// for the panel folding) stays out of the way.
+    @State private var musicEarsArriving = false
+
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    #if DEBUG
+    /// Reduce Motion is read-only in the environment; a render run can force it.
+    private var reduceMotion: Bool { systemReduceMotion || MotionFrameRenderer.forceReduceMotion }
+    #else
+    private var reduceMotion: Bool { systemReduceMotion }
+    #endif
 
     /// Whether the closed island shows the live strip; a key for the ear
     /// spring so the island grows with the strip instead of snapping.
@@ -151,12 +175,13 @@ struct ContentView: View {
         {
             chinWidth = 640
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
-            && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
+            && vm.notchState == .closed && musicEarsActive
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
         {
-            chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
+            chinWidth += ClosedMusicLayout.earsWidth(
+                notchHeight: vm.effectiveClosedNotchHeight, showsTitle: showsClosedTitle, presence: musicWidth)
         } else if !coordinator.expandingView.show && vm.notchState == .closed
-            && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
+            && !musicEarsActive && Defaults[.showNotHumanFace]
             && !vm.hideOnClosed
         {
             chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
@@ -277,6 +302,9 @@ struct ContentView: View {
                     .animation(UmbarMotion.ear(reduce: reduceMotion), value: coordinator.expandingView.show)
                     .onReceive(LiveActivityCenter.shared.$stripItems.map { !$0.isEmpty }.removeDuplicates()) { shown in
                         liveStripShown = shown
+                    }
+                    .onReceive(musicManager.$isPlaying.removeDuplicates()) { playing in
+                        musicPlaybackChanged(playing)
                     }
                     .contentShape(Rectangle())
                     .onHover { hovering in
@@ -459,11 +487,11 @@ struct ContentView: View {
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
-                      } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
+                      } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && musicEarsActive && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
                           MusicLiveActivity()
                               .frame(alignment: .center)
-                              .transition(.closedContent(reduce: reduceMotion))
-                      } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
+                              .transition(musicEarsArriving ? .identity : .closedContent(reduce: reduceMotion))
+                      } else if !coordinator.expandingView.show && vm.notchState == .closed && !musicEarsActive && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           BoringFaceAnimation()
                               .transition(.closedContent(reduce: reduceMotion))
                        } else if vm.notchState == .open {
@@ -579,9 +607,26 @@ struct ContentView: View {
         )
     }
 
+    /// The inline sneak peek: the song name and artist over the notch itself.
+    private var inlineMusicPeekShowing: Bool {
+        coordinator.expandingView.show && coordinator.expandingView.type == .music
+            && Defaults[.sneakPeekStyles] == .inline
+    }
+
+    private var showsClosedTitle: Bool {
+        ClosedMusicLayout.showsTitle(
+            enabled: closedSongTitleEnabled, title: musicManager.songTitle,
+            notchHeight: vm.effectiveClosedNotchHeight, inlinePeekShowing: inlineMusicPeekShowing)
+    }
+
     @ViewBuilder
     func MusicLiveActivity() -> some View {
-        HStack {
+        let art = ClosedMusicLayout.artSide(notchHeight: vm.effectiveClosedNotchHeight)
+        let titled = showsClosedTitle
+        // Folds toward the notch with the ears; under Reduce Motion only
+        // the opacity changes.
+        let artScale = reduceMotion ? 1 : 0.5 + 0.5 * musicContent
+        HStack(spacing: 0) {
             Image(nsImage: musicManager.albumArt)
                 .resizable()
                 .clipped()
@@ -590,10 +635,24 @@ struct ContentView: View {
                         cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed)
                 )
                 .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
-                .frame(
-                    width: max(0, vm.effectiveClosedNotchHeight - 12),
-                    height: max(0, vm.effectiveClosedNotchHeight - 12)
-                )
+                .frame(width: art, height: art)
+                .scaleEffect(artScale, anchor: .center)
+                .opacity(musicContent)
+                .frame(width: art * musicWidth)
+
+            if titled {
+                // Folds from its trailing end, so it stays beside the art
+                // instead of sliding over it.
+                ClosedSongTitle(title: musicManager.songTitle, reduceMotion: reduceMotion)
+                    .frame(width: ClosedMusicLayout.titleWidth, alignment: .leading)
+                    .padding(.leading, ClosedMusicLayout.titleGap)
+                    .opacity(musicContent)
+                    .frame(width: ClosedMusicLayout.titleExtra(showsTitle: true) * musicWidth, alignment: .leading)
+                    .clipped()
+                    .transition(.opacity)
+            }
+
+            Color.clear.frame(width: ClosedMusicLayout.earGap * musicWidth)
 
             Rectangle()
                 .fill(.black)
@@ -636,13 +695,24 @@ struct ContentView: View {
                     }
                 )
                 .frame(
-                    width: (coordinator.expandingView.show
-                        && coordinator.expandingView.type == .music
-                        && Defaults[.sneakPeekStyles] == .inline)
+                    // Folded, the black is as wide as the empty closed
+                    // island's, so taking the ears out of the layout after
+                    // they fold does not move the shape.
+                    width: inlineMusicPeekShowing
                         ? 380
-                        : vm.closedNotchSize.width
-                            + -cornerRadiusInsets.closed.top
+                        : vm.closedNotchSize.width - 20
+                            + (20 - cornerRadiusInsets.closed.top) * musicWidth
                 )
+
+            Color.clear.frame(width: ClosedMusicLayout.earGap * musicWidth)
+
+            // The right ear mirrors the name's width, so the island stays
+            // centred on the camera; the spectrum keeps the outer edge.
+            if titled {
+                Color.clear
+                    .frame(width: ClosedMusicLayout.titleExtra(showsTitle: true) * musicWidth)
+                    .transition(.opacity)
+            }
 
             HStack {
                 if useMusicVisualizer {
@@ -664,22 +734,102 @@ struct ContentView: View {
                 }
             }
             .frame(
-                width: max(
-                    0,
-                    vm.effectiveClosedNotchHeight - 12
-                        + gestureProgress / 2
-                ),
-                height: max(
-                    0,
-                    vm.effectiveClosedNotchHeight - 12
-                ),
+                width: max(0, art + gestureProgress / 2),
+                height: art,
                 alignment: .center
             )
+            .opacity(musicContent)
+            .frame(width: max(0, art + gestureProgress / 2) * musicWidth)
         }
         .frame(
             height: vm.effectiveClosedNotchHeight,
             alignment: .center
         )
+    }
+
+    // MARK: - Closed music presence
+
+    private var noAnimation: Transaction {
+        var t = Transaction()
+        t.disablesAnimations = true
+        return t
+    }
+
+    /// Called with each new `isPlaying`, inside MusicManager's own
+    /// `withAnimation(.smooth)`: every change here names its animation, so
+    /// the ears never ride that one.
+    private func musicPlaybackChanged(_ playing: Bool) {
+        switch musicPresence.playbackChanged(isPlaying: playing) {
+        case .none:
+            break
+        case .enter:
+            showMusicEars()
+        case .scheduleHide(let token):
+            DispatchQueue.main.asyncAfter(deadline: .now() + ClosedMusicPresence.hideDelay) {
+                if musicPresence.hideDue(token: token) { hideMusicEars() }
+            }
+        }
+    }
+
+    private func showMusicEars() {
+        if !musicEarsActive {
+            // In at nothing, out of the notch on the next pass. With the face
+            // on, the face's ears are already out: only the content fades in.
+            withTransaction(noAnimation) {
+                musicContent = 0
+                musicWidth = Defaults[.showNotHumanFace] ? 1 : 0
+                musicEarsArriving = true
+                musicEarsActive = true
+            }
+        }
+        DispatchQueue.main.async {
+            guard musicPresence.shown else { return }
+            let arrived = { musicEarsArriving = false }
+            if reduceMotion || vm.notchState != .closed {
+                withTransaction(noAnimation) { musicWidth = 1 }
+                withAnimation(UmbarMotion.ear(reduce: true)) { musicContent = 1 } completion: { arrived() }
+            } else {
+                withAnimation(UmbarMotion.ear()) {
+                    musicContent = 1
+                    musicWidth = 1
+                } completion: { arrived() }
+            }
+        }
+    }
+
+    private func hideMusicEars() {
+        let face = Defaults[.showNotHumanFace]
+        guard vm.notchState == .closed else {
+            withTransaction(noAnimation) {
+                musicContent = 0
+                musicWidth = 0
+                musicEarsActive = false
+            }
+            return
+        }
+        let finish = {
+            guard !musicPresence.shown else { return }
+            if face {
+                // Hand over to the face with the closed-content transitions.
+                withAnimation(UmbarMotion.ear(reduce: reduceMotion)) { musicEarsActive = false }
+            } else {
+                // Folded to the empty island's width: nothing left to see move.
+                withTransaction(noAnimation) {
+                    musicWidth = 0
+                    musicEarsActive = false
+                }
+            }
+        }
+        if reduceMotion {
+            withAnimation(UmbarMotion.ear(reduce: true)) {
+                musicContent = 0
+            } completion: { finish() }
+        } else {
+            withAnimation(UmbarMotion.ear()) {
+                musicContent = 0
+                if !face { musicWidth = 0 }
+            } completion: { finish() }
+        }
     }
 
     @ViewBuilder

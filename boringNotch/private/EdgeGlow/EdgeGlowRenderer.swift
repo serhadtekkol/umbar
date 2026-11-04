@@ -39,6 +39,9 @@ enum EdgeGlowRenderer {
     private static let height: CGFloat = 100
 
     static func renderMotion(to out: URL) {
+        // The real player reports this Mac's (paused) state once after
+        // launch, which folds the closed music ears; let it pass first.
+        RunLoop.main.run(until: Date().addingTimeInterval(1))
         for notch in notches {
             let tag = "\(Int(notch.width))x\(Int(notch.height))"
             renderMusic(notch: notch, tag: tag, out: out)

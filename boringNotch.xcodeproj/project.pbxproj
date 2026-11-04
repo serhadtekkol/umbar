@@ -351,6 +351,7 @@
 				AudioLevel/AudioTapTargeting.swift,
 				BTBattery/BTBatteryCore.swift,
 				Caffeinate/CaffeinatePolicy.swift,
+				ClosedMusic/ClosedMusicLayout.swift,
 				Clipboard/ClipboardHistoryCore.swift,
 				Clipboard/ClipboardHistoryStore.swift,
 				Clipboard/ClipboardMonitor.swift,

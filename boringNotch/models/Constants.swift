@@ -165,6 +165,8 @@ extension Defaults.Keys {
     static let coloredSpectrogram = Key<Bool>("coloredSpectrogram", default: true)
     static let enableSneakPeek = Key<Bool>("enableSneakPeek", default: false)
     static let sneakPeekStyles = Key<SneakPeekStyle>("sneakPeekStyles", default: .standard)
+    /// The song name scrolling beside the album art on the closed island (ClosedMusicLayout).
+    static let closedSongTitleEnabled = Key<Bool>("closedSongTitleEnabled", default: true)
     /// How long the song name stays under the closed island on a track change, in seconds
     /// (SongPeekTiming: 1–10, 0.5 steps). The volume and brightness HUD do not read it.
     static let songPeekDuration = Key<Double>("songPeekDuration", default: SongPeekTiming.defaultSeconds)
