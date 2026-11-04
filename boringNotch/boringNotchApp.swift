@@ -251,6 +251,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ClipboardHistoryModel.shared.activate()
         PrivacyIndicatorMonitor.shared.start()
         EdgeGlowAudioCoordinator.shared.start()
+        ScreenEdgeGlowController.shared.start()
         // F16: new screenshots land on the shelf; briefly show the shelf
         // without taking focus, and put the notch back unless the user is in it.
         ScreenshotShelfController.shared.start { [weak self] in

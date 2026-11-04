@@ -9793,6 +9793,86 @@
         }
       }
     },
+    "edgeGlow.settings.screenEdge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screen edge light"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekran kenarı ışığı"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.screenEdge.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The same light also runs out from the notch along the edges of the screen, in the same colour and at the same moments. It is hidden while an app is full screen and never gets in the way of clicks."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aynı ışık çentikten ekranın kenarlarına da akar; aynı renkte, aynı anlarda. Bir uygulama tam ekrandayken gizlenir ve tıklamalara hiç engel olmaz."
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.screenEdge.thickness" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edge thickness"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kenar kalınlığı"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.screenEdge.thickness.value" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d points"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d nokta"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.screenEdge.intensity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edge intensity"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kenar yoğunluğu"
+          }
+        }
+      }
+    },
     "critter.settings.header" : {
       "localizations" : {
         "en" : {

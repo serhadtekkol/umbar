@@ -184,7 +184,7 @@ struct EdgeGlow: ViewModifier {
     }
 
     /// The system HUDs umbar replaces; music and battery peeks have their own island.
-    private static let hudTypes: Set<SneakContentType> = [.volume, .brightness, .backlight, .mic]
+    static let hudTypes: Set<SneakContentType> = [.volume, .brightness, .backlight, .mic]
 
     private func retarget(_ new: EdgeGlowState?) {
         envelope.update(to: new, now: Date(), reduceMotion: reduceMotion, audio: audio.brightness)
@@ -265,7 +265,7 @@ struct EdgeGlow: ViewModifier {
         }
     }
 
-    private static func albumTint(_ color: NSColor) -> EdgeGlowRGB {
+    static func albumTint(_ color: NSColor) -> EdgeGlowRGB {
         guard let rgb = color.usingColorSpace(.sRGB) else { return EdgeGlowRGB(red: 0.96, green: 0.96, blue: 0.97) }
         let lifted = EdgeGlowPolicy.albumGlow(
             red: Double(rgb.redComponent), green: Double(rgb.greenComponent), blue: Double(rgb.blueComponent))
@@ -315,6 +315,9 @@ struct EdgeGlowSettingsSection: View {
     @Default(.edgeGlowAudioReactive) private var audioReactive
     @Default(.edgeGlowColorMode) private var colorMode
     @Default(.edgeGlowFixedColor) private var fixedColor
+    @Default(.screenEdgeGlowEnabled) private var screenEdgeEnabled
+    @Default(.screenEdgeGlowThickness) private var screenEdgeThickness
+    @Default(.screenEdgeGlowIntensity) private var screenEdgeIntensity
     /// Mirrored, not observed: observing the monitor would redraw Settings
     /// with every audio sample.
     @State private var authorization = AudioLevelMonitor.Authorization.unknown
@@ -372,6 +375,8 @@ struct EdgeGlowSettingsSection: View {
             audioToggle
             audioStatus
 
+            screenEdge
+
             DisclosureGroup(String(localized: "edgeGlow.settings.eventColors", defaultValue: "Event colours"),
                             isExpanded: $showsEventColors) {
                 ForEach(EdgeGlowEventColor.allCases) { EdgeGlowEventColorRow(event: $0) }
@@ -395,6 +400,35 @@ struct EdgeGlowSettingsSection: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .onReceive(AudioLevelMonitor.shared.$authorization) { authorization = $0 }
+    }
+
+    /// The rim along the screen's edges (ScreenEdgeGlow): the same glow,
+    /// its own width and strength.
+    @ViewBuilder private var screenEdge: some View {
+        Defaults.Toggle(key: .screenEdgeGlowEnabled) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(String(localized: "edgeGlow.settings.screenEdge", defaultValue: "Screen edge light"))
+                Text(String(localized: "edgeGlow.settings.screenEdge.detail",
+                            defaultValue: "The same light also runs out from the notch along the edges of the screen, in the same colour and at the same moments. It is hidden while an app is full screen and never gets in the way of clicks."))
+                    .font(.subheadline)
+                    .foregroundStyle(permissionMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .disabled(!enabled)
+        LabeledContent(String(localized: "edgeGlow.settings.screenEdge.thickness", defaultValue: "Edge thickness")) {
+            Slider(value: $screenEdgeThickness, in: ScreenEdgeGlowPolicy.thicknessRange)
+                .frame(maxWidth: 200)
+                .accessibilityValue(Text(String(format: String(localized: "edgeGlow.settings.screenEdge.thickness.value",
+                                                               defaultValue: "%d points"), Int(screenEdgeThickness.rounded()))))
+        }
+        .disabled(!enabled || !screenEdgeEnabled)
+        LabeledContent(String(localized: "edgeGlow.settings.screenEdge.intensity", defaultValue: "Edge intensity")) {
+            Slider(value: $screenEdgeIntensity, in: ScreenEdgeGlowPolicy.intensityRange)
+                .frame(maxWidth: 200)
+                .accessibilityValue(Text(screenEdgeIntensity, format: .percent.precision(.fractionLength(0))))
+        }
+        .disabled(!enabled || !screenEdgeEnabled)
     }
 
     private var audioToggle: some View {
