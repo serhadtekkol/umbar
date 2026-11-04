@@ -356,6 +356,7 @@
 				HUD/HUDAccessCardPolicy.swift,
 				NetMonitor/NetTrafficMath.swift,
 				MenuBarGeometry/MenuBarCollision.swift,
+				Motion/NotchApproachPolicy.swift,
 				NetMonitor/NetUsageLedger.swift,
 				Pages/CalendarMonth.swift,
 				LiveActivities/DownloadParsing.swift,

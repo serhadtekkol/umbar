@@ -37,6 +37,17 @@ struct ContentView: View {
     /// change it, so it is measured rather than computed.
     @State private var closedHoverFrame: CGRect = .zero
     @State private var clickThrough = NotchClickThrough()
+    @State private var approachMonitor = NotchApproachMonitor()
+    /// The pointer's nearness to the closed island, 0...1 (NotchApproachPolicy).
+    @State private var pointerApproach: CGFloat = 0
+    /// The hover hint's progress on each axis, 0...1. Two values so width
+    /// and depth can run on their own springs (UmbarMotion.hoverHintWiden /
+    /// hoverHintDeepen); see animateHoverHint(to:).
+    @State private var hintWidth: CGFloat = 0
+    @State private var hintDepth: CGFloat = 0
+    /// When the last close finishes moving (system uptime); the hint waits
+    /// for it, see animateHoverHint(to:).
+    @State private var closeSettlesAt: TimeInterval = 0
     @State private var anyDropDebounceTask: Task<Void, Never>?
 
     @State private var gestureProgress: CGFloat = .zero
@@ -58,11 +69,52 @@ struct ContentView: View {
     // Shared interactive spring for the swipe gestures (gestureProgress).
     private let animationSpring = Animation.interactiveSpring(response: 0.38, dampingFraction: 0.8, blendDuration: 0)
 
-    /// The hover hint (design-language §3.7 `motion.hoverHint`): the closed
-    /// island reaches down a few points while the pointer rests on it. Drawn
-    /// by the black shape only, so the measured hover frame does not move.
-    private var hoverHintGrow: CGFloat {
-        (isHovering && vm.notchState == .closed && !reduceMotion) ? UmbarMotion.hoverHintGrow : 0
+    /// The hover hint (design-language §3.7 `motion.hoverHint`) the island
+    /// is heading for: the full hint with the pointer on it, a share of it
+    /// as the pointer nears, none once open or under Reduce Motion (the
+    /// shadow fade is the hint then).
+    private var hoverHintTarget: CGFloat {
+        guard vm.notchState == .closed, !reduceMotion, !coordinator.helloAnimationRunning else { return 0 }
+        return max(isHovering ? 1 : 0, pointerApproach * UmbarMotion.hoverApproachShare)
+    }
+
+    /// The hint's growth is zero whenever the island is not closed, inside
+    /// the same expression: an open turns it to zero in the open
+    /// transaction, so the hint flows into the morph on the open spring
+    /// instead of shrinking back first. Drawn by the black shape only, so
+    /// the measured hover frame does not move.
+    private var hintIsDrawn: CGFloat { vm.notchState == .closed && !reduceMotion ? 1 : 0 }
+    private var hintSide: CGFloat { UmbarMotion.hoverHintSide * hintWidth * hintIsDrawn }
+    private var hintDown: CGFloat { UmbarMotion.hoverHintDown * hintDepth * hintIsDrawn }
+    private var hintRadius: CGFloat { UmbarMotion.hoverHintRadius * hintDepth * hintIsDrawn }
+
+    private func animateHoverHint(to target: CGFloat) {
+        guard vm.notchState == .closed else {
+            // Masked by hintIsDrawn already, so the reset is invisible; with
+            // animations off it cannot touch the open morph, and the next
+            // hover starts from the notch.
+            var reset = Transaction()
+            reset.disablesAnimations = true
+            withTransaction(reset) { hintWidth = 0; hintDepth = 0 }
+            return
+        }
+        // Not while a close is still moving: an animated transaction landing
+        // mid-close hands the island's height the hint's bouncy spring, and
+        // it dips below the notch before settling. The island folds first,
+        // then leans toward a pointer that is still near.
+        let wait = max(0, closeSettlesAt - ProcessInfo.processInfo.systemUptime)
+        DispatchQueue.main.asyncAfter(deadline: .now() + wait) {
+            guard vm.notchState == .closed, target == hoverHintTarget else { return }
+            if target >= hintDepth {
+                withAnimation(UmbarMotion.hoverHintWiden) { hintWidth = target }
+                withAnimation(UmbarMotion.hoverHintDeepen) { hintDepth = target }
+            } else {
+                withAnimation(UmbarMotion.hoverHintRelease) {
+                    hintWidth = target
+                    hintDepth = target
+                }
+            }
+        }
     }
 
     private let extendedHoverPadding: CGFloat = 30
@@ -76,13 +128,14 @@ struct ContentView: View {
                 : cornerRadiusInsets.closed.top
     }
 
+    private var bottomCornerRadius: CGFloat {
+        ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
+            ? cornerRadiusInsets.opened.bottom
+            : cornerRadiusInsets.closed.bottom
+    }
+
     private var currentNotchShape: NotchShape {
-        NotchShape(
-            topCornerRadius: topCornerRadius,
-            bottomCornerRadius: ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
-                ? cornerRadiusInsets.opened.bottom
-                : cornerRadiusInsets.closed.bottom
-        )
+        NotchShape(topCornerRadius: topCornerRadius, bottomCornerRadius: bottomCornerRadius)
     }
 
     private var computedChinWidth: CGFloat {
@@ -132,9 +185,13 @@ struct ContentView: View {
                     // panel is revealed by the island rather than faded over it.
                     .clipShape(currentNotchShape)
                     .background(alignment: .top) {
-                        currentNotchShape
-                            .fill(.black)
-                            .padding(.bottom, -hoverHintGrow)
+                        NotchShape(
+                            topCornerRadius: topCornerRadius,
+                            bottomCornerRadius: bottomCornerRadius + hintRadius
+                        )
+                        .fill(.black)
+                        .padding(.horizontal, -hintSide)
+                        .padding(.bottom, -hintDown)
                     }
                     .overlay(alignment: .top) {
                         Rectangle()
@@ -176,7 +233,11 @@ struct ContentView: View {
                     }
                     .onChange(of: closedHoverFrame, initial: true) { updateClickThrough() }
                     .onChange(of: vm.notchState) { updateClickThrough() }
-                    .onDisappear { clickThrough.stop() }
+                    .onChange(of: hoverHintTarget) { _, target in animateHoverHint(to: target) }
+                    .onDisappear {
+                        clickThrough.stop()
+                        approachMonitor.stop()
+                    }
                     // Innermost wins: an open/close always uses motion.open /
                     // motion.close; the ear spring covers closed-island changes
                     // (music starts, a live strip, a HUD) in a transaction
@@ -230,6 +291,7 @@ struct ContentView: View {
                         } else {
                             hudAccessCard.notchDidClose()
                             stopPointerWatch()
+                            closeSettlesAt = ProcessInfo.processInfo.systemUptime + UmbarMotion.closeSettle
                         }
                         if newState == .closed && isHovering {
                             withAnimation(UmbarMotion.hoverHint(reduce: reduceMotion)) {
@@ -252,6 +314,12 @@ struct ContentView: View {
                         }
                     }
                     .sensoryFeedback(.alignment, trigger: haptics)
+                    #if DEBUG
+                    .onReceive(MotionFrameRenderer.HoverFixture.shared.$hovering.dropFirst()) { hovering in
+                        withAnimation(UmbarMotion.hoverHint(reduce: reduceMotion)) { isHovering = hovering }
+                    }
+                    .onReceive(MotionFrameRenderer.HoverFixture.shared.$approach.dropFirst()) { pointerApproach = $0 }
+                    #endif
                     .contextMenu {
                         Button("Settings") {
                             DispatchQueue.main.async {
@@ -670,6 +738,10 @@ struct ContentView: View {
 
     private func updateClickThrough() {
         clickThrough.update(window: notchWindow, isOpen: vm.notchState == .open, closedRect: closedNotchScreenRect)
+        // The approach lean is the closed island's alone, and only when there
+        // is an island to see (not hidden for a fullscreen app).
+        let leans = vm.notchState == .closed && !reduceMotion && vm.effectiveClosedNotchHeight > 0
+        approachMonitor.update(closedRect: leans ? closedNotchScreenRect : nil) { pointerApproach = $0 }
     }
 
     private func pointerIsOnClosedNotch() -> Bool {

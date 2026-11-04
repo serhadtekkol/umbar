@@ -30,6 +30,11 @@
 //                                the owner's ear shows (LeadingTimeEarPolicy)
 //    timer-net-<state>-<notch>.png     the network ear beside the time ear
 //                                (run with -netMonitorShowInClosedNotch YES)
+//    hover-near-<notch>-<ms>.png the pointer coming within reach of it
+//    hover-in-<notch>-<ms>.png   the pointer arriving on the closed island
+//    hover-open-<notch>-<ms>.png the hovered island opening (hint into morph)
+//    hover-close-<notch>-<ms>.png  and closing, the pointer gone
+//    hover-out-<notch>-<ms>.png  the pointer leaving the closed island
 //
 
 #if DEBUG
@@ -44,12 +49,19 @@ enum MotionFrameRenderer {
         guard let dir = UserDefaults.standard.string(forKey: "UmbarRenderMotion") else { return false }
         let out = URL(fileURLWithPath: dir, isDirectory: true)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-        for notch in [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)] {
+        let notches = [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)]
+        // `-UmbarRenderMotionOnly hover` renders the hover frames alone.
+        if UserDefaults.standard.string(forKey: "UmbarRenderMotionOnly") == "hover" {
+            notches.forEach { renderHover(notch: $0, out: out) }
+            exit(0)
+        }
+        for notch in notches {
             renderTabSwitches(notch: notch, out: out)
             renderIsland(notch: notch, out: out)
             renderBluetoothGlance(notch: notch, out: out)
             renderPrivacyEar(notch: notch, out: out)
             renderTimerEar(notch: notch, out: out)
+            renderHover(notch: notch, out: out)
         }
         renderWiFiConfirm(out: out)
         renderUndoChip(out: out)
@@ -112,6 +124,55 @@ enum MotionFrameRenderer {
             vm.closedNotchSize = notch
             vm.notchSize = notch
         }, name: { out.appendingPathComponent("close-\(tag)-\($0).png") })
+        session.close()
+    }
+
+    // MARK: Hover
+
+    /// Stands in for the pointer: ContentView takes its hover from here in a
+    /// render run, through the same hint animation the real pointer uses.
+    @MainActor final class HoverFixture: ObservableObject {
+        static let shared = HoverFixture()
+        @Published var hovering = false
+        @Published var approach: CGFloat = 0
+    }
+
+    static let hoverTimes: [Double] = [0, 0.03, 0.06, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.45, 0.6]
+
+    /// The closed island, no music, as the pointer arrives, the panel opens
+    /// from the hint, closes, and the pointer passes over and leaves.
+    private static func renderHover(notch: CGSize, out: URL) {
+        let tag = "\(Int(notch.width))x\(Int(notch.height))"
+        let music = MusicManager.shared
+        music.isPlaying = false
+        music.isPlayerIdle = true
+        let fixture = HoverFixture.shared
+        let vm = fixtureViewModel(notch: notch)
+        vm.notchSize = notch
+        BoringViewCoordinator.shared.currentView = .home
+        let root = ContentView()
+            .environmentObject(vm)
+            .frame(width: windowSize.width, height: windowSize.height, alignment: .top)
+            .background(Color(white: 0.85))
+        let session = Session(root, size: NSSize(width: windowSize.width, height: windowSize.height))
+        session.play(times: hoverTimes, change: { fixture.approach = 1 },
+                     name: { out.appendingPathComponent("hover-near-\(tag)-\($0).png") })
+        session.play(times: hoverTimes, change: { fixture.hovering = true },
+                     name: { out.appendingPathComponent("hover-in-\(tag)-\($0).png") })
+        session.play(times: hoverTimes, change: { withAnimation(UmbarMotion.open()) { vm.open() } },
+                     name: { out.appendingPathComponent("hover-open-\(tag)-\($0).png") })
+        session.play(times: hoverTimes, change: {
+            fixture.hovering = false
+            vm.close()
+            vm.closedNotchSize = notch
+            vm.notchSize = notch
+        }, name: { out.appendingPathComponent("hover-close-\(tag)-\($0).png") })
+        fixture.hovering = true
+        RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+        session.play(times: hoverTimes, change: {
+            fixture.hovering = false
+            fixture.approach = 0
+        }, name: { out.appendingPathComponent("hover-out-\(tag)-\($0).png") })
         session.close()
     }
 
@@ -371,10 +432,10 @@ enum MotionFrameRenderer {
             RunLoop.main.run(until: Date().addingTimeInterval(0.6))
         }
 
-        func play(change: () -> Void, name: (Int) -> URL) {
+        func play(times: [Double] = MotionFrameRenderer.islandTimes, change: () -> Void, name: (Int) -> URL) {
             change()
             let start = Date()
-            for t in MotionFrameRenderer.islandTimes {
+            for t in times {
                 RunLoop.main.run(until: start.addingTimeInterval(t))
                 MotionFrameRenderer.capture(host, to: name(Int(t * 1000)))
             }
@@ -384,7 +445,7 @@ enum MotionFrameRenderer {
         func close() { window.orderOut(nil) }
     }
 
-    static let islandTimes: [Double] = [0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4]
+    nonisolated static let islandTimes: [Double] = [0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4]
 
 
     /// Hosts `root`, lets it settle, applies `change` and captures a frame
