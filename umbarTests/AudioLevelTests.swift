@@ -367,6 +367,43 @@ struct AudioTapTargetingTests {
             ownBundleID: "com.serhadbahadir.umbar") == .global)
     }
 
+    @Test func neverFallsBackToGlobalWhileTheMicrophoneIsInUse() {
+        let call = C(objectID: 6, bundleID: "us.zoom.xos", isRunningOutput: true, isRunningInput: true)
+        let quietPlayer = C(objectID: 3, bundleID: "com.spotify.client", isRunningOutput: false)
+        #expect(AudioTapTargeting.target(nowPlaying: "com.spotify.client", candidates: [quietPlayer, call], ownBundleID: nil) == nil)
+        #expect(AudioTapTargeting.target(nowPlaying: nil, candidates: [call], ownBundleID: nil) == nil)
+        // A capturing process without a bundle ID still counts.
+        let anonymous = C(objectID: 8, bundleID: nil, isRunningOutput: false, isRunningInput: true)
+        #expect(AudioTapTargeting.target(nowPlaying: nil, candidates: [anonymous], ownBundleID: nil) == nil)
+    }
+
+    @Test func perAppTapIsStillAllowedWhileTheMicrophoneIsInUse() {
+        let candidates = [
+            C(objectID: 3, bundleID: "com.spotify.client", isRunningOutput: true),
+            C(objectID: 6, bundleID: "us.zoom.xos", isRunningOutput: true, isRunningInput: true),
+        ]
+        #expect(AudioTapTargeting.target(nowPlaying: "com.spotify.client", candidates: candidates, ownBundleID: nil) == .processes([3]))
+    }
+
+    @Test func umbarsOwnTapDoesNotCountAsMicrophoneUse() {
+        // The live tap shows up as input on umbar's process object; it
+        // must not make the global fallback switch itself off.
+        let own = C(objectID: 4, bundleID: "com.serhadbahadir.umbar", isRunningOutput: false, isRunningInput: true)
+        #expect(AudioTapTargeting.target(
+            nowPlaying: nil, candidates: [own],
+            ownBundleID: "com.serhadbahadir.umbar") == .global)
+    }
+
+    @Test func microphoneTearsDownAGlobalTapButKeepsAPerAppOne() {
+        let app = "com.spotify.client"
+        #expect(AudioTapTargeting.shouldRebuild(current: .global, currentApp: app, proposed: nil, app: app))
+        #expect(AudioTapTargeting.shouldRebuild(current: .global, currentApp: nil, proposed: nil, app: nil))
+        #expect(!AudioTapTargeting.shouldRebuild(current: .processes([3]), currentApp: app, proposed: nil, app: app))
+        // Another app with no per-app target during a call: the old app's
+        // tap goes.
+        #expect(AudioTapTargeting.shouldRebuild(current: .processes([3]), currentApp: app, proposed: nil, app: "com.apple.Music"))
+    }
+
     @Test func sameAppTapOnlyGrows() {
         let app = "com.google.Chrome"
         // A helper went quiet or the app briefly had none: keep the tap.

@@ -12,8 +12,11 @@
 //  How it hears: a Core Audio process tap on the now-playing app's
 //  processes (MusicManager's bundle ID, helpers included; see
 //  AudioTapTargeting), or on all system output except umbar when that app
-//  has no outputting process. The tap is unmuted (the user still hears
-//  everything) and private (no device shows up anywhere).
+//  has no outputting process. The all-system fallback is never used while
+//  another app has the microphone open (a call or a recording would be
+//  measured along with the music); capture then waits. The tap is unmuted
+//  (the user still hears everything) and private (no device shows up
+//  anywhere).
 //
 //  When it runs: only between setActive(true) and setActive(false), and
 //  only while MusicManager reports playback. A pause tears the tap down
@@ -159,6 +162,21 @@ final class AudioLevelMonitor: ObservableObject {
         // starting or stopping audio may move the now-playing app's sound.
         addHALListener(kAudioHardwarePropertyDefaultOutputDevice)
         addHALListener(kAudioHardwarePropertyProcessObjectList)
+        // A process starting its microphone flips a per-process property,
+        // which neither listener above reports; the retarget timer would
+        // catch it within a few seconds. The privacy indicator already
+        // listens to exactly that property, so when it is enabled its
+        // change triggers a re-check at once. It is only a trigger: the
+        // decision reads the HAL itself, so it holds with the indicator off.
+        PrivacyIndicatorMonitor.shared.$usage
+            .map(\.microphone)
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                MainActor.assumeIsolated { AudioLevelMonitor.shared.reconcile() }
+            }
+            .store(in: &musicCancellables)
 
         let retarget = Timer(timeInterval: Self.retargetInterval, repeats: true) { _ in
             MainActor.assumeIsolated { AudioLevelMonitor.shared.reconcile() }
@@ -301,6 +319,9 @@ private final class AudioCaptureEngine: @unchecked Sendable {
     /// app, the target or the output device changes.
     private var lastFailure: (target: AudioTapTargeting.Target, output: String?, at: Date)?
     private static let retryDelay: TimeInterval = 30
+    /// True while capture is held back by the microphone rule; only so the
+    /// log says it once, not every few seconds.
+    private var withheld = false
     private static let log = Logger(subsystem: "umbar", category: "AudioLevel")
 
     func apply(
@@ -315,6 +336,7 @@ private final class AudioCaptureEngine: @unchecked Sendable {
                 session = nil
                 sessionApp = nil
                 lastFailure = nil
+                withheld = false
                 completion(nil, nil)
                 return
             }
@@ -335,6 +357,15 @@ private final class AudioCaptureEngine: @unchecked Sendable {
             }
             session?.invalidate()
             session = nil
+            guard let proposed else {
+                // Microphone in use and no per-app tap possible.
+                if !withheld { Self.log.notice("microphone in use; not tapping all system output") }
+                withheld = true
+                sessionApp = nil
+                completion(nil, nil)
+                return
+            }
+            withheld = false
             if let lastFailure, lastFailure.target == proposed, lastFailure.output == outputUID,
                Date().timeIntervalSince(lastFailure.at) < Self.retryDelay {
                 completion(nil, nil)

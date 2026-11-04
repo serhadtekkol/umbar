@@ -234,7 +234,8 @@ enum AudioProcessList {
             AudioTapTargeting.Candidate(
                 objectID: process.id,
                 bundleID: (try? process.bundleID) ?? nil,
-                isRunningOutput: (try? process.isRunningOutput) ?? false)
+                isRunningOutput: (try? process.isRunningOutput) ?? false,
+                isRunningInput: (try? process.isRunningInput) ?? false)
         }
     }
 }
