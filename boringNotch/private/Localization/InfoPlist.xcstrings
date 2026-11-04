@@ -91,6 +91,24 @@
         }
       }
     },
+    "NSAudioCaptureUsageDescription": {
+      "comment": "System audio capture prompt: the edge glow's audio-reactive mode. Only loudness is computed, in memory.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar listens to the music you play so the glow around the notch can move with it. Only its loudness is measured, in memory; nothing is recorded, saved or sent anywhere."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, notch çevresindeki ışığın müzikle birlikte hareket edebilmesi için çaldığınız müziği dinler. Yalnızca ses yüksekliği bellekte ölçülür; hiçbir şey kaydedilmez, saklanmaz ya da bir yere gönderilmez."
+          }
+        }
+      }
+    },
     "NSBluetoothAlwaysUsageDescription": {
       "comment": "Bluetooth permission prompt: quick toggles list paired devices.",
       "extractionState": "manual",
