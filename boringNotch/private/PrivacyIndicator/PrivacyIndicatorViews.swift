@@ -167,7 +167,7 @@ struct PrivacyIndicatorSettingsSection: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(String(localized: "privacy.settings.enabled", defaultValue: "Show when the camera or microphone is in use"))
                     Text(String(localized: "privacy.settings.enabled.detail",
-                                defaultValue: "A dot beside the closed notch, and on the Now page the apps using the microphone. macOS does not tell other apps which one uses the camera, so the camera is shown without a name. umbar never turns either on."))
+                                defaultValue: "A dot beside the closed notch, and on the Now page the apps using the microphone. macOS does not tell other apps which one uses the camera, so the camera is shown without a name. umbar never turns the microphone on; the camera only for the mirror, when you tap it. While the mirror is on, the camera dot is hidden."))
                         .font(.subheadline)
                         .foregroundStyle(permissionMutedText)
                         .fixedSize(horizontal: false, vertical: true)
