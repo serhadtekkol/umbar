@@ -83,10 +83,10 @@ enum UmbarMotion {
 
     /// The liquid drip under the closed island (NotchDripPolicy, DripLayer).
     /// Reach is wider than the hint's so the drip starts before the hint
-    /// leans; the inset keeps it on the flat edge past the 14 pt bottom
-    /// radius plus the hint's 3.
+    /// leans; the inset keeps the drip's whole root (dripLook.rootHalfWidth) on
+    /// the flat edge past the 14 pt bottom radius plus the hint's 3.
     static let drip = NotchDripTuning(
-        reach: 48, near: 14, inset: 22,
+        reach: 48, near: 14, inset: 42,
         stretchResponse: 0.42, stretchDamping: 0.55,
         retractResponse: 0.3, retractDamping: 0.9,
         followResponse: 0.28, followDamping: 0.82,
@@ -95,14 +95,15 @@ enum UmbarMotion {
         dropSpeed: 1.5, gravity: 34, fall: 2.6,
         rippleLife: 0.6, maxDrops: 3
     )
-    /// Points below the edge at full pull (the tip), and the bulb's radius
-    /// at no and full length.
-    static let dripMaxLength: CGFloat = 20
-    static let dripBulbRadius: ClosedRange<CGFloat> = 3...5.5
+    /// The drip's size, for a 2x screen: at a 20 pt length, a 3...5.5 bulb
+    /// and a root barely wider than it, it read as a hairline on a real
+    /// notch. Now a 40...54 pt sag off the edge into a neck that keeps 0.88
+    /// of the bulb's 8...12 radius, thinning only as it pinches off.
+    static let dripLook = NotchDripLook(
+        maxLength: 32, bulbRadius: 8...12, rootHalfWidth: 20...27, neck: 0.88, lean: 6
+    )
     /// Gooey merge: the blur the alpha threshold cuts at half coverage.
-    static let dripGoo: CGFloat = 2.2
-    /// How far the bulb trails the root while it slides, at most.
-    static let dripLean: CGFloat = 4
+    static let dripGoo: CGFloat = 3.4
     /// The drip leaving when the panel opens over it.
     static let dripOut: Animation = .easeIn(duration: 0.1)
 

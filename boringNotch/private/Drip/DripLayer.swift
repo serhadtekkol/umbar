@@ -110,16 +110,13 @@ enum DripArt {
     /// layer only, clipped away) so the blur has a straight edge to merge into.
     static let top: CGFloat = 12
     static var height: CGFloat {
-        top + UmbarMotion.dripMaxLength * (UmbarMotion.drip.fall + 0.6)
+        top + UmbarMotion.dripLook.maxLength * (UmbarMotion.drip.fall + 0.6)
     }
 
     static func draw(_ sim: NotchDripSim, in context: inout GraphicsContext, size: CGSize) {
         let edge = top
-        let unit = UmbarMotion.dripMaxLength
-        let radii = UmbarMotion.dripBulbRadius
-        func radius(_ length: CGFloat) -> CGFloat {
-            radii.lowerBound + (radii.upperBound - radii.lowerBound) * min(max(length, 0), 1)
-        }
+        let look = UmbarMotion.dripLook
+        let unit = look.maxLength
 
         // Nothing above the edge, and nothing past the flat part of it:
         // half a point up seals the seam against the island's antialiased
@@ -134,14 +131,15 @@ enum DripArt {
             let t = min(max(ripple.age / life, 0), 1)
             let e = 1 - pow(1 - t, 3)
             let fade = 1 - t
-            let rx = 4 + (8 + 12 * ripple.size) * e
-            let ry = rx * 0.32
+            // Scaled with the drip: about as wide as its root at full size.
+            let rx = 8 + (14 + 22 * ripple.size) * e
+            let ry = rx * 0.3
             let center = CGPoint(x: ripple.x * size.width, y: edge)
             let dark = Path(ellipseIn: CGRect(x: center.x - rx, y: center.y - ry, width: 2 * rx, height: 2 * ry))
-            context.stroke(dark, with: .color(.black.opacity(0.5 * fade)), lineWidth: 1.2)
-            let light = Path(ellipseIn: CGRect(x: center.x - rx - 1.2, y: center.y - ry - 0.8,
-                                               width: 2 * (rx + 1.2), height: 2 * (ry + 0.8)))
-            context.stroke(light, with: .color(.white.opacity(0.28 * fade)), lineWidth: 0.8)
+            context.stroke(dark, with: .color(.black.opacity(0.5 * fade)), lineWidth: 1.6)
+            let light = Path(ellipseIn: CGRect(x: center.x - rx - 1.6, y: center.y - ry - 1,
+                                               width: 2 * (rx + 1.6), height: 2 * (ry + 1)))
+            context.stroke(light, with: .color(.white.opacity(0.28 * fade)), lineWidth: 1)
         }
 
         context.drawLayer { goo in
@@ -154,23 +152,27 @@ enum DripArt {
                 // A point short of the edge, so its own cut never shows
                 // as a line under the island.
                 layer.fill(Path(CGRect(x: 0, y: 0, width: size.width, height: edge - 1)), with: .color(.black))
-                if sim.length > 0.002 {
-                    let rootX = sim.x * size.width
-                    let lean = min(max(-sim.xVelocity * size.width * 0.05, -UmbarMotion.dripLean), UmbarMotion.dripLean)
-                    let r = radius(sim.length)
-                    let tip = edge + sim.length * unit
-                    let bulb = CGPoint(x: rootX + lean * sim.length, y: max(edge - r * 0.6, tip - r))
-                    // Neck: wide at the root, narrowing to the bulb.
-                    let rootHalf = r + 3
-                    let neckHalf = r * (0.8 - 0.45 * min(sim.length, 1))
+                if let shape = NotchDripShape(sim, width: size.width, flat: flat, look: look) {
+                    // A wide sag at the root that flares down into a thick
+                    // neck and the bulb, as liquid hangs off an edge.
+                    let rootX = shape.rootX, rootHalf = shape.rootHalf, neckHalf = shape.neckHalf
+                    let r = shape.radius
+                    let bulb = CGPoint(x: shape.bulb.x, y: edge + shape.bulb.y)
+                    let depth = bulb.y - edge
+                    // Where each side leaves the edge's flat: never inside
+                    // the neck, or a leaning bulb hooks the trailing side.
+                    let rightShoulder = max(rootX + rootHalf * 0.5, bulb.x + neckHalf)
+                    let leftShoulder = min(rootX - rootHalf * 0.5, bulb.x - neckHalf)
                     var neck = Path()
                     neck.move(to: CGPoint(x: rootX - rootHalf, y: edge - 2))
                     neck.addLine(to: CGPoint(x: rootX + rootHalf, y: edge - 2))
-                    neck.addQuadCurve(to: CGPoint(x: bulb.x + neckHalf, y: bulb.y),
-                                      control: CGPoint(x: rootX + neckHalf, y: edge + (bulb.y - edge) * 0.4))
+                    neck.addCurve(to: CGPoint(x: bulb.x + neckHalf, y: bulb.y),
+                                  control1: CGPoint(x: rightShoulder, y: edge + depth * 0.12),
+                                  control2: CGPoint(x: bulb.x + neckHalf, y: edge + depth * 0.45))
                     neck.addLine(to: CGPoint(x: bulb.x - neckHalf, y: bulb.y))
-                    neck.addQuadCurve(to: CGPoint(x: rootX - rootHalf, y: edge - 2),
-                                      control: CGPoint(x: rootX - neckHalf, y: edge + (bulb.y - edge) * 0.4))
+                    neck.addCurve(to: CGPoint(x: rootX - rootHalf, y: edge - 2),
+                                  control1: CGPoint(x: bulb.x - neckHalf, y: edge + depth * 0.45),
+                                  control2: CGPoint(x: leftShoulder, y: edge + depth * 0.12))
                     layer.fill(neck, with: .color(.black))
                     layer.fill(Path(ellipseIn: CGRect(x: bulb.x - r, y: bulb.y - r, width: 2 * r, height: 2 * r)),
                                with: .color(.black))
@@ -178,7 +180,7 @@ enum DripArt {
                 for drop in sim.drops {
                     let progress = min(max(drop.y / UmbarMotion.drip.fall, 0), 1)
                     // Shrinks as it falls, and away to nothing at the end.
-                    let r = radius(drop.size) * (1 - 0.45 * progress) * min(1, (1 - progress) * 4)
+                    let r = look.bulbRadius(at: drop.size) * (1 - 0.45 * progress) * min(1, (1 - progress) * 4)
                     guard r > 0.3 else { continue }
                     let center = CGPoint(x: drop.x * size.width, y: edge + drop.y * unit - r)
                     layer.fill(Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: 2 * r, height: 2 * r)),

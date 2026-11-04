@@ -209,3 +209,52 @@ struct NotchDripSim: Equatable {
         velocity = CGFloat(v)
     }
 }
+
+/// The drip's size in points, for drawing. The app's values are
+/// UmbarMotion.dripLook; tests build their own.
+struct NotchDripLook: Equatable {
+    /// Points below the edge at full pull (the tip).
+    var maxLength: CGFloat
+    /// The bulb's radius at no and full length.
+    var bulbRadius: ClosedRange<CGFloat>
+    /// Half the width where the drip leaves the edge, at no and full length.
+    var rootHalfWidth: ClosedRange<CGFloat>
+    /// The neck's half width as a share of the bulb's radius.
+    var neck: CGFloat
+    /// How far the bulb trails the root while it slides, at most.
+    var lean: CGFloat
+
+    func bulbRadius(at length: CGFloat) -> CGFloat { Self.lerp(bulbRadius, length) }
+
+    static func lerp(_ range: ClosedRange<CGFloat>, _ t: CGFloat) -> CGFloat {
+        range.lowerBound + (range.upperBound - range.lowerBound) * min(max(t, 0), 1)
+    }
+}
+
+/// The hanging drip's outline in points, below an edge at y = 0 running
+/// 0...width, whose flat part starts `flat` in from either end.
+struct NotchDripShape: Equatable {
+    var rootX: CGFloat
+    var rootHalf: CGFloat
+    var neckHalf: CGFloat
+    /// The bulb's center below the edge, and its radius.
+    var bulb: CGPoint
+    var radius: CGFloat
+
+    /// Nil while there is nothing hanging.
+    init?(_ sim: NotchDripSim, width: CGFloat, flat: CGFloat, look: NotchDripLook) {
+        guard sim.length > 0.002 else { return nil }
+        rootX = sim.x * width
+        let lean = min(max(-sim.xVelocity * width * 0.05, -look.lean), look.lean)
+        radius = look.bulbRadius(at: sim.length)
+        let tip = sim.length * look.maxLength
+        bulb = CGPoint(x: rootX + lean * sim.length, y: max(-radius * 0.6, tip - radius))
+        // Never wider than the flat edge either side of it.
+        rootHalf = min(NotchDripLook.lerp(look.rootHalfWidth, sim.length),
+                       max(rootX - flat, 0), max(width - flat - rootX, 0))
+        // Thick while it stretches or draws back slowly; only the pinch's
+        // recoil (lengths per second well below zero) thins it.
+        let pinch = min(max(1 + min(sim.lengthVelocity, 0) * 0.12, 0.35), 1)
+        neckHalf = min(radius * look.neck * pinch, rootHalf)
+    }
+}

@@ -49,7 +49,9 @@ enum DripRenderer {
             .frame(width: windowSize.width, height: height, alignment: .top)
             .background(color)
         let session = MotionFrameRenderer.Session(root, size: NSSize(width: windowSize.width, height: height))
-        let crop = NSRect(x: windowSize.width / 2 - 160, y: 0, width: 320, height: notch.height + 64)
+        // Deep enough for a drop to fall the whole way.
+        let crop = NSRect(x: windowSize.width / 2 - 160, y: 0, width: 320,
+                          height: notch.height + DripArt.height - DripArt.top + 8)
         let fixture = DripFixture.shared
         let hover = MotionFrameRenderer.HoverFixture.shared
         func name(_ scene: String) -> (Int) -> URL {
