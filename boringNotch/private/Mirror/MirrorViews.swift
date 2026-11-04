@@ -62,8 +62,8 @@ struct MirrorTile: View {
             ZStack {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .fill(PageTokens.raised)
-                if state == .live {
-                    live
+                if state.showsCameraPicture {
+                    live.excludedFromScreenCapture()
                 } else {
                     placeholder
                 }

@@ -144,3 +144,22 @@ struct MirrorAccessPolicyTests {
         #expect(!MirrorAccessPolicy.requestsOnEnable(wasEnabled: false, isEnabled: true, access: access))
     }
 }
+
+@Suite("MirrorTileState capture", .timeLimit(.minutes(1)))
+struct MirrorTileCaptureTests {
+    @Test func onlyTheLiveTileShowsTheCameraPicture() {
+        #expect(MirrorTileState.live.showsCameraPicture)
+        for state in [MirrorTileState.idle, .needsAccess, .denied, .unavailable] {
+            #expect(!state.showsCameraPicture)
+        }
+    }
+
+    @Test func aLiveTileKeepsTheWindowOutOfCaptureWhateverTheSetting() {
+        // The tile reports itself as sensitive while it shows the picture;
+        // the user's "hide from screen recording" being off must not matter.
+        #expect(CapturePrivacyPolicy.excludesFromCapture(
+            userHides: false, sensitiveOnScreen: MirrorTileState.live.showsCameraPicture))
+        #expect(!CapturePrivacyPolicy.excludesFromCapture(
+            userHides: false, sensitiveOnScreen: MirrorTileState.idle.showsCameraPicture))
+    }
+}

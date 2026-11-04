@@ -67,6 +67,14 @@ enum MirrorTileState: Equatable, Sendable {
     case unavailable
 }
 
+extension MirrorTileState {
+    /// The tile draws the camera picture. While it does, the notch window
+    /// is kept out of screen shares and recordings (`CapturePrivacy`):
+    /// otherwise an app with Screen Recording access but no camera access
+    /// could read the camera through the mirror (Muhittin M2).
+    var showsCameraPicture: Bool { self == .live }
+}
+
 /// The start/stop state machine. The controller owns one on the main
 /// actor, feeds it every change of `MirrorConditions` and every tap, and
 /// carries out the command it returns. It never starts or stops the
