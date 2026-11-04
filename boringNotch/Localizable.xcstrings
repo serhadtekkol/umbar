@@ -10368,6 +10368,57 @@
           }
         }
       }
+    },
+    "outline.settings.enabled" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thin light around the notch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çentik etrafında ince ışık"
+          }
+        }
+      }
+    },
+    "outline.settings.enabled.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the notch's edge on dark backgrounds."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koyu arka planlarda çentiğin sınırını gösterir."
+          }
+        }
+      }
+    },
+    "outline.settings.strength" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outline strength"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Işık yoğunluğu"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

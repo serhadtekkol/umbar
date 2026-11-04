@@ -263,6 +263,7 @@ struct ContentView: View {
                             notchWidth: vm.closedNotchSize.width, height: vm.effectiveClosedNotchHeight)
                     }
                     // After the ears, so it lights their silhouette too; visual only.
+                    .modifier(NotchOutline())
                     .modifier(EdgeGlow(isOpen: vm.notchState == .open, islandHeight: vm.effectiveClosedNotchHeight))
                     // After the glow, so the glow stays the island's silhouette
                     // and the drip's black sits in front of it. Pinned to the
