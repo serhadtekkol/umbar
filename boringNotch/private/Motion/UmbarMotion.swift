@@ -130,11 +130,18 @@ enum UmbarMotion {
 
     // MARK: Pages and tabs
 
+    /// One page of the open panel replacing another (every tab, Şimdi
+    /// included): the new page slides `pageOffset` in from its tab's side
+    /// while the old one slides out the other way, both fading. A soft
+    /// spring, no visible overshoot, settled by ~0.35 s. Reduce Motion: a
+    /// plain crossfade, nothing moves.
     static func page(reduce: Bool = reduceMotion) -> Animation {
-        reduce ? .easeOut(duration: 0.15) : .spring(response: 0.26, dampingFraction: 0.9)
+        reduce ? .easeInOut(duration: 0.18) : .spring(response: 0.34, dampingFraction: 0.88)
     }
 
-    static let pageOffset: CGFloat = 8
+    /// How far a page travels. 8 pt read as a crossfade on the 800 pt
+    /// panel; 32 pt shows the direction without the page seeming to leave.
+    static let pageOffset: CGFloat = 32
 
     /// The selected-tab capsule moving and the label widening its tab.
     static func tab(reduce: Bool = reduceMotion) -> Animation {
