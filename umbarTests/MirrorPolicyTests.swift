@@ -144,3 +144,130 @@ struct MirrorAccessPolicyTests {
         #expect(!MirrorAccessPolicy.requestsOnEnable(wasEnabled: false, isEnabled: true, access: access))
     }
 }
+
+@Suite("MirrorTileState capture", .timeLimit(.minutes(1)))
+struct MirrorTileCaptureTests {
+    @Test func onlyTheLiveTileShowsTheCameraPicture() {
+        #expect(MirrorTileState.live.showsCameraPicture)
+        for state in [MirrorTileState.idle, .needsAccess, .denied, .unavailable] {
+            #expect(!state.showsCameraPicture)
+        }
+    }
+
+    @Test func aLiveTileKeepsTheWindowOutOfCaptureWhateverTheSetting() {
+        // The tile reports itself as sensitive while it shows the picture;
+        // the user's "hide from screen recording" being off must not matter.
+        #expect(CapturePrivacyPolicy.excludesFromCapture(
+            userHides: false, sensitiveOnScreen: MirrorTileState.live.showsCameraPicture))
+        #expect(!CapturePrivacyPolicy.excludesFromCapture(
+            userHides: false, sensitiveOnScreen: MirrorTileState.idle.showsCameraPicture))
+    }
+}
+
+@Suite("MirrorSession run cap", .timeLimit(.minutes(1)))
+struct MirrorRunCapTests {
+    @Test func theCapStopsTheRunningPreview() {
+        var session = MirrorSession()
+        _ = session.tap(conditions())
+        #expect(session.runTimeElapsed(generation: session.generation) == .stop)
+        #expect(!session.running)
+        // Back to idle: still in front, but it does not restart by itself.
+        #expect(session.update(conditions()) == nil)
+        #expect(session.tileState(conditions()) == .idle)
+    }
+
+    @Test func anEarlierPreviewsCapDoesNotStopALaterOne() {
+        var session = MirrorSession()
+        _ = session.tap(conditions())
+        let first = session.generation
+        _ = session.tap(conditions()) // stop
+        _ = session.tap(conditions()) // start again
+        #expect(session.generation != first)
+        #expect(session.runTimeElapsed(generation: first) == nil)
+        #expect(session.running)
+    }
+
+    @Test func aCapAfterTheStopIsANoOp() {
+        var session = MirrorSession()
+        _ = session.tap(conditions())
+        let generation = session.generation
+        _ = session.update(conditions(visible: false))
+        #expect(session.runTimeElapsed(generation: generation) == nil)
+    }
+
+    @Test func theCapIsFiveMinutes() {
+        #expect(MirrorSession.maxRunDuration == 300)
+    }
+}
+
+@Suite("MirrorTileOwners", .timeLimit(.minutes(1)))
+struct MirrorTileOwnersTests {
+    private final class Panel {}
+
+    @Test func aRemovedOwnerStopsTheCamera() {
+        // Muhittin L3: the external display's panel had the live tile and
+        // its window was closed without onDisappear.
+        let external = Panel()
+        var owners = MirrorTileOwners()
+        var session = MirrorSession()
+        let added = owners.set(true, for: ObjectIdentifier(external))
+        #expect(added)
+        _ = session.tap(conditions(visible: owners.anyVisible))
+        #expect(session.running)
+        let removed = owners.remove(ObjectIdentifier(external))
+        #expect(removed)
+        #expect(session.update(conditions(visible: owners.anyVisible)) == .stop)
+    }
+
+    @Test func anotherScreensTileKeepsItVisible() {
+        let builtIn = Panel(), external = Panel()
+        var owners = MirrorTileOwners()
+        _ = owners.set(true, for: ObjectIdentifier(builtIn))
+        _ = owners.set(true, for: ObjectIdentifier(external))
+        _ = owners.remove(ObjectIdentifier(external))
+        #expect(owners.anyVisible)
+    }
+
+    @Test func repeatsAndUnknownOwnersChangeNothing() {
+        let panel = Panel(), stranger = Panel()
+        var owners = MirrorTileOwners()
+        let added = owners.set(true, for: ObjectIdentifier(panel))
+        #expect(added)
+        let addedAgain = owners.set(true, for: ObjectIdentifier(panel))
+        #expect(!addedAgain)
+        let removedStranger = owners.remove(ObjectIdentifier(stranger))
+        #expect(!removedStranger)
+        let removed = owners.remove(ObjectIdentifier(panel))
+        #expect(removed)
+        let removedAgain = owners.remove(ObjectIdentifier(panel))
+        #expect(!removedAgain)
+        #expect(!owners.anyVisible)
+    }
+}
+
+@Suite("MirrorRunReason", .timeLimit(.minutes(1)))
+struct MirrorRunReasonTests {
+    @Test(arguments: [
+        (conditions(enabled: false, present: false), MirrorRunReason.disabled),
+        (conditions(visible: false, present: false), .away),
+        (conditions(visible: false), .hidden),
+        (conditions(access: .denied), .denied),
+        (conditions(available: false), .unplug),
+        (conditions(), .tap),
+    ])
+    func stopNamesTheFirstFailingCondition(_ lost: MirrorConditions, _ reason: MirrorRunReason) {
+        #expect(MirrorRunReason.stop(after: lost) == reason)
+    }
+
+    @Test func everyStopFromUpdateHasAReasonOtherThanTap() {
+        // A stop from `update` is never the user's tap; that path passes
+        // `.tap` itself. Guards the log against "tap" hiding a real cause.
+        for lost in [conditions(enabled: false), conditions(present: false), conditions(visible: false),
+                     conditions(access: .denied), conditions(available: false)] {
+            var session = MirrorSession()
+            _ = session.tap(conditions())
+            #expect(session.update(lost) == .stop)
+            #expect(MirrorRunReason.stop(after: lost) != .tap)
+        }
+    }
+}

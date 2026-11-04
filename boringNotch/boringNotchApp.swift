@@ -111,10 +111,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 NotchSpaceManager.shared.notchSpace.windows.remove(window)
             }
             windows.removeAll()
+            viewModels.values.forEach { MirrorCamera.shared.panelWentAway($0) }
             viewModels.removeAll()
         } else if let window = window {
             window.close()
             NotchSpaceManager.shared.notchSpace.windows.remove(window)
+            MirrorCamera.shared.panelWentAway(vm)
             if let obs = windowScreenDidChangeObserver {
                 NotificationCenter.default.removeObserver(obs)
                 windowScreenDidChangeObserver = nil
@@ -426,7 +428,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     window.close()
                     NotchSpaceManager.shared.notchSpace.windows.remove(window)
                     windows.removeValue(forKey: uuid)
-                    viewModels.removeValue(forKey: uuid)
+                    // Closing the window may not run the tile's
+                    // onDisappear; without this the camera could keep
+                    // running for a display that is gone (Muhittin L3).
+                    if let viewModel = viewModels.removeValue(forKey: uuid) {
+                        MirrorCamera.shared.panelWentAway(viewModel)
+                    }
                 }
             }
 

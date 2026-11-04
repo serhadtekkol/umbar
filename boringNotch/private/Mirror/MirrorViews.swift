@@ -30,13 +30,13 @@ struct MirrorTileLive: View {
         MirrorTile(state: camera.tileState, previewLayer: camera.previewLayer, onTap: camera.tap)
             .onAppear { onScreen = true }
             .onChange(of: visible, initial: true) { _, now in
-                camera.setTileVisible(now, owner: ObjectIdentifier(vm))
+                camera.setTileVisible(now, owner: vm)
             }
             // Told directly, not through `visible`: a view that is gone may
             // not get its onChange.
             .onDisappear {
                 onScreen = false
-                camera.setTileVisible(false, owner: ObjectIdentifier(vm))
+                camera.setTileVisible(false, owner: vm)
             }
     }
 }
@@ -62,8 +62,8 @@ struct MirrorTile: View {
             ZStack {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .fill(PageTokens.raised)
-                if state == .live {
-                    live
+                if state.showsCameraPicture {
+                    live.excludedFromScreenCapture()
                 } else {
                     placeholder
                 }

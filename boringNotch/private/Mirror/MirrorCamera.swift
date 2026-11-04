@@ -50,7 +50,7 @@ final class MirrorCamera: ObservableObject {
     private var session = MirrorSession()
     private var cameraAvailable = false
     /// Tiles on screen, one per display's panel.
-    private var visibleTiles: Set<AnyHashable> = []
+    private var tiles = MirrorTileOwners()
     private var userPresent = true
 
     private var capture: MirrorCapture?
@@ -59,6 +59,9 @@ final class MirrorCamera: ObservableObject {
     private var subscriptions: Set<AnyCancellable> = []
     private var enabledSubscription: AnyCancellable?
     private var accessRequestInFlight = false
+    private var runCap: Task<Void, Never>?
+    /// The privacy indicator's claim token for the latest start.
+    private var claimToken: UInt64 = 0
 
     private init() {}
 
@@ -88,15 +91,20 @@ final class MirrorCamera: ObservableObject {
         }
     }
 
-    /// A tile appeared on, or left, an open panel's Şimdi page.
-    func setTileVisible(_ visible: Bool, owner: AnyHashable) {
-        let changed = visible ? visibleTiles.insert(owner).inserted : visibleTiles.remove(owner) != nil
-        if changed { apply() }
+    /// A tile appeared on, or left, the open Şimdi page of `owner`'s panel.
+    func setTileVisible(_ visible: Bool, owner: BoringViewModel) {
+        if tiles.set(visible, for: ObjectIdentifier(owner)) { apply() }
+    }
+
+    /// `owner`'s notch window is being closed (its display went away, or
+    /// "show on all displays" changed). Its tile may never see onDisappear.
+    func panelWentAway(_ owner: BoringViewModel) {
+        if tiles.remove(ObjectIdentifier(owner)) { apply() }
     }
 
     func tap() {
         guard let command = session.tap(conditions) else { return }
-        perform(command)
+        perform(command, reason: .tap)
         refreshTile()
     }
 
@@ -154,9 +162,8 @@ final class MirrorCamera: ObservableObject {
         // away): stop rather than silently switching to another camera.
         if session.running, let current = capture?.currentDeviceID,
            !devices.contains(where: { $0.uniqueID == current }) {
-            log.notice("mirror: camera disconnected")
             session.sessionEnded()
-            stopCapture()
+            stopCapture(reason: .unplug)
         }
         apply()
     }
@@ -165,12 +172,17 @@ final class MirrorCamera: ObservableObject {
 
     private var conditions: MirrorConditions {
         MirrorConditions(enabled: Defaults[.mirrorEnabled], access: access,
-                         cameraAvailable: cameraAvailable, tileVisible: !visibleTiles.isEmpty,
+                         cameraAvailable: cameraAvailable, tileVisible: tiles.anyVisible,
                          userPresent: userPresent)
     }
 
     private func apply() {
-        if let command = session.update(conditions) { perform(command) }
+        let conditions = self.conditions
+        if let command = session.update(conditions) {
+            // `update` starts only a preview that was waiting for the
+            // prompt's answer; every other start comes from `tap`.
+            perform(command, reason: command == .start ? .accessGranted : .stop(after: conditions))
+        }
         refreshTile()
     }
 
@@ -179,12 +191,30 @@ final class MirrorCamera: ObservableObject {
         if state != tileState { tileState = state }
     }
 
-    private func perform(_ command: MirrorCommand) {
+    private func perform(_ command: MirrorCommand, reason: MirrorRunReason) {
         switch command {
-        case .start: startCapture()
-        case .stop: stopCapture()
+        case .start:
+            startCapture(reason: reason)
+            scheduleRunCap()
+        case .stop:
+            runCap?.cancel()
+            stopCapture(reason: reason)
         case .requestAccess: requestAccess()
         case .openPrivacySettings: Self.openPrivacySettings()
+        }
+    }
+
+    /// MirrorPolicy rule 4. A sleep, not a deadline compared with the
+    /// wall clock: a clock change cannot extend it.
+    private func scheduleRunCap() {
+        runCap?.cancel()
+        let generation = session.generation
+        runCap = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(MirrorSession.maxRunDuration))
+            guard !Task.isCancelled, let self,
+                  let command = self.session.runTimeElapsed(generation: generation) else { return }
+            self.perform(command, reason: .timeLimit)
+            self.refreshTile()
         }
     }
 
@@ -219,7 +249,7 @@ final class MirrorCamera: ObservableObject {
 
     // MARK: Capture
 
-    private func startCapture() {
+    private func startCapture(reason: MirrorRunReason) {
         // The user's chosen camera (Control Centre > Video Effects, or a
         // Continuity iPhone that was picked), else the first one listed.
         guard let device = AVCaptureDevice.systemPreferredCamera ?? discovery?.devices.first else {
@@ -227,24 +257,28 @@ final class MirrorCamera: ObservableObject {
             return
         }
         let capture = self.capture ?? makeCapture()
-        PrivacyIndicatorMonitor.shared.mirrorDidClaimCamera()
+        claimToken = PrivacyIndicatorMonitor.shared.mirrorDidClaimCamera()
+        log.notice("mirror: started reason=\(reason.rawValue, privacy: .public)")
         capture.start(device: device) { [weak self] started in
             Task { @MainActor in
                 guard let self, !started else { return }
                 // Could not open the camera (in exclusive use by another
                 // app, or gone in the meantime): back to the idle tile.
-                self.log.error("mirror: capture did not start")
                 self.session.sessionEnded()
                 // Also removes a half-added input; releases the claim.
-                self.stopCapture()
+                self.stopCapture(reason: .startFailed)
                 self.refreshTile()
             }
         }
     }
 
-    private func stopCapture() {
+    private func stopCapture(reason: MirrorRunReason) {
+        log.notice("mirror: stopped reason=\(reason.rawValue, privacy: .public)")
+        // The token of the capture being stopped, taken now: by the time
+        // the queue finishes, a new start may hold a newer one.
+        let token = claimToken
         capture?.stop {
-            Task { @MainActor in PrivacyIndicatorMonitor.shared.mirrorDidReleaseCamera() }
+            Task { @MainActor in PrivacyIndicatorMonitor.shared.mirrorDidReleaseCamera(token) }
         }
     }
 
@@ -259,9 +293,8 @@ final class MirrorCamera: ObservableObject {
             .sink { [weak self] _ in
                 MainActor.assumeIsolated {
                     guard let self, self.session.running else { return }
-                    self.log.error("mirror: capture runtime error")
                     self.session.sessionEnded()
-                    self.stopCapture()
+                    self.stopCapture(reason: .error)
                     self.refreshTile()
                 }
             }

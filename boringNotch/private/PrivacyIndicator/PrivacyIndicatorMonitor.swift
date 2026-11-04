@@ -45,6 +45,14 @@ final class PrivacyIndicatorMonitor: ObservableObject {
     private var lastSample: PrivacySample?
     private var ownCamera = OwnCameraClaim()
     private var releaseCheck: Task<Void, Never>?
+    #if DEBUG
+    /// How often, and for how long, the camera mask was on: makes a stuck
+    /// or flapping mask visible in Console (subsystem umbar, category
+    /// PrivacyIndicator) during development.
+    private var maskCount = 0
+    private var maskSince: ContinuousClock.Instant?
+    private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "umbar", category: "PrivacyIndicator")
+    #endif
 
     private init() {}
 
@@ -71,26 +79,47 @@ final class PrivacyIndicatorMonitor: ObservableObject {
         usage = .idle
     }
 
-    /// The mirror is about to start its capture.
-    func mirrorDidClaimCamera() {
+    /// The mirror is about to start its capture. Returns the claim's token
+    /// for `mirrorDidReleaseCamera`.
+    func mirrorDidClaimCamera() -> UInt64 {
         releaseCheck?.cancel()
-        ownCamera.begin(cameraRunningElsewhere: lastSample?.cameraRunning ?? false)
+        let token = ownCamera.begin(cameraRunningElsewhere: lastSample?.cameraRunning)
+        noteMask()
         republish()
+        return token
     }
 
-    /// The mirror's capture has stopped (`stopRunning` returned).
-    func mirrorDidReleaseCamera() {
-        ownCamera.end(now: .now)
+    /// The capture claimed with `token` has stopped (`stopRunning`
+    /// returned). A stale token, from a stop that arrived after the next
+    /// start, changes nothing.
+    func mirrorDidReleaseCamera(_ token: UInt64) {
+        ownCamera.end(token)
+        noteMask()
         republish()
-        guard ownCamera.releaseDeadline != nil else { return }
+        guard ownCamera.releasing else { return }
         // No HAL callback may come if the camera stays on for someone
-        // else, so the grace end is checked on a timer too.
+        // else, so the grace is ended by a timer too, unconditionally.
         releaseCheck?.cancel()
         releaseCheck = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(OwnCameraClaim.releaseGrace))
-            guard !Task.isCancelled else { return }
-            self?.republish()
+            guard !Task.isCancelled, let self else { return }
+            self.ownCamera.expire(token)
+            self.noteMask()
+            self.republish()
         }
+    }
+
+    private func noteMask() {
+        #if DEBUG
+        if ownCamera.masksCamera, maskSince == nil {
+            maskCount += 1
+            maskSince = .now
+            log.debug("camera mask #\(self.maskCount, privacy: .public) on")
+        } else if !ownCamera.masksCamera, let since = maskSince {
+            maskSince = nil
+            log.debug("camera mask #\(self.maskCount, privacy: .public) off after \(since.duration(to: .now), privacy: .public)")
+        }
+        #endif
     }
 
     private func republish() {
@@ -99,7 +128,8 @@ final class PrivacyIndicatorMonitor: ObservableObject {
 
     private func publish(_ sample: PrivacySample) {
         lastSample = sample
-        ownCamera.observe(cameraRunning: sample.cameraRunning, now: .now)
+        ownCamera.observe(cameraRunning: sample.cameraRunning)
+        noteMask()
         let apps = NSWorkspace.shared.runningApplications.compactMap { app -> PrivacyRunningApp? in
             guard let id = app.bundleIdentifier, let name = app.localizedName else { return nil }
             return PrivacyRunningApp(bundleID: id, name: name, pid: app.processIdentifier)

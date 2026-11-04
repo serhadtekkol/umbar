@@ -277,3 +277,19 @@ struct CritterPath: Sendable {
         }
     }
 }
+
+/// The system states in which nobody is in front of the screen, as
+/// `CritterSystemState` collects them from notifications. The critter is
+/// not sent and the mirror's camera stops while `away`.
+struct UserPresence: Equatable, Sendable {
+    var asleep = false
+    var displaysAsleep = false
+    var locked = false
+    var sessionInactive = false
+    /// A screen saver is running. Without a lock (or with "require
+    /// password" delayed) nothing else says the user left, and a display
+    /// assertion can keep the screens from sleeping (Muhittin M1).
+    var screenSaverRunning = false
+
+    var away: Bool { asleep || displaysAsleep || locked || sessionInactive || screenSaverRunning }
+}
