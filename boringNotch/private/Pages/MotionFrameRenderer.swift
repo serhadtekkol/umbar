@@ -36,6 +36,7 @@
 //    hover-close-<notch>-<ms>.png  and closing, the pointer gone
 //    hover-out-<notch>-<ms>.png  the pointer leaving the closed island
 //    glow-…                      the edge glow; see EdgeGlowRenderer
+//    critter-…                   the idle critter crossing; see CritterRenderer
 //
 
 #if DEBUG
@@ -51,13 +52,16 @@ enum MotionFrameRenderer {
         let out = URL(fileURLWithPath: dir, isDirectory: true)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
         let notches = [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)]
-        // `-UmbarRenderMotionOnly hover` (or `glow`) renders those frames alone.
+        // `-UmbarRenderMotionOnly hover` (or `glow`, `critter`) renders those frames alone.
         switch UserDefaults.standard.string(forKey: "UmbarRenderMotionOnly") {
         case "hover":
             notches.forEach { renderHover(notch: $0, out: out) }
             exit(0)
         case "glow":
             EdgeGlowRenderer.renderMotion(to: out)
+            exit(0)
+        case "critter":
+            CritterRenderer.renderMotion(to: out)
             exit(0)
         default:
             break
@@ -74,6 +78,7 @@ enum MotionFrameRenderer {
         renderUndoChip(out: out)
         EyeBreakBannerRenderer.renderMotion(to: out)
         EdgeGlowRenderer.renderMotion(to: out)
+        CritterRenderer.renderMotion(to: out)
         exit(0)
     }
 

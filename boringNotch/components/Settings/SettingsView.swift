@@ -1033,6 +1033,8 @@ struct Appearance: View {
 
             EdgeGlowSettingsSection()
 
+            CritterSettingsSection()
+
             Section {
                 Defaults.Toggle(key: .coloredSpectrogram) {
                     Text("Colored spectrogram")

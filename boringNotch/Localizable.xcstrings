@@ -9776,6 +9776,262 @@
           }
         }
       }
+    },
+    "critter.settings.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idle critter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boşta geçen karakter"
+          }
+        }
+      }
+    },
+    "critter.settings.enabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a critter across now and then"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arada bir karakter geçsin"
+          }
+        }
+      }
+    },
+    "critter.settings.enabled.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now and then, while the notch is closed and quiet, a small critter eats a row of crumbs under it, slips into the notch and comes out the other side. It never blocks a click."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ada kapalı ve boştayken arada bir küçük bir karakter altındaki kırıntıları yiyerek geçer; çentiğin içine dalıp öbür taraftan çıkar. Tıklamaları hiç engellemez."
+          }
+        }
+      }
+    },
+    "critter.settings.frequency" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How often"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıklık"
+          }
+        }
+      }
+    },
+    "critter.settings.character" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Character"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karakter"
+          }
+        }
+      }
+    },
+    "critter.settings.whileMusic" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also while music plays"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Müzik çalarken de geçsin"
+          }
+        }
+      }
+    },
+    "critter.settings.preview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send one now"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi bir tane gönder"
+          }
+        }
+      }
+    },
+    "critter.settings.preview.label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önizleme"
+          }
+        }
+      }
+    },
+    "critter.settings.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It stays away while the panel is open, while the pointer is on the notch, during a HUD, a live activity or an eye break, in full screen, and while the Mac is locked or asleep. With Reduce Motion on, it does not appear at all."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panel açıkken, imleç adanın üstündeyken, bir HUD, canlı etkinlik ya da göz molası sırasında, tam ekranda ve Mac kilitliyken ya da uykudayken çıkmaz. Hareketi Azalt açıksa hiç görünmez."
+          }
+        }
+      }
+    },
+    "critter.frequency.rarely" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rarely (about every 15 min)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seyrek (yaklaşık 15 dakikada bir)"
+          }
+        }
+      }
+    },
+    "critter.frequency.sometimes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now and then (about every 5 min)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ara sıra (yaklaşık 5 dakikada bir)"
+          }
+        }
+      }
+    },
+    "critter.frequency.often" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Often (about every minute)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sık (yaklaşık dakikada bir)"
+          }
+        }
+      }
+    },
+    "critter.choice.mixed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A different one each time"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her seferinde farklı"
+          }
+        }
+      }
+    },
+    "critter.choice.beetle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beetle"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kıtır böcek"
+          }
+        }
+      }
+    },
+    "critter.choice.caterpillar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caterpillar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tırtıl"
+          }
+        }
+      }
+    },
+    "critter.choice.comet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comet"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuyruklu yıldız"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
