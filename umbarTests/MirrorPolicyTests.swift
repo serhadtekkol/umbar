@@ -244,3 +244,30 @@ struct MirrorTileOwnersTests {
         #expect(!owners.anyVisible)
     }
 }
+
+@Suite("MirrorRunReason", .timeLimit(.minutes(1)))
+struct MirrorRunReasonTests {
+    @Test(arguments: [
+        (conditions(enabled: false, present: false), MirrorRunReason.disabled),
+        (conditions(visible: false, present: false), .away),
+        (conditions(visible: false), .hidden),
+        (conditions(access: .denied), .denied),
+        (conditions(available: false), .unplug),
+        (conditions(), .tap),
+    ])
+    func stopNamesTheFirstFailingCondition(_ lost: MirrorConditions, _ reason: MirrorRunReason) {
+        #expect(MirrorRunReason.stop(after: lost) == reason)
+    }
+
+    @Test func everyStopFromUpdateHasAReasonOtherThanTap() {
+        // A stop from `update` is never the user's tap; that path passes
+        // `.tap` itself. Guards the log against "tap" hiding a real cause.
+        for lost in [conditions(enabled: false), conditions(present: false), conditions(visible: false),
+                     conditions(access: .denied), conditions(available: false)] {
+            var session = MirrorSession()
+            _ = session.tap(conditions())
+            #expect(session.update(lost) == .stop)
+            #expect(MirrorRunReason.stop(after: lost) != .tap)
+        }
+    }
+}

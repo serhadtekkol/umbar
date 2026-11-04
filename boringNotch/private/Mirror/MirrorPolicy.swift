@@ -156,6 +156,43 @@ struct MirrorSession: Equatable, Sendable {
     }
 }
 
+/// Why a preview started or stopped, for the log: "why was the camera on?"
+/// has to be answerable afterwards (Muhittin, detection gap). Event names
+/// only; no device, no user data.
+enum MirrorRunReason: String, Sendable {
+    /// The user tapped the tile (start or stop).
+    case tap
+    /// macOS answered the prompt with "allow" while the tile waited.
+    case accessGranted
+    /// The panel closed or another page was picked.
+    case hidden
+    /// Locked, asleep, screen saver or switched user.
+    case away
+    /// The setting was turned off.
+    case disabled
+    /// Access was revoked in System Settings.
+    case denied
+    /// The camera in use was disconnected.
+    case unplug
+    /// `MirrorSession.maxRunDuration` passed.
+    case timeLimit
+    /// AVCaptureSession reported a runtime error.
+    case error
+    /// The camera could not be opened.
+    case startFailed
+
+    /// Why `MirrorSession.update` returned `.stop` under `conditions`. The
+    /// first condition that fails names it, most global first.
+    static func stop(after conditions: MirrorConditions) -> MirrorRunReason {
+        if !conditions.enabled { return .disabled }
+        if !conditions.userPresent { return .away }
+        if !conditions.tileVisible { return .hidden }
+        if conditions.access != .granted { return .denied }
+        if !conditions.cameraAvailable { return .unplug }
+        return .tap
+    }
+}
+
 /// Which screens' panels show the tile right now, keyed by their view
 /// model. The tile reports itself from onAppear/onDisappear, but a window
 /// closed because its display was unplugged may never get onDisappear; the

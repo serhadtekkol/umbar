@@ -45,6 +45,14 @@ final class PrivacyIndicatorMonitor: ObservableObject {
     private var lastSample: PrivacySample?
     private var ownCamera = OwnCameraClaim()
     private var releaseCheck: Task<Void, Never>?
+    #if DEBUG
+    /// How often, and for how long, the camera mask was on: makes a stuck
+    /// or flapping mask visible in Console (subsystem umbar, category
+    /// PrivacyIndicator) during development.
+    private var maskCount = 0
+    private var maskSince: ContinuousClock.Instant?
+    private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "umbar", category: "PrivacyIndicator")
+    #endif
 
     private init() {}
 
@@ -76,6 +84,7 @@ final class PrivacyIndicatorMonitor: ObservableObject {
     func mirrorDidClaimCamera() -> UInt64 {
         releaseCheck?.cancel()
         let token = ownCamera.begin(cameraRunningElsewhere: lastSample?.cameraRunning)
+        noteMask()
         republish()
         return token
     }
@@ -85,6 +94,7 @@ final class PrivacyIndicatorMonitor: ObservableObject {
     /// start, changes nothing.
     func mirrorDidReleaseCamera(_ token: UInt64) {
         ownCamera.end(token)
+        noteMask()
         republish()
         guard ownCamera.releasing else { return }
         // No HAL callback may come if the camera stays on for someone
@@ -94,8 +104,22 @@ final class PrivacyIndicatorMonitor: ObservableObject {
             try? await Task.sleep(for: .seconds(OwnCameraClaim.releaseGrace))
             guard !Task.isCancelled, let self else { return }
             self.ownCamera.expire(token)
+            self.noteMask()
             self.republish()
         }
+    }
+
+    private func noteMask() {
+        #if DEBUG
+        if ownCamera.masksCamera, maskSince == nil {
+            maskCount += 1
+            maskSince = .now
+            log.debug("camera mask #\(self.maskCount, privacy: .public) on")
+        } else if !ownCamera.masksCamera, let since = maskSince {
+            maskSince = nil
+            log.debug("camera mask #\(self.maskCount, privacy: .public) off after \(since.duration(to: .now), privacy: .public)")
+        }
+        #endif
     }
 
     private func republish() {
@@ -105,6 +129,7 @@ final class PrivacyIndicatorMonitor: ObservableObject {
     private func publish(_ sample: PrivacySample) {
         lastSample = sample
         ownCamera.observe(cameraRunning: sample.cameraRunning)
+        noteMask()
         let apps = NSWorkspace.shared.runningApplications.compactMap { app -> PrivacyRunningApp? in
             guard let id = app.bundleIdentifier, let name = app.localizedName else { return nil }
             return PrivacyRunningApp(bundleID: id, name: name, pid: app.processIdentifier)
