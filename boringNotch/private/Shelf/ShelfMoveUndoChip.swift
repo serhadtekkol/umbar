@@ -6,7 +6,7 @@
 //  (design-language §5.3, card #101). The window, the Undo and its failures
 //  live in ShelfMoveUndoModel (card #100); this only shows them.
 //
-//  One chip, never a stack: the page is 680 pt wide and a multi-item drag
+//  One chip, never a stack: the page is 800 pt wide and a multi-item drag
 //  makes one ghost per item. Several ghosts read as "Taşındı: 3 öğe", and
 //  Undo puts back every one that can be put back.
 //

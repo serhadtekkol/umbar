@@ -16,7 +16,7 @@ let shadowPadding: CGFloat = 20
 /// design-language §4: one fixed size for every page (no layout shift when
 /// the page changes). 640 × 190 fit neither five tabs beside the notch nor a
 /// page body that is not crammed.
-let openNotchSize: CGSize = .init(width: 680, height: 236)
+let openNotchSize: CGSize = .init(width: 800, height: 236)
 let windowSize: CGSize = .init(width: openNotchSize.width, height: openNotchSize.height + shadowPadding)
 let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 19, bottom: 24), closed: (top: 6, bottom: 14))
 
