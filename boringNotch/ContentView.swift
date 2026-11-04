@@ -348,6 +348,7 @@ struct ContentView: View {
         // banner; it does not open the panel or take the keyboard. Behind
         // the island, so the island's ears and hover stay on top.
         .background(alignment: .top) { EyeBreakBannerSlot(neckWidth: computedChinWidth) }
+        .background(alignment: .top) { CritterLayer(islandWidth: computedChinWidth, pointerNear: isHovering || pointerApproach > 0) }
         .compositingGroup()
         .scaleEffect(
             x: gestureScale,

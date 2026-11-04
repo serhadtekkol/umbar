@@ -353,6 +353,7 @@
 				Clipboard/ClipboardHistoryCore.swift,
 				Clipboard/ClipboardHistoryStore.swift,
 				Clipboard/ClipboardMonitor.swift,
+				Critter/CritterPolicy.swift,
 				EdgeGlow/EdgeGlowPolicy.swift,
 				EyeBreak/EyeBreakBannerHitPolicy.swift,
 				EyeBreak/EyeBreakEngine.swift,
