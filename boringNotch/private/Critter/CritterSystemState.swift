@@ -2,9 +2,9 @@
 //  CritterSystemState.swift
 //  boringNotch
 //
-//  Whether anyone is in front of the screen: a critter is not sent across
-//  a locked, sleeping or switched-away session. Notifications only; nothing
-//  polls.
+//  Whether anyone is in front of the screen: a critter is not sent, and
+//  the mirror's camera does not run, across a locked, sleeping, screen-saver
+//  or switched-away session. Notifications only; nothing polls.
 //
 
 import AppKit
@@ -30,6 +30,8 @@ final class CritterSystemState: ObservableObject {
         observe(ws, NSWorkspace.sessionDidBecomeActiveNotification) { $0.presence.sessionInactive = false }
         observe(dist, Notification.Name("com.apple.screenIsLocked")) { $0.presence.locked = true }
         observe(dist, Notification.Name("com.apple.screenIsUnlocked")) { $0.presence.locked = false }
+        observe(dist, Notification.Name("com.apple.screensaver.didstart")) { $0.presence.screenSaverRunning = true }
+        observe(dist, Notification.Name("com.apple.screensaver.didstop")) { $0.presence.screenSaverRunning = false }
     }
 
     private func observe(_ center: NotificationCenter, _ name: Notification.Name,

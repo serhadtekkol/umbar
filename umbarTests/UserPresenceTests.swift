@@ -15,7 +15,7 @@ struct UserPresenceTests {
     }
 
     @Test(arguments: [
-        \UserPresence.asleep, \.displaysAsleep, \.locked, \.sessionInactive,
+        \UserPresence.asleep, \.displaysAsleep, \.locked, \.sessionInactive, \.screenSaverRunning,
     ] as [WritableKeyPath<UserPresence, Bool> & Sendable])
     func eachStateAloneIsAway(_ flag: WritableKeyPath<UserPresence, Bool> & Sendable) {
         var presence = UserPresence()

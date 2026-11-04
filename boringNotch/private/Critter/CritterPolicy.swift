@@ -286,6 +286,10 @@ struct UserPresence: Equatable, Sendable {
     var displaysAsleep = false
     var locked = false
     var sessionInactive = false
+    /// A screen saver is running. Without a lock (or with "require
+    /// password" delayed) nothing else says the user left, and a display
+    /// assertion can keep the screens from sleeping (Muhittin M1).
+    var screenSaverRunning = false
 
-    var away: Bool { asleep || displaysAsleep || locked || sessionInactive }
+    var away: Bool { asleep || displaysAsleep || locked || sessionInactive || screenSaverRunning }
 }
