@@ -170,7 +170,7 @@ struct AudioLevelMeterTests {
                             mNumberChannels: UInt32(channels.count),
                             mDataByteSize: UInt32(raw.count),
                             mData: raw.baseAddress))
-                    meter.ingest(&list)
+                    meter.ingest(&list, buffers: 0..<1)
                 }
             } else {
                 let list = AudioBufferList.allocate(maximumBuffers: channels.count)
@@ -188,7 +188,7 @@ struct AudioLevelMeterTests {
                         mDataByteSize: UInt32(count * MemoryLayout<Float>.size),
                         mData: UnsafeMutableRawPointer(samples))
                 }
-                meter.ingest(list.unsafePointer)
+                meter.ingest(list.unsafePointer, buffers: 0..<channels.count)
             }
             offset += count
         }
@@ -243,9 +243,47 @@ struct AudioLevelMeterTests {
         let meter = AudioLevelMeter(sampleRate: sampleRate)!
         var empty = AudioBufferList(
             mNumberBuffers: 1, mBuffers: AudioBuffer(mNumberChannels: 0, mDataByteSize: 0, mData: nil))
-        meter.ingest(&empty)
+        meter.ingest(&empty, buffers: 0..<1)
         #expect(meter.analysisCount == 0)
         #expect(AudioLevelMeter(sampleRate: 0) == nil)
+    }
+
+    /// Regression for the headset case: the aggregate delivers the
+    /// microphone's buffer first and the tap's second. Only the tap's may
+    /// move the meter, and a range the list cannot satisfy reads nothing.
+    @Test func readsOnlyTheTapsBuffers() {
+        let microphone = sine(1_000, amplitude: 0.5, count: 4096)
+        let tap = [Float](repeating: 0, count: 4096)
+        let list = AudioBufferList.allocate(maximumBuffers: 2)
+        let storage = [microphone, tap].map { channel -> UnsafeMutablePointer<Float> in
+            let samples = UnsafeMutablePointer<Float>.allocate(capacity: channel.count)
+            samples.initialize(from: channel, count: channel.count)
+            return samples
+        }
+        defer {
+            storage.forEach { $0.deallocate() }
+            free(list.unsafeMutablePointer)
+        }
+        for index in storage.indices {
+            list[index] = AudioBuffer(
+                mNumberChannels: 1,
+                mDataByteSize: UInt32(4096 * MemoryLayout<Float>.size),
+                mData: UnsafeMutableRawPointer(storage[index]))
+        }
+
+        let tapOnly = AudioLevelMeter(sampleRate: sampleRate)!
+        tapOnly.ingest(list.unsafePointer, buffers: 1..<2)
+        #expect(tapOnly.analysisCount > 0)
+        #expect(tapOnly.latest() == .silent)
+
+        let micOnly = AudioLevelMeter(sampleRate: sampleRate)!
+        micOnly.ingest(list.unsafePointer, buffers: 0..<1)
+        #expect(micOnly.latest().level > 0.5)
+
+        let outOfRange = AudioLevelMeter(sampleRate: sampleRate)!
+        outOfRange.ingest(list.unsafePointer, buffers: 2..<3)
+        outOfRange.ingest(list.unsafePointer, buffers: 1..<1)
+        #expect(outOfRange.analysisCount == 0)
     }
 
     @Test func packingKeepsFourValuesTogether() {
@@ -258,6 +296,29 @@ struct AudioLevelMeterTests {
         let wild = AudioLevelMeter.unpack(AudioLevelMeter.pack(
             AudioLevelReading(level: 2, bass: -1, mid: .nan, treble: 1)))
         #expect(wild == AudioLevelReading(level: 1, bass: 0, mid: 0, treble: 1))
+    }
+}
+
+@Suite("AudioTapStreamLayout", .timeLimit(.minutes(1)))
+struct AudioTapStreamLayoutTests {
+    /// Stream counts as read from the HAL smoke on macOS 27 (no IO).
+    @Test func outputOnlyDeviceHasTheTapAlone() {
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 1, subdeviceInputStreams: 0, tapStreams: 1) == 0..<1)
+    }
+
+    @Test func duplexDeviceInputsComeFirstAndAreSkipped() {
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 2, subdeviceInputStreams: 1, tapStreams: 1) == 1..<2)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 4, subdeviceInputStreams: 3, tapStreams: 1) == 3..<4)
+    }
+
+    @Test func unexpectedLayoutsRefuseToCapture() {
+        // More or fewer streams than sub-device + tap: something else is
+        // in the list, so no index can be trusted.
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 2, subdeviceInputStreams: 0, tapStreams: 1) == nil)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 0, subdeviceInputStreams: 0, tapStreams: 1) == nil)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 1, subdeviceInputStreams: 1, tapStreams: 1) == nil)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 1, subdeviceInputStreams: 1, tapStreams: 0) == nil)
+        #expect(AudioTapStreamLayout.tapBuffers(aggregateInputStreams: 0, subdeviceInputStreams: -1, tapStreams: 1) == nil)
     }
 }
 
