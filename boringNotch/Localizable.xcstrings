@@ -9264,6 +9264,198 @@
           }
         }
       }
+    },
+    "edgeGlow.settings.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edge glow"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kenar parıltısı"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.enabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glow around the closed notch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapalı çentiğin çevresinde parıltı"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.enabled.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A soft light behind the notch. It breathes in the album's colour while music plays, and flashes briefly when a timer ends, an eye break starts, the camera or microphone turns on, or the volume or brightness changes. It goes out while the panel is open."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çentiğin arkasında yumuşak bir ışık. Müzik çalarken albümün renginde yavaşça nefes alır; sayaç bittiğinde, göz molası başladığında, kamera ya da mikrofon açıldığında, ses ya da parlaklık değiştiğinde kısa bir an parlar. Panel açıkken söner."
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.style" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Style"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stil"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.intensity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intensity"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yoğunluk"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.reduceMotion" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With Reduce Motion on, the glow stays still and dim."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hareketi Azalt açıkken parıltı kıpırdamaz ve soluk kalır."
+          }
+        }
+      }
+    },
+    "edgeGlow.style.soft" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soft"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yumuşak"
+          }
+        }
+      }
+    },
+    "edgeGlow.style.neon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon"
+          }
+        }
+      }
+    },
+    "edgeGlow.style.pulse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulse"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nabız"
+          }
+        }
+      }
+    },
+    "edgeGlow.style.soft.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soft: a wide, blurred halo."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yumuşak: geniş, bulanık bir hale."
+          }
+        }
+      }
+    },
+    "edgeGlow.style.neon.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon: a thin, bright outline."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon: ince, parlak bir kontur."
+          }
+        }
+      }
+    },
+    "edgeGlow.style.pulse.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulse: flashes for events only, no glow while music plays."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nabız: yalnızca olaylarda parlar, müzik çalarken ışık yok."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

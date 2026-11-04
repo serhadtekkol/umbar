@@ -35,6 +35,7 @@
 //    hover-open-<notch>-<ms>.png the hovered island opening (hint into morph)
 //    hover-close-<notch>-<ms>.png  and closing, the pointer gone
 //    hover-out-<notch>-<ms>.png  the pointer leaving the closed island
+//    glow-…                      the edge glow; see EdgeGlowRenderer
 //
 
 #if DEBUG
@@ -66,6 +67,7 @@ enum MotionFrameRenderer {
         renderWiFiConfirm(out: out)
         renderUndoChip(out: out)
         EyeBreakBannerRenderer.renderMotion(to: out)
+        EdgeGlowRenderer.renderMotion(to: out)
         exit(0)
     }
 

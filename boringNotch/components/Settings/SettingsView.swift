@@ -1031,6 +1031,8 @@ struct Appearance: View {
                 Text("General")
             }
 
+            EdgeGlowSettingsSection()
+
             Section {
                 Defaults.Toggle(key: .coloredSpectrogram) {
                     Text("Colored spectrogram")
