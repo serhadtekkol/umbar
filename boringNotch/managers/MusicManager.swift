@@ -14,6 +14,15 @@ let defaultImage: NSImage = .init(
     accessibilityDescription: "Album Art"
 )!
 
+/// Shown when the player publishes no usable artwork, in place of the
+/// player's app icon.
+let missingArtworkImage: NSImage = {
+    let config = NSImage.SymbolConfiguration(pointSize: 96, weight: .regular)
+        .applying(.init(paletteColors: [.white]))
+    let symbol = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Album Art")!
+    return symbol.withSymbolConfiguration(config) ?? symbol
+}()
+
 class MusicManager: ObservableObject {
     // MARK: - Properties
     static let shared = MusicManager()
@@ -44,6 +53,21 @@ class MusicManager: ObservableObject {
     @Published var volumeControlSupported: Bool = true
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Published var usingAppIconForArtwork: Bool = false
+
+    /// Browsers are where the music plays, not what is playing: their logo
+    /// is never shown as artwork or as the player badge.
+    static let browserBundleIdentifiers: Set<String> = [
+        "com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary",
+        "com.apple.Safari", "com.apple.SafariTechnologyPreview",
+        "org.mozilla.firefox", "org.mozilla.firefoxdeveloperedition", "org.mozilla.nightly",
+        "company.thebrowser.Browser", "com.brave.Browser", "com.microsoft.edgemac",
+        "com.operasoftware.Opera", "com.vivaldi.Vivaldi", "app.zen-browser.zen", "org.chromium.Chromium",
+    ]
+
+    var isBrowserPlayer: Bool {
+        guard let bundleIdentifier else { return false }
+        return Self.browserBundleIdentifiers.contains(bundleIdentifier)
+    }
     @Published var canFavoriteTrack: Bool = false
     @Published var isFavoriteTrack: Bool = false
 
@@ -202,11 +226,10 @@ class MusicManager: ObservableObject {
             if artworkChanged, let artwork = state.artwork {
                 self.updateArtwork(artwork, bundleIdentifier: state.bundleIdentifier)
             } else if state.artwork == nil {
-                // Try to use app icon if no artwork but track changed
-                if let appIconImage = AppIconAsNSImage(for: state.bundleIdentifier) {
-                    self.usingAppIconForArtwork = true
-                    self.updateAlbumArt(newAlbumArt: appIconImage)
-                }
+                // No artwork: a neutral note, never the player's app icon
+                // (a browser logo is not the song).
+                self.usingAppIconForArtwork = true
+                self.updateAlbumArt(newAlbumArt: missingArtworkImage)
             }
             self.artworkData = state.artwork
 
@@ -360,10 +383,8 @@ class MusicManager: ObservableObject {
                     self.updateAlbumArt(newAlbumArt: NSImage(cgImage: image, size: .zero))
                 case .failure(let rejection):
                     NSLog("[Media] artwork ignored: \(rejection)")
-                    if let appIcon = AppIconAsNSImage(for: bundleIdentifier) {
-                        self.usingAppIconForArtwork = true
-                        self.updateAlbumArt(newAlbumArt: appIcon)
-                    }
+                    self.usingAppIconForArtwork = true
+                    self.updateAlbumArt(newAlbumArt: missingArtworkImage)
                 }
             }
         }
