@@ -12,14 +12,23 @@
 //    glow-style-<style>-<bg>-<notch>.png  each style at the default
 //                                       intensity around a fixture island
 //                                       with music ears and a time ear
+//    glow-audio-<notch>-<frame>.png     the audio-reactive glow fed a fake
+//                                       120 bpm level sequence at 30 Hz
+//                                       (frame 15 is a kick, 16–22 its decay)
+//    glow-color-fixed-<bg>-<notch>.png  the fixed colour (the default one)
+//    glow-color-cycle-<notch>-<s>.png   the colour cycle a quarter turn apart
+//    glow-settings-<bg>.png             Settings' edge glow section, event
+//                                       colours open
 //  <bg> is dark or light: the glow is seen against the menu bar and what
 //  is under it, which can be either. The style comes from the run's
 //  defaults (`-edgeGlowStyle neon`), so the user's own settings are never
-//  written. The timer and camera are fixtures: no clock, sound or hardware.
+//  written. The timer and camera are fixtures: no clock, sound or hardware;
+//  the audio frames are computed, nothing is captured or played.
 //
 
 #if DEBUG
 import AppKit
+import Defaults
 import SwiftUI
 
 @MainActor
@@ -35,7 +44,10 @@ enum EdgeGlowRenderer {
             renderMusic(notch: notch, tag: tag, out: out)
             renderEvents(notch: notch, tag: tag, out: out)
             renderStyles(notch: notch, tag: tag, out: out)
+            renderAudio(notch: notch, tag: tag, out: out)
+            renderColors(notch: notch, tag: tag, out: out)
         }
+        renderSettings(out: out)
     }
 
     private static func renderMusic(notch: CGSize, tag: String, out: URL) {
@@ -83,31 +95,100 @@ enum EdgeGlowRenderer {
     /// A fixture island with a time ear on its leading side, so the frame
     /// shows the glow following the ear, at the default intensity.
     private static func renderStyles(notch: CGSize, tag: String, out: URL) {
+        for style in [EdgeGlowStyle.soft, .neon] {
+            for (bg, color) in backgrounds {
+                still(notch, background: color,
+                      glow: EdgeGlowShadow(style: style, color: Color(red: 0.86, green: 0.47, blue: 0.70), level: 0.7),
+                      to: out.appendingPathComponent("glow-style-\(style.rawValue)-\(bg)-\(tag).png"))
+            }
+        }
+    }
+
+    /// Kick on every 15th frame (120 bpm at 30 Hz), a body of sound that
+    /// swells with it, hats between. Shaped like the monitor's smoothed
+    /// output: a rise over a frame or two, a slower fall.
+    static func fakeAudio(frame i: Int) -> (level: Double, bass: Double, treble: Double) {
+        let sinceKick = Double(i % 15)
+        let kick = exp(-sinceKick / 3)
+        let hat = i % 15 == 7 ? 0.8 : exp(-Double(abs(i % 15 - 7)) / 1.5) * 0.6
+        return (0.3 + 0.4 * kick, 0.15 + 0.7 * kick, hat)
+    }
+
+    private static let audioFrames = [0, 7, 14, 15, 16, 18, 22, 29, 30]
+
+    private static func renderAudio(notch: CGSize, tag: String, out: URL) {
+        var follower = EdgeGlowAudioFollower()
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        let album = EdgeGlowRGB(red: 0.86, green: 0.47, blue: 0.70)
+        for i in 0...audioFrames.max()! {
+            let a = fakeAudio(frame: i)
+            follower.feed(level: a.level, bass: a.bass, treble: a.treble, now: start.addingTimeInterval(Double(i) / 30))
+            guard audioFrames.contains(i) else { continue }
+            let color = EdgeGlowColor.sparkle(album, amount: follower.sparkle).color
+            still(notch, background: backgrounds[0].1,
+                  glow: EdgeGlowShadow(style: .soft, color: color, level: follower.brightness * 0.7, spread: follower.spread),
+                  to: out.appendingPathComponent("glow-audio-\(tag)-\(i).png"))
+        }
+    }
+
+    private static func renderColors(notch: CGSize, tag: String, out: URL) {
+        let fixed = EdgeGlowColor.rgb(hex: Defaults.Keys.edgeGlowFixedColor.defaultValue) ?? EdgeGlowRGB(red: 1, green: 1, blue: 1)
+        for (bg, color) in backgrounds {
+            still(notch, background: color,
+                  glow: EdgeGlowShadow(style: .soft, color: fixed.color, level: 0.7),
+                  to: out.appendingPathComponent("glow-color-fixed-\(bg)-\(tag).png"))
+        }
+        let quarter = EdgeGlowColor.cyclePeriod / 4
+        for step in 0..<4 {
+            let t = Double(step) * quarter
+            still(notch, background: backgrounds[0].1,
+                  glow: EdgeGlowShadow(style: .soft, color: EdgeGlowColor.cycle(time: t).color, level: 0.7),
+                  to: out.appendingPathComponent("glow-color-cycle-\(tag)-\(Int(t * 10)).png"))
+        }
+    }
+
+    /// The section as Settings shows it, in both appearances. The run's
+    /// defaults choose what is on (`-edgeGlowColorMode fixed
+    /// -edgeGlowAudioReactive YES`).
+    private static func renderSettings(out: URL) {
+        for (bg, appearance, scheme) in [("dark", NSAppearance.Name.darkAqua, ColorScheme.dark),
+                                         ("light", .aqua, .light)] {
+            let size = NSSize(width: 620, height: 820)
+            let root = Form { EdgeGlowSettingsSection(showsEventColors: true) }
+                .formStyle(.grouped)
+                .frame(width: size.width, height: size.height)
+                .environment(\.colorScheme, scheme)
+            let session = MotionFrameRenderer.Session(root, size: size)
+            session.window.appearance = NSAppearance(named: appearance)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.4))
+            MotionFrameRenderer.capture(session.host, to: out.appendingPathComponent("glow-settings-\(bg).png"))
+            session.close()
+        }
+    }
+
+    /// One frame of a fixture island (with a leading time ear) wearing `glow`.
+    private static func still(_ notch: CGSize, background: Color, glow: EdgeGlowShadow, to url: URL) {
         let width = notch.width + 2 * max(0, notch.height - 12) + 20
         let ear: CGFloat = 70
         let shape = NotchShape(topCornerRadius: cornerRadiusInsets.closed.top,
                                bottomCornerRadius: cornerRadiusInsets.closed.bottom)
         let canvas = NSSize(width: width + 2 * ear + 80, height: notch.height + 50)
-        for style in [EdgeGlowStyle.soft, .neon] {
-            for (bg, color) in backgrounds {
-                let root = shape.fill(.black)
-                    .frame(width: width, height: notch.height)
-                    .background(alignment: .topLeading) {
-                        UnevenRoundedRectangle(bottomLeadingRadius: 8)
-                            .fill(.black)
-                            .frame(width: ear, height: notch.height)
-                            .offset(x: -ear + cornerRadiusInsets.closed.top)
-                    }
-                    .compositingGroup()
-                    .modifier(EdgeGlowShadow(style: style, color: Color(red: 0.86, green: 0.47, blue: 0.70), level: 0.7))
-                    .frame(width: canvas.width, height: canvas.height, alignment: .top)
-                    .background(color)
-                    .environment(\.colorScheme, .dark)
-                let still = MotionFrameRenderer.Session(root, size: canvas)
-                MotionFrameRenderer.capture(still.host, to: out.appendingPathComponent("glow-style-\(style.rawValue)-\(bg)-\(tag).png"))
-                still.close()
+        let root = shape.fill(.black)
+            .frame(width: width, height: notch.height)
+            .background(alignment: .topLeading) {
+                UnevenRoundedRectangle(bottomLeadingRadius: 8)
+                    .fill(.black)
+                    .frame(width: ear, height: notch.height)
+                    .offset(x: -ear + cornerRadiusInsets.closed.top)
             }
-        }
+            .compositingGroup()
+            .modifier(glow)
+            .frame(width: canvas.width, height: canvas.height, alignment: .top)
+            .background(background)
+            .environment(\.colorScheme, .dark)
+        let session = MotionFrameRenderer.Session(root, size: canvas)
+        MotionFrameRenderer.capture(session.host, to: url)
+        session.close()
     }
 
     private static let size = NSSize(width: windowSize.width, height: height)

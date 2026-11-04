@@ -9302,13 +9302,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A soft light behind the notch. It breathes in the album's colour while music plays, and flashes briefly when a timer ends, an eye break starts, the camera or microphone turns on, or the volume or brightness changes. It goes out while the panel is open."
+            "value" : "A soft light behind the notch. It breathes slowly while music plays, and flashes briefly when a timer ends, an eye break starts, the camera or microphone turns on, or the volume or brightness changes. It goes out while the panel is open."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Çentiğin arkasında yumuşak bir ışık. Müzik çalarken albümün renginde yavaşça nefes alır; sayaç bittiğinde, göz molası başladığında, kamera ya da mikrofon açıldığında, ses ya da parlaklık değiştiğinde kısa bir an parlar. Panel açıkken söner."
+            "value" : "Çentiğin arkasında yumuşak bir ışık. Müzik çalarken yavaşça nefes alır; sayaç bittiğinde, göz molası başladığında, kamera ya da mikrofon açıldığında, ses ya da parlaklık değiştiğinde kısa bir an parlar. Panel açıkken söner."
           }
         }
       }
@@ -9350,13 +9350,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "With Reduce Motion on, the glow stays still and dim."
+            "value" : "With Reduce Motion on, the glow stays still and dim, and does not react to sound."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hareketi Azalt açıkken parıltı kıpırdamaz ve soluk kalır."
+            "value" : "Hareketi Azalt açıkken parıltı kıpırdamaz, soluk kalır ve sese tepki vermez."
           }
         }
       }
@@ -9453,6 +9453,326 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nabız: yalnızca olaylarda parlar, müzik çalarken ışık yok."
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.color" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music colour"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Müzik rengi"
+          }
+        }
+      }
+    },
+    "edgeGlow.color.album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album colour"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Albüm rengi"
+          }
+        }
+      }
+    },
+    "edgeGlow.color.fixed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fixed colour"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sabit renk"
+          }
+        }
+      }
+    },
+    "edgeGlow.color.cycle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour cycle"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renk döngüsü"
+          }
+        }
+      }
+    },
+    "edgeGlow.color.cycle.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour cycle: the music glow moves slowly through every hue, once every 30 seconds."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renk döngüsü: müzik parıltısı 30 saniyede bir tüm renk tonlarını yavaşça dolaşır."
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.fixedColor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glow colour"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parıltı rengi"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.audio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "React to sound"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sese tepki ver"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.audio.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While music plays, the glow follows how loud it is and widens on the bass. To hear it, macOS asks you to allow audio recording for umbar. umbar does not record or send the sound anywhere; it only measures how loud it is, moment to moment. Off by default."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Müzik çalarken parıltı sesin yüksekliğini izler, bas vuruşlarında biraz genişler. Sesi duyabilmesi için macOS, umbar'a ses kaydı izni vermenizi ister. umbar sesi kaydetmez ve hiçbir yere göndermez; yalnızca o anki yüksekliğini ölçer. Varsayılan olarak kapalıdır."
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.audio.denied" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio recording is off for umbar, so the glow breathes instead."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar için ses kaydı izni kapalı; parıltı bunun yerine nefes alıyor."
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.audio.open" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open System Settings"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem Ayarları'nı Aç"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.audio.unsupported" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This version of macOS cannot share audio levels with umbar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu macOS sürümü ses yüksekliğini umbar ile paylaşamıyor."
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.eventColors" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event colours"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olay renkleri"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.eventColors.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera and microphone start green and orange, as macOS's own indicators do."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera ve mikrofon, macOS'un kendi göstergeleri gibi varsayılan olarak yeşil ve turuncudur."
+          }
+        }
+      }
+    },
+    "edgeGlow.color.timer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer finished"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamanlayıcı bitti"
+          }
+        }
+      }
+    },
+    "edgeGlow.color.eyeBreak" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eye break"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Göz molası"
+          }
+        }
+      }
+    },
+    "edgeGlow.color.camera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera açıldı"
+          }
+        }
+      }
+    },
+    "edgeGlow.color.microphone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mikrofon açıldı"
+          }
+        }
+      }
+    },
+    "edgeGlow.color.hud" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume and brightness"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ses ve parlaklık"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.resetColor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the default colour"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varsayılan renge dön"
+          }
+        }
+      }
+    },
+    "edgeGlow.settings.resetColor.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset %@ to the default colour"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ rengini varsayılana döndür"
           }
         }
       }

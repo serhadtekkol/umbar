@@ -51,10 +51,16 @@ enum MotionFrameRenderer {
         let out = URL(fileURLWithPath: dir, isDirectory: true)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
         let notches = [CGSize(width: 190, height: 37), CGSize(width: 200, height: 32), CGSize(width: 254, height: 45)]
-        // `-UmbarRenderMotionOnly hover` renders the hover frames alone.
-        if UserDefaults.standard.string(forKey: "UmbarRenderMotionOnly") == "hover" {
+        // `-UmbarRenderMotionOnly hover` (or `glow`) renders those frames alone.
+        switch UserDefaults.standard.string(forKey: "UmbarRenderMotionOnly") {
+        case "hover":
             notches.forEach { renderHover(notch: $0, out: out) }
             exit(0)
+        case "glow":
+            EdgeGlowRenderer.renderMotion(to: out)
+            exit(0)
+        default:
+            break
         }
         for notch in notches {
             renderTabSwitches(notch: notch, out: out)
