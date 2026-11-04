@@ -59,6 +59,7 @@ final class MirrorCamera: ObservableObject {
     private var subscriptions: Set<AnyCancellable> = []
     private var enabledSubscription: AnyCancellable?
     private var accessRequestInFlight = false
+    private var runCap: Task<Void, Never>?
 
     private init() {}
 
@@ -181,10 +182,28 @@ final class MirrorCamera: ObservableObject {
 
     private func perform(_ command: MirrorCommand) {
         switch command {
-        case .start: startCapture()
-        case .stop: stopCapture()
+        case .start:
+            startCapture()
+            scheduleRunCap()
+        case .stop:
+            runCap?.cancel()
+            stopCapture()
         case .requestAccess: requestAccess()
         case .openPrivacySettings: Self.openPrivacySettings()
+        }
+    }
+
+    /// MirrorPolicy rule 4. A sleep, not a deadline compared with the
+    /// wall clock: a clock change cannot extend it.
+    private func scheduleRunCap() {
+        runCap?.cancel()
+        let generation = session.generation
+        runCap = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(MirrorSession.maxRunDuration))
+            guard !Task.isCancelled, let self,
+                  let command = self.session.runTimeElapsed(generation: generation) else { return }
+            self.perform(command)
+            self.refreshTile()
         }
     }
 

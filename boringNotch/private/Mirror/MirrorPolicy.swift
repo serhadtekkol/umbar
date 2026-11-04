@@ -17,6 +17,10 @@
 //       leaving Şimdi, locking, sleeping or switching user stops it, and
 //       forgets the request: the next opening shows the idle tile again,
 //       so hovering the notch never lights the camera by itself.
+//    4. A preview runs at most `maxRunDuration`. A panel opened from the
+//       keyboard stays open without the pointer, and leaving the desk
+//       unlocked with display sleep held off says nothing; the cap bounds
+//       how long the camera, and the camera-dot mask, can stay on.
 //
 
 import Foundation
@@ -84,6 +88,13 @@ struct MirrorSession: Equatable, Sendable {
     private(set) var wanted = false
     /// The controller was told to start and not yet to stop.
     private(set) var running = false
+    /// Bumped on every `.start`, so the cap timer of an earlier preview
+    /// cannot stop a later one.
+    private(set) var generation: UInt64 = 0
+
+    /// Rule 4. Long enough to fix your hair before a call, short enough
+    /// that a forgotten preview does not run for the afternoon.
+    static let maxRunDuration: TimeInterval = 5 * 60
 
     /// Re-evaluates after any condition changed. Returns `.start` or
     /// `.stop` when the hardware has to follow, nil when it already does.
@@ -94,7 +105,16 @@ struct MirrorSession: Equatable, Sendable {
             && conditions.access == .granted && conditions.cameraAvailable
         guard desired != running else { return nil }
         running = desired
+        if desired { generation &+= 1 }
         return desired ? .start : .stop
+    }
+
+    /// The cap timer for preview `generation` fired. Stops it when it is
+    /// still the one running; a tap starts a fresh preview.
+    mutating func runTimeElapsed(generation: UInt64) -> MirrorCommand? {
+        guard running, generation == self.generation else { return nil }
+        sessionEnded()
+        return .stop
     }
 
     /// The user tapped the tile.

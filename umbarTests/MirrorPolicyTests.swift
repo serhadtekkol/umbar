@@ -163,3 +163,39 @@ struct MirrorTileCaptureTests {
             userHides: false, sensitiveOnScreen: MirrorTileState.idle.showsCameraPicture))
     }
 }
+
+@Suite("MirrorSession run cap", .timeLimit(.minutes(1)))
+struct MirrorRunCapTests {
+    @Test func theCapStopsTheRunningPreview() {
+        var session = MirrorSession()
+        _ = session.tap(conditions())
+        #expect(session.runTimeElapsed(generation: session.generation) == .stop)
+        #expect(!session.running)
+        // Back to idle: still in front, but it does not restart by itself.
+        #expect(session.update(conditions()) == nil)
+        #expect(session.tileState(conditions()) == .idle)
+    }
+
+    @Test func anEarlierPreviewsCapDoesNotStopALaterOne() {
+        var session = MirrorSession()
+        _ = session.tap(conditions())
+        let first = session.generation
+        _ = session.tap(conditions()) // stop
+        _ = session.tap(conditions()) // start again
+        #expect(session.generation != first)
+        #expect(session.runTimeElapsed(generation: first) == nil)
+        #expect(session.running)
+    }
+
+    @Test func aCapAfterTheStopIsANoOp() {
+        var session = MirrorSession()
+        _ = session.tap(conditions())
+        let generation = session.generation
+        _ = session.update(conditions(visible: false))
+        #expect(session.runTimeElapsed(generation: generation) == nil)
+    }
+
+    @Test func theCapIsFiveMinutes() {
+        #expect(MirrorSession.maxRunDuration == 300)
+    }
+}
