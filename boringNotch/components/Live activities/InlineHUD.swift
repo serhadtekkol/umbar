@@ -55,8 +55,7 @@ struct InlineHUD: View {
                 .symbolVariant(.fill)
                 
                 Text(Type2Name(type))
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .umbarFont(.display, size: 11, weight: 500)
                     .lineLimit(1)
                     .allowsTightening(true)
                     .contentTransition(.numericText())
@@ -95,8 +94,7 @@ struct InlineHUD: View {
                                 .multilineTextAlignment(.trailing)
                         } else if Defaults[.showClosedNotchHUDPercentage] {
                             Text("\(Int(value * 100))%")
-                                .font(.caption)
-                                .fontWeight(.medium)
+                                .umbarFont(.numeric, size: 10, weight: 500)
                                 .foregroundStyle(.gray)
                                 .lineLimit(1)
                                 .allowsTightening(true)

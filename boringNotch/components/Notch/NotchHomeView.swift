@@ -155,18 +155,18 @@ struct MusicControlsView: View {
     private func songInfo(width: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             MarqueeText(
-                $musicManager.songTitle, font: .headline, nsFont: .headline, textColor: .white,
+                $musicManager.songTitle, nsFont: .headline, textColor: .white,
                 frameWidth: width)
+            .umbarFont(.display, size: 13, weight: 700)
             MarqueeText(
                 $musicManager.artistName,
-                font: .headline,
                 nsFont: .headline,
                 textColor: Defaults[.playerColorTinting]
                     ? Color(nsColor: musicManager.avgColor)
                         .ensureMinimumBrightness(factor: 0.6) : .gray,
                 frameWidth: width
             )
-            .fontWeight(.medium)
+            .umbarFont(.display, size: 13, weight: 500)
         }
     }
 
@@ -456,12 +456,11 @@ struct MusicSliderView: View {
                 Spacer()
                 Text(timeString(from: duration))
             }
-            .fontWeight(.medium)
             .foregroundColor(
                 Defaults[.playerColorTinting]
                     ? Color(nsColor: color).ensureMinimumBrightness(factor: 0.6) : .gray
             )
-            .font(.caption)
+            .umbarFont(.numeric, size: 10, weight: 500)
         }
         .onChange(of: currentDate) {
            guard !dragging, timestampDate.timeIntervalSince(lastDragged) > -1 else { return }

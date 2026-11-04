@@ -61,7 +61,7 @@ struct FocusTimerTile: View {
             } else {
                 HStack(spacing: 4) {
                     FocusClockText(state: service.state)
-                        .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                        .umbarFont(.numeric, size: 15, weight: 600)
                         .foregroundStyle(PageTokens.textPrimary)
                     Spacer(minLength: 4)
                     if service.state.isPaused {
@@ -136,7 +136,7 @@ struct FocusTimerClosedBadge: View {
 
     private var badge: some View {
             FocusClockText(state: service.state)
-                .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
+                .umbarFont(.numeric, size: 11, weight: 600, design: .rounded)
                 .foregroundStyle(service.state.isPaused ? Color.gray : Color.orange)
                 .frame(width: width, height: height)
                 .background(.black, in: UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: 8))

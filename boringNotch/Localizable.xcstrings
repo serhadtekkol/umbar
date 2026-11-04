@@ -9776,6 +9776,182 @@
           }
         }
       }
+    },
+    "songPeek.settings.duration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sneak peek duration"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ön izleme süresi"
+          }
+        }
+      }
+    },
+    "songPeek.settings.duration.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How long the song name stays under the notch. The volume and brightness indicator keep their own time."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şarkı adının çentiğin altında ne kadar kalacağı. Ses ve parlaklık göstergesi kendi süresini korur."
+          }
+        }
+      }
+    },
+    "typeface.settings.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch text"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çentik yazıları"
+          }
+        }
+      }
+    },
+    "typeface.settings.picker" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typeface"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yazı tipi"
+          }
+        }
+      }
+    },
+    "typeface.settings.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used for the song name, clocks, percentages and titles in the notch. Longer text, such as calendar details, stays in the system font so it reads easily. Doto and Pixelify Sans are included under the SIL Open Font License."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çentikteki şarkı adı, saatler, yüzdeler ve başlıklar için kullanılır. Takvim ayrıntıları gibi uzun metinler kolay okunsun diye sistem yazı tipinde kalır. Doto ve Pixelify Sans, SIL Open Font License ile birlikte gelir."
+          }
+        }
+      }
+    },
+    "typeface.settings.preview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview of the chosen typeface"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seçilen yazı tipinin ön izlemesi"
+          }
+        }
+      }
+    },
+    "typeface.system" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem"
+          }
+        }
+      }
+    },
+    "typeface.rounded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Rounded"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem Yuvarlak"
+          }
+        }
+      }
+    },
+    "typeface.monospaced" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monospace"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eş aralıklı"
+          }
+        }
+      }
+    },
+    "typeface.dotMatrix" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dot matrix"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nokta vuruşlu"
+          }
+        }
+      }
+    },
+    "typeface.pixel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pixel"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piksel"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

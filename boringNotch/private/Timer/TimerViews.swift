@@ -179,7 +179,7 @@ struct CountdownTile: View {
             } else if let own {
                 HStack(spacing: 4) {
                     TimerClockText(state: own)
-                        .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                        .umbarFont(.numeric, size: 15, weight: 600)
                         .foregroundStyle(PageTokens.textPrimary)
                     Spacer(minLength: 4)
                     if own.isPaused {
@@ -264,7 +264,7 @@ struct StopwatchTile: View {
             if let own {
                 HStack(spacing: 4) {
                     TimerClockText(state: own)
-                        .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                        .umbarFont(.numeric, size: 15, weight: 600)
                         .foregroundStyle(PageTokens.textPrimary)
                     Spacer(minLength: 4)
                     if own.isPaused {
@@ -346,7 +346,7 @@ struct TimerClosedEar: View {
     var body: some View {
         let width = Self.width(alerting: alerting)
         content
-            .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
+            .umbarFont(.numeric, size: 11, weight: 600, design: .rounded)
             .frame(width: width, height: height)
             .background(.black, in: UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: 8))
             .offset(x: -width)

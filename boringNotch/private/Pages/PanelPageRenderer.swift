@@ -171,6 +171,7 @@ enum PanelPageRenderer {
                                           bottomTrailingRadius: cornerRadiusInsets.opened.bottom))
         .padding(10)
         .background(Color(white: 0.85))
+        .umbarTypefaceFromDefaults()
         .environmentObject(vm)
         .environment(\.colorScheme, .dark)
 

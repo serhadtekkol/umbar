@@ -127,7 +127,7 @@ struct TodayColumnContent: View {
     private func header(more: Int) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(String(localized: "now.today.title", defaultValue: "Today"))
-                .font(.system(size: 12, weight: .semibold))
+                .umbarFont(.display, size: 12, weight: 600)
                 .foregroundStyle(PageTokens.textPrimary)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 4)

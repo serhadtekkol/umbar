@@ -540,6 +540,7 @@ struct Media: View {
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableSneakPeek) private var enableSneakPeek
     @Default(.sneakPeekStyles) var sneakPeekStyles
+    @Default(.songPeekDuration) private var songPeekDuration
 
 
     var body: some View {
@@ -575,6 +576,8 @@ struct Media: View {
                         Text(style.rawValue).tag(style)
                     }
                 }
+                SongPeekDurationRow(seconds: $songPeekDuration)
+                    .disabled(!enableSneakPeek)
                 HStack {
                     Stepper(value: $waitInterval, in: 0...10, step: 1) {
                         HStack {
@@ -1030,6 +1033,8 @@ struct Appearance: View {
             } header: {
                 Text("General")
             }
+
+            TypefaceSettingsSection()
 
             EdgeGlowSettingsSection()
 

@@ -24,7 +24,8 @@ struct MeasureSizeModifier: ViewModifier {
 
 struct MarqueeText: View {
     @Binding var text: String
-    let font: Font
+    /// nil: the text takes the environment's font, e.g. from `.umbarFont`.
+    let font: Font?
     let nsFont: NSFont.TextStyle
     let textColor: Color
     let backgroundColor: Color
@@ -35,7 +36,7 @@ struct MarqueeText: View {
     @State private var textSize: CGSize = .zero
     @State private var offset: CGFloat = 0
     
-    init(_ text: Binding<String>, font: Font = .body, nsFont: NSFont.TextStyle = .body, textColor: Color = .primary, backgroundColor: Color = .clear, minDuration: Double = 3.0, frameWidth: CGFloat = 200) {
+    init(_ text: Binding<String>, font: Font? = nil, nsFont: NSFont.TextStyle = .body, textColor: Color = .primary, backgroundColor: Color = .clear, minDuration: Double = 3.0, frameWidth: CGFloat = 200) {
         _text = text
         self.font = font
         self.nsFont = nsFont
@@ -58,7 +59,7 @@ struct MarqueeText: View {
                         .opacity(needsScrolling ? 1 : 0)
                 }
                 .id(text)
-                .font(font)
+                .transformEnvironment(\.font) { if let font { $0 = font } }
                 .foregroundColor(textColor)
                 .fixedSize(horizontal: true, vertical: false)
                 .offset(x: self.animate ? offset : 0)
@@ -72,7 +73,10 @@ struct MarqueeText: View {
                 .background(backgroundColor)
                 .modifier(MeasureSizeModifier())
                 .onPreferenceChange(SizePreferenceKey.self) { size in
-                    self.textSize = CGSize(width: size.width / 2, height: NSFont.preferredFont(forTextStyle: nsFont).pointSize)
+                    // The taller of the measured line and the text style's: a
+                    // bundled face (UmbarFont) can be taller than its style.
+                    self.textSize = CGSize(width: size.width / 2,
+                                           height: max(size.height / 1.3, NSFont.preferredFont(forTextStyle: nsFont).pointSize))
                     self.animate = false
                     self.offset = 0
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01){
