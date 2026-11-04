@@ -62,13 +62,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "umbar shows your camera in the notch as a mirror, only after you tap the mirror tile. The picture is shown live and is never recorded, saved or sent anywhere."
+            "value": "umbar shows your camera in the notch as a mirror, only while the panel's Mirror tab is open. The picture is shown live and is never recorded, saved or sent anywhere."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "umbar, kamera görüntünüzü notch'ta ayna olarak gösterir; yalnızca ayna kutucuğuna dokunduğunuzda açılır. Görüntü canlı gösterilir; hiçbir zaman kaydedilmez, saklanmaz ve hiçbir yere gönderilmez."
+            "value": "umbar, kamera görüntünüzü notch'ta ayna olarak gösterir; yalnızca paneldeki Ayna sekmesi açıkken. Görüntü canlı gösterilir; hiçbir zaman kaydedilmez, saklanmaz ve hiçbir yere gönderilmez."
           }
         }
       }

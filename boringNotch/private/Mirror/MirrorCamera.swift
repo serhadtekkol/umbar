@@ -91,7 +91,7 @@ final class MirrorCamera: ObservableObject {
         }
     }
 
-    /// A tile appeared on, or left, the open Şimdi page of `owner`'s panel.
+    /// The Ayna page came to the front of, or left, `owner`'s open panel.
     func setTileVisible(_ visible: Bool, owner: BoringViewModel) {
         if tiles.set(visible, for: ObjectIdentifier(owner)) { apply() }
     }
@@ -148,6 +148,10 @@ final class MirrorCamera: ObservableObject {
 
     private func deactivate() {
         apply() // enabled is false now: stops a running preview first.
+        // The tab is gone; do not leave the selection on it, or turning the
+        // mirror back on would reopen the panel straight onto the camera.
+        let coordinator = BoringViewCoordinator.shared
+        if coordinator.currentView == .mirror { coordinator.currentView = .home }
         devicesObservation?.invalidate()
         devicesObservation = nil
         discovery = nil
@@ -176,12 +180,13 @@ final class MirrorCamera: ObservableObject {
                          userPresent: userPresent)
     }
 
-    private func apply() {
+    /// - Parameter afterAccessAnswer: the prompt was just answered, so a
+    ///   start is logged as `.accessGranted` rather than `.tabShown`.
+    private func apply(afterAccessAnswer: Bool = false) {
         let conditions = self.conditions
         if let command = session.update(conditions) {
-            // `update` starts only a preview that was waiting for the
-            // prompt's answer; every other start comes from `tap`.
-            perform(command, reason: command == .start ? .accessGranted : .stop(after: conditions))
+            perform(command, reason: command == .start
+                ? .start(afterAccessAnswer: afterAccessAnswer) : .stop(after: conditions))
         }
         refreshTile()
     }
@@ -237,7 +242,7 @@ final class MirrorCamera: ObservableObject {
             guard let self else { return }
             self.accessRequestInFlight = false
             self.access = Self.currentAccess()
-            self.apply()
+            self.apply(afterAccessAnswer: true)
         }
     }
 
@@ -328,9 +333,15 @@ final class MirrorCapture: @unchecked Sendable {
                     let next = try AVCaptureDeviceInput(device: device)
                     session.beginConfiguration()
                     if let input { session.removeInput(input) }
-                    // A tile of ~112 pt does not need more; lower presets
-                    // also keep the camera's power draw down.
-                    if session.canSetSessionPreset(.medium) { session.sessionPreset = .medium }
+                    // The Ayna preview is at most ~290 x 165 pt, ~580 px
+                    // wide on Retina: 720p covers it; more would only
+                    // raise the camera's power draw. .medium if the
+                    // camera has no 720p mode.
+                    if session.canSetSessionPreset(.hd1280x720) {
+                        session.sessionPreset = .hd1280x720
+                    } else if session.canSetSessionPreset(.medium) {
+                        session.sessionPreset = .medium
+                    }
                     guard session.canAddInput(next) else {
                         session.commitConfiguration()
                         input = nil

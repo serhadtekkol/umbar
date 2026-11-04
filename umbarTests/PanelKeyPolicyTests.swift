@@ -51,21 +51,21 @@ struct PanelKeyPolicyTests {
 
     @Test func commandDigitsMapToTheFixedPages() {
         let expected: [(UInt16, PanelPage)] = [
-            (18, .now), (19, .shelf), (20, .calendar), (21, .network), (23, .tools),
+            (18, .now), (19, .shelf), (20, .calendar), (21, .network), (23, .tools), (22, .mirror),
         ]
         for (code, page) in expected {
             #expect(PanelKeyPolicy.page(forKeyCode: code, commandOnly: true) == page)
         }
-        #expect(PanelPage.allCases.map(\.rawValue) == [1, 2, 3, 4, 5])
+        #expect(PanelPage.allCases.map(\.rawValue) == [1, 2, 3, 4, 5, 6])
     }
 
     @Test func digitsWithOtherModifiersAreNotPanelKeys() {
         #expect(PanelKeyPolicy.page(forKeyCode: 18, commandOnly: false) == nil)
     }
 
-    @Test(arguments: [UInt16(22), 25, 26, 28, 29, 0])
+    @Test(arguments: [UInt16(26), 25, 28, 29, 0])
     func otherKeysAreNotPanelPages(_ code: UInt16) {
-        // 22 is the 6 key; 25/26/28/29 are 9/7/8/0; 0 is A.
+        // 26/28/25/29 are 7/8/9/0; 0 is A. 22 (the 6 key) is Ayna's.
         #expect(PanelKeyPolicy.page(forKeyCode: code, commandOnly: true) == nil)
     }
 

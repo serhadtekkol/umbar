@@ -2,9 +2,10 @@
 //  PanelTabs.swift
 //  boringNotch
 //
-//  The open panel's five pages (design-language §5.2) and which of them are
-//  on. One list feeds the tab bar, ⌘1…⌘5 and the page switch in
-//  ContentView, so a page that is off has no tab and no shortcut.
+//  The open panel's pages (design-language §5.2's five, plus the opt-in
+//  Ayna) and which of them are on. One list feeds the tab bar, ⌘1…⌘6 and
+//  the page switch in ContentView, so a page that is off has no tab and no
+//  shortcut.
 //
 
 import Defaults
@@ -53,6 +54,7 @@ struct PanelTab: Identifiable, Equatable {
                 ? String(localized: "panel.tab.network", defaultValue: "Network")
                 : String(localized: "panel.tab.system", defaultValue: "System")
         case .tools: String(localized: "panel.tab.tools", defaultValue: "Tools")
+        case .mirror: String(localized: "panel.tab.mirror", defaultValue: "Mirror")
         }
     }
 
@@ -62,6 +64,8 @@ struct PanelTab: Identifiable, Equatable {
         PanelTab(view: .calendar, page: .calendar, icon: .system("calendar")),
         PanelTab(view: .network, page: .network, icon: .system("network")),
         PanelTab(view: .tools, page: .tools, icon: .system("slider.horizontal.3")),
+        // Last: the only page that turns a device on, and opt-in.
+        PanelTab(view: .mirror, page: .mirror, icon: .system("person.crop.square")),
     ]
 
     /// Pages whose feature is on (AC-1.13: a turned-off feature loses its tab).
@@ -80,6 +84,7 @@ struct PanelTab: Identifiable, Equatable {
         case .tools:
             Defaults[.quickTogglesEnabled] || Defaults[.caffeinateEnabled]
                 || Defaults[.focusTimerEnabled] || Defaults[.eyeBreakEnabled]
+        case .mirror: Defaults[.mirrorEnabled]
         }
     }
 }
@@ -88,7 +93,7 @@ struct PanelTab: Identifiable, Equatable {
 /// feature was turned off while the panel was on it.
 ///
 /// Every page change, whichever page and however it was picked (tab click,
-/// ←/→, ⌘1…⌘5, a page link), slides `UmbarMotion.pageOffset` from the side
+/// ←/→, ⌘1…⌘6, a page link), slides `UmbarMotion.pageOffset` from the side
 /// its tab is on and crossfades (§3.7 `motion.page`). The animation is
 /// started here, not by the caller: the shortcuts set the page without one,
 /// and a page change must never depend on who changed it.
@@ -157,6 +162,7 @@ struct PanelPageView: View {
         case .calendar: CalendarPage()
         case .network: NetworkPage()
         case .tools: ToolsPage()
+        case .mirror: MirrorPageLive()
         }
     }
 }

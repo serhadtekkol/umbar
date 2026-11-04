@@ -26,6 +26,7 @@ struct TabSelectionView: View {
     @Default(.caffeinateEnabled) private var caffeinateOn
     @Default(.focusTimerEnabled) private var focusOn
     @Default(.eyeBreakEnabled) private var eyeBreakOn
+    @Default(.mirrorEnabled) private var mirrorOn
 
     private var tabs: [PanelTab] { PanelTab.available }
 
@@ -79,7 +80,7 @@ struct TabSelectionView: View {
             }
         }
         // Any change of the selected tab moves the capsule, widens the new
-        // tab and slides the neighbours on one spring, including the ⌘1…⌘5
+        // tab and slides the neighbours on one spring, including the ⌘1…⌘6
         // shortcuts, which set the page without an animation of their own.
         .animation(UmbarMotion.tab(reduce: reduceMotion), value: shownView)
         .padding(.vertical, Self.inset)

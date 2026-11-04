@@ -31,6 +31,7 @@ public enum NotchViews: CaseIterable {
     case calendar
     case network
     case tools
+    case mirror
 }
 
 enum SettingsEnum {

@@ -15,7 +15,7 @@
 //    page-<notch>-<ms>.png       the open panel going Şimdi → Takvim
 //    pages-<from>-<to>-<how>-<notch>-<ms>.png  the whole island changing
 //                                page (Şimdi → Raf, Raf → Şimdi, Ağ → Araçlar;
-//                                how: click = tab bar, key = ⌘1…⌘5 with no
+//                                how: click = tab bar, key = ⌘1…⌘6 with no
 //                                animation of its own, reduce = Reduce
 //                                Motion); pages-open-<notch>-<ms>.png the
 //                                open it starts from. `-UmbarRenderMotionOnly
