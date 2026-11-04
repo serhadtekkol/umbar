@@ -12,9 +12,13 @@
 //      started processes get listeners too.
 //
 //  Never opens a device. Reading these properties is not capture, so no
-//  camera or microphone permission is needed and no TCC prompt is raised;
-//  umbar has no camera/microphone entitlement or usage string, and must
-//  not gain one for this feature.
+//  camera or microphone permission is needed and no TCC prompt is raised.
+//  umbar's camera entitlement and usage string belong to the opt-in mirror
+//  (Mirror/), not to this feature; the indicator works without them.
+//
+//  The mirror is umbar's only camera user. It claims the camera here
+//  (`mirrorDidClaimCamera`), and while the claim masks, a running camera
+//  is not reported: see `OwnCameraClaim`.
 //
 //  Threading. `PrivacyHardwareProbe` lives on its own serial queue: every
 //  listener block is delivered there, and the listener tables are only
@@ -38,6 +42,9 @@ final class PrivacyIndicatorMonitor: ObservableObject {
 
     private let probe = PrivacyHardwareProbe()
     private var settings: AnyCancellable?
+    private var lastSample: PrivacySample?
+    private var ownCamera = OwnCameraClaim()
+    private var releaseCheck: Task<Void, Never>?
 
     private init() {}
 
@@ -60,16 +67,46 @@ final class PrivacyIndicatorMonitor: ObservableObject {
 
     private func deactivate() {
         probe.stop()
+        lastSample = nil
         usage = .idle
     }
 
+    /// The mirror is about to start its capture.
+    func mirrorDidClaimCamera() {
+        releaseCheck?.cancel()
+        ownCamera.begin(cameraRunningElsewhere: lastSample?.cameraRunning ?? false)
+        republish()
+    }
+
+    /// The mirror's capture has stopped (`stopRunning` returned).
+    func mirrorDidReleaseCamera() {
+        ownCamera.end(now: .now)
+        republish()
+        guard ownCamera.releaseDeadline != nil else { return }
+        // No HAL callback may come if the camera stays on for someone
+        // else, so the grace end is checked on a timer too.
+        releaseCheck?.cancel()
+        releaseCheck = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(OwnCameraClaim.releaseGrace))
+            guard !Task.isCancelled else { return }
+            self?.republish()
+        }
+    }
+
+    private func republish() {
+        if let lastSample { publish(lastSample) }
+    }
+
     private func publish(_ sample: PrivacySample) {
+        lastSample = sample
+        ownCamera.observe(cameraRunning: sample.cameraRunning, now: .now)
         let apps = NSWorkspace.shared.runningApplications.compactMap { app -> PrivacyRunningApp? in
             guard let id = app.bundleIdentifier, let name = app.localizedName else { return nil }
             return PrivacyRunningApp(bundleID: id, name: name, pid: app.processIdentifier)
         }
         let next = PrivacyUsage.reduce(sample, enabled: Defaults[.privacyIndicatorEnabled],
-                                       ownPID: ProcessInfo.processInfo.processIdentifier, runningApps: apps)
+                                       ownPID: ProcessInfo.processInfo.processIdentifier, runningApps: apps,
+                                       ownCamera: ownCamera.masksCamera)
         if next != usage { usage = next }
     }
 
