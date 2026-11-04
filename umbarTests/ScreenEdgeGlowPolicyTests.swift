@@ -3,8 +3,9 @@
 //  umbarTests
 //
 //  The screen edge glow: when it draws and when its window shows, the
-//  frame-rate cap, how far the light has run from the notch, the glint, and
-//  the fullscreen check against fixture window lists. Nothing is drawn,
+//  frame-rate cap, how far the bands beside the notch reach, how far the
+//  light has run along them, the glint, the panel strip, and the
+//  fullscreen check against fixture window lists. Nothing is drawn,
 //  captured or played.
 //
 
@@ -67,6 +68,50 @@ struct ScreenEdgeGlowPolicyTests {
         #expect(ScreenEdgeGlowPolicy.frameInterval(EdgeGlowPolicy.frameInterval(.pulse))! >= 1.0 / 30)
     }
 
+    // MARK: Band geometry
+
+    @Test func defaultSpreadIsBetweenOneAndOneAndAHalfNotchWidths() {
+        let spread = 1.25
+        #expect(ScreenEdgeGlowPolicy.spreadRange.contains(spread))
+        let length = ScreenEdgeGlowPolicy.bandLength(screenWidth: 1512, notchWidth: 190, spread: spread)
+        #expect(length >= 190 && length <= 285)
+        #expect(abs(length - 237.5) < 1e-9)
+    }
+
+    @Test func theBandNeverReachesTheCorner() {
+        // Widest spread on a narrow screen: cut short of the corner.
+        let length = ScreenEdgeGlowPolicy.bandLength(screenWidth: 900, notchWidth: 200, spread: 2.5)
+        #expect(length == (900 - 200) / 2 - ScreenEdgeGlowPolicy.cornerMargin)
+        #expect(200 / 2 + length < 900 / 2)
+    }
+
+    @Test func spreadIsClampedAndNaNSafe() {
+        let low = ScreenEdgeGlowPolicy.bandLength(screenWidth: 3000, notchWidth: 200, spread: 0)
+        #expect(Double(low) == 200 * ScreenEdgeGlowPolicy.spreadRange.lowerBound)
+        let high = ScreenEdgeGlowPolicy.bandLength(screenWidth: 3000, notchWidth: 200, spread: 10)
+        #expect(Double(high) == 200 * ScreenEdgeGlowPolicy.spreadRange.upperBound)
+        #expect(ScreenEdgeGlowPolicy.bandLength(screenWidth: 3000, notchWidth: 200, spread: .nan) == 200)
+    }
+
+    @Test func noNotchUsesTheFallbackWidth() {
+        let length = ScreenEdgeGlowPolicy.bandLength(screenWidth: 2560, notchWidth: 0, spread: 1)
+        #expect(length == ScreenEdgeGlowPolicy.fallbackNotchWidth)
+    }
+
+    @Test func aTinyScreenGetsNoBandRatherThanANegativeOne() {
+        #expect(ScreenEdgeGlowPolicy.bandLength(screenWidth: 100, notchWidth: 190, spread: 1) == 0)
+    }
+
+    @Test func thePanelIsAStripAtTheTopOfItsScreen() {
+        let screen = CGRect(x: 1512, y: -200, width: 2560, height: 1080)
+        let strip = ScreenEdgeGlowPolicy.panelFrame(screen: screen)
+        #expect(strip.width == screen.width && strip.minX == screen.minX)
+        #expect(strip.maxY == screen.maxY)
+        #expect(strip.height == ScreenEdgeGlowPolicy.panelHeight)
+        let tiny = CGRect(x: 0, y: 0, width: 300, height: 50)
+        #expect(ScreenEdgeGlowPolicy.panelFrame(screen: tiny) == tiny)
+    }
+
     // MARK: Flow phase
 
     @Test func reachRunsOutFromTheNotch() {
@@ -101,7 +146,7 @@ struct ScreenEdgeGlowPolicyTests {
         #expect(ScreenEdgeGlowPolicy.glint(.pulse, time: 0, elapsed: EdgeGlowPolicy.pulseDuration / 2) == nil)
     }
 
-    @Test func ambientGlintTravelsNotchToBottomAndRepeats() throws {
+    @Test func ambientGlintTravelsOutwardAndRepeats() throws {
         let period = ScreenEdgeGlowPolicy.glintPeriod
         let base = period * 1000
         let start = try #require(ScreenEdgeGlowPolicy.glint(.breathing, time: base, elapsed: 10))

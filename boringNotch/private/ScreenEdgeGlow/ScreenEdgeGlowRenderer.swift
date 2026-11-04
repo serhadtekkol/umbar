@@ -4,8 +4,8 @@
 //
 //  Debug-only fixtures for the screen edge glow, run by
 //  `-UmbarRenderMotion <dir> -UmbarRenderMotionOnly screenedge`. Each frame
-//  is a whole MacBook screen (1512 × 982 pt, 10 pt corners, a notch and a
-//  menu bar) drawn at half size, with the thickness halved to match:
+//  is the top 180 pt of a MacBook screen (1512 pt wide, 10 pt corners, a
+//  190 pt notch and a menu bar) at full size, which is all the bands use:
 //    screenedge-camera-<bg>-<ms>.png   an event: the sweep out of the
 //                                      notch and the two flashes, dark by 1.6 s
 //    screenedge-music-<bg>-<ms>.png    music starting: the reveal, then the
@@ -13,9 +13,11 @@
 //    screenedge-audio-<frame>.png      reacting to sound, fed the notch
 //                                      glow's fake 120 bpm sequence at 30 Hz
 //                                      (frame 15 is a kick, 7 a hat)
-//    screenedge-reduce-<bg>.png        Reduce Motion: the still rim
-//    screenedge-style-<style>-<bg>.png each style at full size
+//    screenedge-reduce-<bg>.png        Reduce Motion: the still bands
+//    screenedge-style-<style>-<bg>.png each style, a glint mid-band
 //    screenedge-thickness-<pt>.png     the thinnest and thickest settings
+//    screenedge-spread-<x100>.png      the shortest, default and longest
+//                                      bands (notch widths × 100)
 //    screenedge-settings-<bg>.png      Settings' edge glow section
 //  <bg> is dark or light (the wallpaper under it). Nothing is captured or
 //  played; the user's settings are only read (`-edgeGlowStyle neon`).
@@ -31,6 +33,7 @@ enum ScreenEdgeGlowRenderer {
     private static let screen = CGSize(width: 1512, height: 982)
     private static let notch = CGSize(width: 190, height: 37)
     private static let corner: CGFloat = 10
+    private static let stripHeight: CGFloat = 180
     private static let backgrounds: [(String, Color, Color)] = [
         ("dark", Color(red: 0.10, green: 0.11, blue: 0.14), Color(white: 0.16)),
         ("light", Color(red: 0.86, green: 0.87, blue: 0.90), Color(white: 0.94)),
@@ -50,7 +53,7 @@ enum ScreenEdgeGlowRenderer {
             for t in [0.0, 0.15, 0.3, 0.5, 0.8, 1.0, 1.2, 1.6] {
                 let frame = ScreenEdgeGlowModel.frame(envelope: envelope, audio: .init(), pulseStart: start,
                                                       album: album, at: start.addingTimeInterval(t))
-                still(frame, style: style, thickness: thickness, intensity: intensity, wall: wall, bar: bar, scale: 0.5,
+                still(frame, style: style, thickness: thickness, intensity: intensity, wall: wall, bar: bar,
                       to: out.appendingPathComponent("screenedge-camera-\(bg)-\(Int(t * 1000)).png"))
             }
             // Music starting.
@@ -59,21 +62,21 @@ enum ScreenEdgeGlowRenderer {
             for t in [0.0, 0.2, 0.45, 0.9, 1.75, 2.6, 3.5] {
                 let frame = ScreenEdgeGlowModel.frame(envelope: envelope, audio: .init(), pulseStart: .distantPast,
                                                       album: album, at: start.addingTimeInterval(t))
-                still(frame, style: style, thickness: thickness, intensity: intensity, wall: wall, bar: bar, scale: 0.5,
+                still(frame, style: style, thickness: thickness, intensity: intensity, wall: wall, bar: bar,
                       to: out.appendingPathComponent("screenedge-music-\(bg)-\(Int(t * 1000)).png"))
             }
             // Reduce Motion.
             envelope = EdgeGlowEnvelope()
             envelope.update(to: EdgeGlowState(tint: .album, animation: .steady), now: start, reduceMotion: true)
             still(ScreenEdgeGlowModel.frame(envelope: envelope, audio: .init(), pulseStart: .distantPast, album: album, at: start),
-                  style: style, thickness: thickness, intensity: intensity, wall: wall, bar: bar, scale: 0.5,
+                  style: style, thickness: thickness, intensity: intensity, wall: wall, bar: bar,
                   to: out.appendingPathComponent("screenedge-reduce-\(bg).png"))
             // Styles, full size, mid-breath with a glint on the side.
             for s in [EdgeGlowStyle.soft, .neon] {
                 let frame = ScreenEdgeGlowFrame(color: album.color, level: 0.8, reach: 1,
                                                 glint: .init(position: 0.45, strength: 0.8,
                                                              color: EdgeGlowColor.sparkle(album, amount: 0.45).color))
-                still(frame, style: s, thickness: thickness, intensity: intensity, wall: wall, bar: bar, scale: 1,
+                still(frame, style: s, thickness: thickness, intensity: intensity, wall: wall, bar: bar,
                       to: out.appendingPathComponent("screenedge-style-\(s.rawValue)-\(bg).png"))
             }
         }
@@ -81,8 +84,15 @@ enum ScreenEdgeGlowRenderer {
         for pt in [ScreenEdgeGlowPolicy.thicknessRange.lowerBound, ScreenEdgeGlowPolicy.thicknessRange.upperBound] {
             let frame = ScreenEdgeGlowFrame(color: album.color, level: 0.8, reach: 1, glint: nil)
             still(frame, style: style, thickness: CGFloat(pt), intensity: intensity,
-                  wall: backgrounds[0].1, bar: backgrounds[0].2, scale: 0.5,
+                  wall: backgrounds[0].1, bar: backgrounds[0].2,
                   to: out.appendingPathComponent("screenedge-thickness-\(Int(pt)).png"))
+        }
+        for spread in [ScreenEdgeGlowPolicy.spreadRange.lowerBound, Defaults.Keys.screenEdgeGlowSpread.defaultValue,
+                       ScreenEdgeGlowPolicy.spreadRange.upperBound] {
+            let frame = ScreenEdgeGlowFrame(color: album.color, level: 0.8, reach: 1, glint: nil)
+            still(frame, style: style, thickness: thickness, intensity: intensity,
+                  wall: backgrounds[0].1, bar: backgrounds[0].2, spread: spread,
+                  to: out.appendingPathComponent("screenedge-spread-\(Int(spread * 100)).png"))
         }
         renderSettings(out: out)
     }
@@ -102,7 +112,7 @@ enum ScreenEdgeGlowRenderer {
             let frame = ScreenEdgeGlowModel.frame(envelope: envelope, audio: follower, pulseStart: .distantPast,
                                                   album: album, at: now)
             still(frame, style: style, thickness: thickness, intensity: intensity,
-                  wall: backgrounds[0].1, bar: backgrounds[0].2, scale: 0.5,
+                  wall: backgrounds[0].1, bar: backgrounds[0].2,
                   to: out.appendingPathComponent("screenedge-audio-\(i).png"))
         }
     }
@@ -123,27 +133,30 @@ enum ScreenEdgeGlowRenderer {
         }
     }
 
-    /// One screen: wallpaper, menu bar, the rim, the notch over it, the
-    /// display's rounded corners masking it all (black outside, as the
-    /// bezel). `scale` shrinks the whole screen, thickness included.
+    /// The top of one screen: wallpaper, menu bar, the bands, the notch
+    /// over them, the display's rounded top corners (black outside, as
+    /// the bezel). `spread` defaults to the run's setting.
     private static func still(_ frame: ScreenEdgeGlowFrame?, style: EdgeGlowStyle, thickness: CGFloat,
-                              intensity: Double, wall: Color, bar: Color, scale: CGFloat, to url: URL) {
-        let size = CGSize(width: screen.width * scale, height: screen.height * scale)
+                              intensity: Double, wall: Color, bar: Color,
+                              spread: Double = Defaults[.screenEdgeGlowSpread], to url: URL) {
+        let size = CGSize(width: screen.width, height: stripHeight)
         let root = ZStack(alignment: .top) {
             wall
-            bar.frame(height: notch.height * scale)
+            bar.frame(height: notch.height)
             if let frame {
-                ScreenEdgeGlowRim(frame: frame, style: style, thickness: thickness * scale,
-                                  intensity: intensity, cornerRadius: corner * scale)
+                ScreenEdgeGlowRim(frame: frame, style: style, thickness: thickness, intensity: intensity,
+                                  notchWidth: notch.width,
+                                  bandLength: ScreenEdgeGlowPolicy.bandLength(
+                                      screenWidth: screen.width, notchWidth: notch.width, spread: spread))
             }
-            // Hardware, and the notch's own window above the rim's: nothing
+            // Hardware, and the notch's own window above the bands': nothing
             // drawn under it is seen.
-            UnevenRoundedRectangle(bottomLeadingRadius: 9 * scale, bottomTrailingRadius: 9 * scale)
+            UnevenRoundedRectangle(bottomLeadingRadius: 9, bottomTrailingRadius: 9)
                 .fill(.black)
-                .frame(width: notch.width * scale, height: notch.height * scale)
+                .frame(width: notch.width, height: notch.height)
         }
         .frame(width: size.width, height: size.height)
-        .clipShape(RoundedRectangle(cornerRadius: corner * scale))
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: corner, topTrailingRadius: corner))
         .background(.black)
         let session = MotionFrameRenderer.Session(root, size: NSSize(width: size.width, height: size.height))
         MotionFrameRenderer.capture(session.host, to: url)

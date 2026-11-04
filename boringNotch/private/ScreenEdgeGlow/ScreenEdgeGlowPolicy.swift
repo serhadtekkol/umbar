@@ -8,11 +8,12 @@
 //  it hostless (membershipExceptions), beside EdgeGlowPolicy whose state
 //  and colours it shares.
 //
-//  The picture: light leaves the notch, runs along the top edge to the
-//  corners and down the sides, dimmer the further it gets. While music
-//  plays a glint keeps travelling the same way; an event sends one sweep.
-//  Positions along the rim are fractions of one half of it, 0 at the top
-//  centre (the notch) and 1 at the bottom centre; both halves mirror.
+//  The picture: light leaves the notch on both sides and runs a short
+//  way along the top edge, fading out toward its ends. It never reaches
+//  the corners, the sides or the bottom. While music plays a glint keeps
+//  travelling outward; an event sends one sweep. Positions along a band
+//  are fractions of it, 0 at the notch's edge and 1 at the band's far
+//  end; the two sides mirror.
 //
 
 import Foundation
@@ -20,15 +21,42 @@ import Foundation
 enum ScreenEdgeGlowPolicy {
     /// The light running out from the notch when the music glow starts.
     static let revealDuration: TimeInterval = 0.9
-    /// One glint, notch to bottom. Half a breath, so the two never beat.
+    /// One glint, notch to the band's end. Half a breath, so the two never beat.
     static let glintPeriod: TimeInterval = EdgeGlowPolicy.breathPeriod / 2
-    /// The glint's length, as a fraction of the half rim.
-    static let glintLength = 0.14
-    /// The most the rim ever draws: a full-screen layer is not worth more.
+    /// The glint's length, as a fraction of the band.
+    static let glintLength = 0.3
+    /// The most the bands ever draw: a soft glow gains nothing from more.
     static let maxFrameRate = 30.0
     /// Settings: the band's width on screen, in points.
     static let thicknessRange: ClosedRange<Double> = 2...12
     static let intensityRange: ClosedRange<Double> = 0.3...1
+    /// Settings: how far each band runs out from the notch's edge, in
+    /// notch widths. 1.25 is the default (between 1 and 1.5).
+    static let spreadRange: ClosedRange<Double> = 0.5...2.5
+    /// The band always stops this far short of the screen's corner.
+    static let cornerMargin: CGFloat = 24
+    /// A display without a notch: the closed island's width stands in.
+    static let fallbackNotchWidth: CGFloat = 185
+
+    /// How tall the panel is: the band and the light it throws down, at
+    /// the thickest setting and a bass hit's widest spread.
+    static let panelHeight: CGFloat = 120
+
+    /// The panel: a strip along the top of the screen (AppKit coordinates),
+    /// not the whole screen, so the window server composites only that.
+    static func panelFrame(screen: CGRect) -> CGRect {
+        let height = min(panelHeight, screen.height)
+        return CGRect(x: screen.minX, y: screen.maxY - height, width: screen.width, height: height)
+    }
+
+    /// The length of one side's band, in points: `spread` notch widths,
+    /// cut short so it stops `cornerMargin` before the corner.
+    static func bandLength(screenWidth: CGFloat, notchWidth: CGFloat, spread: Double) -> CGFloat {
+        let notch = notchWidth > 0 ? notchWidth : fallbackNotchWidth
+        let room = max(0, (screenWidth - notch) / 2 - cornerMargin)
+        let wanted = notch * CGFloat(min(max(spread.isFinite ? spread : 1, spreadRange.lowerBound), spreadRange.upperBound))
+        return min(wanted, room)
+    }
 
     /// What the rim draws, nil for nothing. The same state as the notch's
     /// glow, with two differences: an open panel does not put it out (the
@@ -54,7 +82,7 @@ enum ScreenEdgeGlowPolicy {
         interval.map { max($0, 1 / maxFrameRate) }
     }
 
-    /// How far the light has run from the notch, 0…1 of the half rim.
+    /// How far the light has run from the notch, 0…1 of the band.
     /// `elapsed` is the time since the glow (or the pulse) began.
     /// An event sweeps out during its first flash, so the echo lights the
     /// whole rim. Steady (Reduce Motion) is the whole rim at once.
@@ -66,11 +94,11 @@ enum ScreenEdgeGlowPolicy {
         }
     }
 
-    /// The travelling highlight: where its centre is (0…1 of the half rim)
-    /// and how strong it is (0…1), or nil for none.
+    /// The travelling highlight: where its centre is
+    /// and how strong it is (0…1), or nil for none. Its centre is 0…1 of the band.
     ///   pulse     the head of the sweep, fading as it arrives
     ///   ambient   a glint every `glintPeriod`, born at the notch and gone
-    ///             by the bottom; it does not run ahead of the reveal
+    ///             by the band's end; it does not run ahead of the reveal
     ///   steady    none: Reduce Motion
     static func glint(_ animation: EdgeGlowAnimation, time: TimeInterval, elapsed: TimeInterval) -> (position: Double, strength: Double)? {
         switch animation {

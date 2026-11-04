@@ -24,7 +24,7 @@ struct ScreenEdgeGlowFrame: Equatable {
     var color: Color
     /// 0…1, before the user's intensity.
     var level: Double
-    /// How far the light has run from the notch, 0…1 of the half rim.
+    /// How far the light has run from the notch, 0…1 of the band.
     var reach: Double
     var glint: Glint?
     /// A bass hit widens the band: EdgeGlowAudioFollower.spread.

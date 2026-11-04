@@ -3,7 +3,8 @@
 //  boringNotch
 //
 //  One transparent, click-through panel per screen for the screen edge
-//  glow. Idle, every panel is ordered out and holds no view, so nothing is
+//  glow: a strip along the top of the screen (ScreenEdgeGlowPolicy.panelFrame),
+//  where the bands beside the notch are drawn. Idle, every panel is ordered out and holds no view, so nothing is
 //  drawn or scheduled; a glow starting puts one on each screen that no
 //  fullscreen app owns.
 //
@@ -27,7 +28,7 @@ import SwiftUI
 
 final class ScreenEdgeGlowPanel: NSPanel {
     init(screen: NSScreen) {
-        super.init(contentRect: screen.frame, styleMask: [.borderless, .nonactivatingPanel],
+        super.init(contentRect: ScreenEdgeGlowPolicy.panelFrame(screen: screen.frame), styleMask: [.borderless, .nonactivatingPanel],
                    backing: .buffered, defer: true)
         isOpaque = false
         backgroundColor = .clear
@@ -133,10 +134,12 @@ final class ScreenEdgeGlowController {
     }
 
     private func show(_ panel: ScreenEdgeGlowPanel, on screen: NSScreen) {
-        if panel.frame != screen.frame { panel.setFrame(screen.frame, display: false) }
+        let frame = ScreenEdgeGlowPolicy.panelFrame(screen: screen.frame)
+        if panel.frame != frame { panel.setFrame(frame, display: false) }
         if panel.contentView == nil || !panel.isVisible {
-            let host = NSHostingView(rootView: ScreenEdgeGlowView(cornerRadius: Self.cornerRadius(of: screen)))
-            host.frame = NSRect(origin: .zero, size: screen.frame.size)
+            let view = ScreenEdgeGlowView(screenWidth: screen.frame.width, notchWidth: Self.notchWidth(of: screen))
+            let host = NSHostingView(rootView: view)
+            host.frame = NSRect(origin: .zero, size: frame.size)
             panel.contentView = host
         }
         panel.orderFrontRegardless()
@@ -149,17 +152,14 @@ final class ScreenEdgeGlowController {
         panel.contentView = nil
     }
 
-    /// The display's corner rounding. macOS has no public value for it: a
-    /// private one is read when the system offers it, otherwise a built-in
-    /// display with a notch is given the MacBook's ~10 pt and any other
-    /// display square corners.
-    static func cornerRadius(of screen: NSScreen) -> CGFloat {
-        let key = "_displayCornerRadius"
-        if screen.responds(to: NSSelectorFromString(key)),
-           let value = (screen.value(forKey: key) as? NSNumber)?.doubleValue, value > 0 {
-            return CGFloat(value)
+    /// The hardware notch's width: what the menu bar leaves between its
+    /// two halves. A display without one gets the closed island's width.
+    static func notchWidth(of screen: NSScreen) -> CGFloat {
+        guard let left = screen.auxiliaryTopLeftArea?.width, let right = screen.auxiliaryTopRightArea?.width else {
+            return ScreenEdgeGlowPolicy.fallbackNotchWidth
         }
-        return screen.safeAreaInsets.top > 0 ? 10 : 0
+        let width = screen.frame.width - left - right
+        return width > 0 ? width : ScreenEdgeGlowPolicy.fallbackNotchWidth
     }
 
     /// Bounds, layer and owner of every on-screen window. Needs no screen
