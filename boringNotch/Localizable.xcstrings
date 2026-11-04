@@ -1009,6 +1009,262 @@
         }
       }
     },
+    "mirror.settings.denied" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera access is off for umbar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "umbar için kamera izni kapalı."
+          }
+        }
+      }
+    },
+    "mirror.settings.enabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mirror on the Now page"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi sayfasında ayna"
+          }
+        }
+      }
+    },
+    "mirror.settings.enabled.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A camera tile beside today's events. The camera turns on only when you tap the tile, and off when the panel closes or you switch pages. The picture is never recorded or sent anywhere."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünün etkinliklerinin yanında bir kamera kutucuğu. Kamera yalnızca kutucuğa dokunduğunuzda açılır; panel kapanınca ya da sayfa değiştirince kapanır. Görüntü hiçbir zaman kaydedilmez ve hiçbir yere gönderilmez."
+          }
+        }
+      }
+    },
+    "mirror.settings.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mirror"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayna"
+          }
+        }
+      }
+    },
+    "mirror.settings.openPrivacy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open System Settings"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem Ayarları'nı aç"
+          }
+        }
+      }
+    },
+    "mirror.tile.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mirror"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayna"
+          }
+        }
+      }
+    },
+    "mirror.tile.denied" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera access off"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera izni kapalı"
+          }
+        }
+      }
+    },
+    "mirror.tile.denied.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open camera privacy settings"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera gizlilik ayarlarını aç"
+          }
+        }
+      }
+    },
+    "mirror.tile.idle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mirror"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayna"
+          }
+        }
+      }
+    },
+    "mirror.tile.idle.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the camera. It turns off when the panel closes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamerayı göster. Panel kapanınca kapanır."
+          }
+        }
+      }
+    },
+    "mirror.tile.live" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mirror on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayna açık"
+          }
+        }
+      }
+    },
+    "mirror.tile.live.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn the camera off"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamerayı kapat"
+          }
+        }
+      }
+    },
+    "mirror.tile.needsAccess" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow camera"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kameraya izin ver"
+          }
+        }
+      }
+    },
+    "mirror.tile.needsAccess.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask macOS for camera access"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS'tan kamera izni iste"
+          }
+        }
+      }
+    },
+    "mirror.tile.unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No camera"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera yok"
+          }
+        }
+      }
+    },
+    "mirror.tile.unavailable.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect a camera to use the mirror"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aynayı kullanmak için bir kamera bağlayın"
+          }
+        }
+      }
+    },
     "No permissions are requested now. When a feature needs your calendar, reminders or Accessibility, umbar tells you why and asks you then." : {
       "localizations" : {
         "en" : {

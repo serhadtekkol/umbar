@@ -250,6 +250,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // F21: follows Settings > Shelf > Clipboard (on by default).
         ClipboardHistoryModel.shared.activate()
         PrivacyIndicatorMonitor.shared.start()
+        // Never prompts; with the setting off it does not touch AVFoundation.
+        MirrorCamera.shared.start()
         EdgeGlowAudioCoordinator.shared.start()
         // F16: new screenshots land on the shelf; briefly show the shelf
         // without taking focus, and put the notch back unless the user is in it.

@@ -55,6 +55,24 @@
         }
       }
     },
+    "NSCameraUsageDescription": {
+      "comment": "Camera permission prompt: the opt-in mirror tile on the Now page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar shows your camera in the notch as a mirror, only after you tap the mirror tile. The picture is shown live and is never recorded, saved or sent anywhere."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "umbar, kamera görüntünüzü notch'ta ayna olarak gösterir; yalnızca ayna kutucuğuna dokunduğunuzda açılır. Görüntü canlı gösterilir; hiçbir zaman kaydedilmez, saklanmaz ve hiçbir yere gönderilmez."
+          }
+        }
+      }
+    },
     "NSRemindersFullAccessUsageDescription": {
       "comment": "Reminders permission prompt (full access). Must say umbar also writes completion (AC-6R.7).",
       "extractionState": "manual",
