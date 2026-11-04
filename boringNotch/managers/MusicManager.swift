@@ -375,9 +375,22 @@ class MusicManager: ObservableObject {
     private func updateArtwork(_ artworkData: Data, bundleIdentifier: String) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let decoded = ArtworkImageDecoder.thumbnail(from: artworkData)
+            // Browsers hand their own logo over as artwork when the page has
+            // none (X, plain <video>): that is not the song either.
+            let isAppIcon: Bool = {
+                guard case .success(let image) = decoded,
+                      Self.browserBundleIdentifiers.contains(bundleIdentifier),
+                      let icon = AppIconAsNSImage(for: bundleIdentifier)?
+                          .cgImage(forProposedRect: nil, context: nil, hints: nil)
+                else { return false }
+                return ArtworkSimilarity.looksAlike(image, icon)
+            }()
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 switch decoded {
+                case .success where isAppIcon:
+                    self.usingAppIconForArtwork = true
+                    self.updateAlbumArt(newAlbumArt: missingArtworkImage)
                 case .success(let image):
                     self.usingAppIconForArtwork = false
                     self.updateAlbumArt(newAlbumArt: NSImage(cgImage: image, size: .zero))
