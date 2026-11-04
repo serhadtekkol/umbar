@@ -69,7 +69,7 @@ final class AudioLevelMonitor: ObservableObject {
 
     private let engine = AudioCaptureEngine()
     private var requested = false
-    private var permissionRequestInFlight = false
+    private var permissionRequest = AudioPermissionRequestGate()
     private var musicPlaying = false
     private var nowPlaying: String?
     private var meter: AudioLevelMeter?
@@ -96,6 +96,10 @@ final class AudioLevelMonitor: ObservableObject {
         if active {
             authorizeThenStart()
         } else {
+            // An unanswered request must not block the next start; if its
+            // answer still arrives it is recorded, and starts nothing
+            // because `requested` is false.
+            permissionRequest.cancel()
             stopObserving()
             reconcile()
         }
@@ -115,18 +119,29 @@ final class AudioLevelMonitor: ObservableObject {
             Self.log.notice("audio capture permission cannot be read on this system; starting anyway")
             startObserving()
         case .notDetermined:
-            guard !permissionRequestInFlight else { return }
-            permissionRequestInFlight = true
+            guard let requestID = permissionRequest.begin() else { return }
             AudioCapturePermission.requestAccess { status in
                 MainActor.assumeIsolated {
                     let monitor = AudioLevelMonitor.shared
-                    monitor.permissionRequestInFlight = false
+                    monitor.permissionRequest.finish(requestID)
                     switch status {
                     case .granted: monitor.authorization = .granted
                     case .denied: monitor.authorization = .denied
                     case .notDetermined, .unavailable: break
                     }
                     if status != .denied, monitor.requested { monitor.startObserving() }
+                }
+            }
+            // If the answer never comes, look again once the request counts
+            // as lost: the preflight then reads whatever the user decided
+            // (or asks again if they still have not), instead of capture
+            // staying off until the glow is toggled.
+            DispatchQueue.main.asyncAfter(deadline: .now() + AudioPermissionRequestGate.timeout) {
+                MainActor.assumeIsolated {
+                    let monitor = AudioLevelMonitor.shared
+                    guard monitor.permissionRequest.expire(requestID), monitor.requested else { return }
+                    Self.log.notice("audio capture permission request unanswered; checking again")
+                    monitor.authorizeThenStart()
                 }
             }
         }

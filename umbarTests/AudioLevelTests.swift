@@ -427,3 +427,57 @@ struct AudioTapTargetingTests {
             proposed: .global, app: "com.spotify.client"))
     }
 }
+
+@Suite("AudioPermissionRequestGate", .timeLimit(.minutes(1)))
+struct AudioPermissionRequestGateTests {
+    // The gate's methods are mutating, which #expect cannot call inline.
+
+    @Test func oneRequestAtATime() {
+        var gate = AudioPermissionRequestGate()
+        let first = gate.begin()
+        let whileOutstanding = gate.begin()
+        #expect(first != nil)
+        #expect(whileOutstanding == nil)
+        gate.finish(first!)
+        let afterAnswer = gate.begin()
+        #expect(afterAnswer != nil)
+    }
+
+    /// Regression: with a bool flag, a completion that never fired kept
+    /// every later start from asking. Deactivating now clears it.
+    @Test func cancelLetsTheNextStartAskAgain() {
+        var gate = AudioPermissionRequestGate()
+        _ = gate.begin()
+        gate.cancel()
+        let next = gate.begin()
+        #expect(next != nil)
+    }
+
+    @Test func expiryEndsOnlyAnUnansweredRequest() {
+        var gate = AudioPermissionRequestGate()
+        let lost = gate.begin()!
+        let expired = gate.expire(lost)
+        let expiredAgain = gate.expire(lost)
+        #expect(expired)
+        #expect(!expiredAgain)
+
+        let answered = gate.begin()!
+        gate.finish(answered)
+        let expiredAfterAnswer = gate.expire(answered)
+        #expect(!expiredAfterAnswer)
+    }
+
+    @Test func staleAnswersAndTimersLeaveANewerRequestAlone() {
+        var gate = AudioPermissionRequestGate()
+        let old = gate.begin()!
+        gate.cancel()
+        let current = gate.begin()!
+        gate.finish(old)
+        let oldExpired = gate.expire(old)
+        let anotherWhileCurrent = gate.begin()
+        let currentExpired = gate.expire(current)
+        #expect(!oldExpired)
+        #expect(anotherWhileCurrent == nil)
+        #expect(currentExpired)
+    }
+}
