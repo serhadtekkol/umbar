@@ -13,6 +13,13 @@
 //    open-<notch>-<ms>.png       the whole island opening, music playing
 //    close-<notch>-<ms>.png      and closing again
 //    page-<notch>-<ms>.png       the open panel going Şimdi → Takvim
+//    pages-<from>-<to>-<how>-<notch>-<ms>.png  the whole island changing
+//                                page (Şimdi → Raf, Raf → Şimdi, Ağ → Araçlar;
+//                                how: click = tab bar, key = ⌘1…⌘5 with no
+//                                animation of its own, reduce = Reduce
+//                                Motion); pages-open-<notch>-<ms>.png the
+//                                open it starts from. `-UmbarRenderMotionOnly
+//                                tabs` renders these alone.
 //    wifi-arm-<ms>.png           the quick toggles row, first tap on Wi-Fi
 //    wifi-off-<ms>.png           and the confirming second tap
 //    wifi-on-<ms>.png            and the one-tap turn back on
@@ -88,6 +95,9 @@ enum MotionFrameRenderer {
             exit(0)
         case "music":
             notches.forEach { renderClosedMusic(notch: $0, out: out) }
+            exit(0)
+        case "tabs":
+            notches.forEach { renderPageChanges(notch: $0, out: out) }
             exit(0)
         default:
             break
@@ -167,6 +177,50 @@ enum MotionFrameRenderer {
             vm.notchSize = notch
         }, name: { out.appendingPathComponent("close-\(tag)-\($0).png") })
         session.close()
+    }
+
+    // MARK: Page changes
+
+    static let pageTimes: [Double] = [0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.13, 0.16, 0.2, 0.25, 0.3, 0.4]
+
+    /// The open island changing page the three ways a page changes. Each
+    /// pair starts from a settled panel on `from`, so the frames show only
+    /// the page transition, never the open.
+    private static func renderPageChanges(notch: CGSize, out: URL) {
+        let tag = "\(Int(notch.width))x\(Int(notch.height))"
+        seedMusic()
+        let pairs: [(NotchViews, NotchViews)] = [(.home, .shelf), (.shelf, .home), (.network, .tools)]
+        let ways: [(String, Bool, Bool)] = [("click", true, false), ("key", false, false), ("reduce", true, true)]
+        var renderedOpen = false
+        for (how, animated, reduce) in ways {
+            forceReduceMotion = reduce
+            for (from, to) in pairs {
+                let vm = fixtureViewModel(notch: notch)
+                vm.notchSize = notch
+                BoringViewCoordinator.shared.currentView = .home
+                let root = ContentView()
+                    .environmentObject(vm)
+                    .frame(width: windowSize.width, height: windowSize.height, alignment: .top)
+                    .background(Color(white: 0.85))
+                let session = Session(root, size: NSSize(width: windowSize.width, height: windowSize.height))
+                session.play(times: renderedOpen ? [0.4] : pageTimes, change: {
+                    withAnimation(UmbarMotion.open()) { vm.open() }
+                }, name: { out.appendingPathComponent("pages-open-\(tag)-\($0).png") })
+                renderedOpen = true
+                BoringViewCoordinator.shared.currentView = from
+                RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+                session.play(times: pageTimes, change: {
+                    if animated {
+                        withAnimation(UmbarMotion.tab()) { BoringViewCoordinator.shared.currentView = to }
+                    } else {
+                        BoringViewCoordinator.shared.currentView = to
+                    }
+                }, name: { out.appendingPathComponent("pages-\(from)-\(to)-\(how)-\(tag)-\($0).png") })
+                session.close()
+            }
+        }
+        forceReduceMotion = false
+        BoringViewCoordinator.shared.currentView = .home
     }
 
     // MARK: Hover

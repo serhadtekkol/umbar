@@ -405,8 +405,10 @@ struct NotchHomeView: View {
                 mainContent
             }
         }
-        // simplified: use a straightforward opacity transition
-        .transition(.opacity)
+        // No .transition here: on a Group it reaches the page's root and
+        // replaces PanelPageView's slide, so Şimdi alone only faded. The
+        // panel never opens during first launch (doOpen), so the flip
+        // needs none of its own.
     }
 
     /// Şimdi (design-language §5.2): music on the left, today on the right.
@@ -418,7 +420,9 @@ struct NotchHomeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let todayFixture { todayFixture } else { TodayColumn() }
         }
-        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+        // No transition of its own: Şimdi arrives with the panel or slides
+        // in as a page (PanelPageView). A move(edge: .top) here fired on
+        // both, so Şimdi alone dropped in from above.
         .blur(radius: vm.notchState == .closed ? 30 : 0)
     }
 }
