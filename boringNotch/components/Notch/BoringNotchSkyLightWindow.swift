@@ -19,7 +19,7 @@ import Combine
 /// non-activating panel that becomes key only when asked to, through
 /// `PanelKeyController`. A hover-opened panel never takes the keyboard, so
 /// ⌘2 still reaches Safari. While key, the window itself handles Esc and
-/// ⌘1…⌘5 before anything inside it can, so those keys never leak to the
+/// ⌘1…⌘6 before anything inside it can, so those keys never leak to the
 /// app behind the panel and a text field cannot swallow Esc.
 class BoringNotchSkyLightWindow: NSPanel {
     /// The model of the notch this window draws. Set once, by the app
@@ -122,7 +122,7 @@ class BoringNotchSkyLightWindow: NSPanel {
         super.sendEvent(event)
     }
 
-    /// Esc and ⌘1…⌘5 inside a key panel. Returns true when the key was used.
+    /// Esc and ⌘1…⌘6 inside a key panel. Returns true when the key was used.
     private func handlePanelKey(_ event: NSEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             .subtracting([.capsLock, .numericPad, .function])

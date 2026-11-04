@@ -17,54 +17,66 @@ private func conditions(enabled: Bool = true, access: MirrorAccess = .granted, a
 
 @Suite("MirrorSession", .timeLimit(.minutes(1)))
 struct MirrorSessionTests {
-    @Test func showingTheTileNeverStartsTheCamera() {
+    @Test func showingTheTabStartsTheCamera() {
         var session = MirrorSession()
-        #expect(session.update(conditions()) == nil)
-        #expect(!session.running)
-        #expect(session.tileState(conditions()) == .idle)
+        #expect(session.update(conditions()) == .start)
+        #expect(session.running)
+        #expect(session.tileState(conditions()) == .live)
     }
 
-    @Test func tapStartsAndSecondTapStops() {
+    @Test func nothingStartsWhileTheTabIsNotShown() {
         var session = MirrorSession()
-        #expect(session.tap(conditions()) == .start)
-        #expect(session.tileState(conditions()) == .live)
-        #expect(session.tap(conditions()) == .stop)
+        #expect(session.update(conditions(visible: false)) == nil)
+        #expect(session.update(conditions(enabled: false)) == nil)
+        #expect(session.update(conditions(present: false)) == nil)
         #expect(!session.running)
     }
 
     @Test(arguments: [
         conditions(visible: false), // panel closed or another tab
-        conditions(present: false), // locked, asleep, user switched
+        conditions(present: false), // locked, asleep, screen saver, user switched
         conditions(enabled: false), // setting turned off
         conditions(available: false), // camera unplugged
         conditions(access: .denied), // revoked in System Settings
     ])
     func losingAnyConditionStops(_ lost: MirrorConditions) {
         var session = MirrorSession()
-        _ = session.tap(conditions())
+        _ = session.update(conditions())
         #expect(session.update(lost) == .stop)
         #expect(!session.running)
     }
 
-    @Test func reopeningAfterAStopDoesNotRestart() {
+    @Test func tabAwayAndBackStartsAgain() {
         var session = MirrorSession()
-        _ = session.tap(conditions())
-        _ = session.update(conditions(visible: false))
-        // Next hover opens the panel on Şimdi again.
-        #expect(session.update(conditions()) == nil)
-        #expect(session.tileState(conditions()) == .idle)
+        _ = session.update(conditions())
+        #expect(session.update(conditions(visible: false)) == .stop)
+        #expect(session.update(conditions()) == .start)
     }
 
-    @Test func tabAwayAndBackDoesNotRestart() {
+    @Test func tapOnTheLivePreviewStopsUntilTheTabIsShownAgain() {
         var session = MirrorSession()
+        _ = session.update(conditions())
+        #expect(session.tap(conditions()) == .stop)
+        #expect(session.held)
+        // Still on the tab: it stays off.
+        #expect(session.update(conditions()) == nil)
+        #expect(session.tileState(conditions()) == .idle)
+        // Leave and come back: on again.
+        _ = session.update(conditions(visible: false))
+        #expect(session.update(conditions()) == .start)
+    }
+
+    @Test func tapOnTheIdlePreviewStartsIt() {
+        var session = MirrorSession()
+        _ = session.update(conditions())
         _ = session.tap(conditions())
-        #expect(session.update(conditions(visible: false)) == .stop)
-        #expect(session.update(conditions(visible: true)) == nil)
+        #expect(session.tap(conditions()) == .start)
+        #expect(session.running)
     }
 
     @Test func repeatedUpdatesAreIdempotent() {
         var session = MirrorSession()
-        _ = session.tap(conditions())
+        _ = session.update(conditions())
         #expect(session.update(conditions()) == nil)
         _ = session.update(conditions(visible: false))
         #expect(session.update(conditions(visible: false)) == nil)
@@ -77,26 +89,33 @@ struct MirrorSessionTests {
         #expect(session.tap(conditions(present: false)) == nil)
     }
 
-    @Test func tapWithoutCameraDoesNothing() {
+    @Test func noCameraMeansNoStartAndNoTap() {
         var session = MirrorSession()
+        #expect(session.update(conditions(available: false)) == nil)
         #expect(session.tap(conditions(available: false)) == nil)
         #expect(session.tileState(conditions(available: false)) == .unavailable)
     }
 
-    @Test func tapWhenDeniedOpensSettingsAndNeverStarts() {
+    @Test func deniedNeverStartsAndTapOpensSettings() {
         var session = MirrorSession()
         let denied = conditions(access: .denied)
-        #expect(session.tap(denied) == .openPrivacySettings)
         #expect(session.update(denied) == nil)
+        #expect(session.tap(denied) == .openPrivacySettings)
         #expect(session.tileState(denied) == .denied)
+    }
+
+    /// Rule 2: showing the tab never raises the camera prompt by itself.
+    @Test func showingTheTabNeverAsksForAccess() {
+        var session = MirrorSession()
+        let asking = conditions(access: .notDetermined)
+        #expect(session.update(asking) == nil)
+        #expect(session.tileState(asking) == .needsAccess)
     }
 
     @Test func tapWhenUndeterminedAsksThenStartsOnGrant() {
         var session = MirrorSession()
         let asking = conditions(access: .notDetermined)
-        #expect(session.tileState(asking) == .needsAccess)
         #expect(session.tap(asking) == .requestAccess)
-        #expect(session.update(asking) == nil)
         #expect(session.update(conditions(access: .granted)) == .start)
     }
 
@@ -104,7 +123,7 @@ struct MirrorSessionTests {
         var session = MirrorSession()
         _ = session.tap(conditions(access: .notDetermined))
         _ = session.update(conditions(access: .notDetermined, visible: false))
-        #expect(session.update(conditions(access: .granted)) == nil)
+        #expect(session.update(conditions(access: .granted, visible: false)) == nil)
     }
 
     @Test func denialAfterAskingStaysOff() {
@@ -114,12 +133,26 @@ struct MirrorSessionTests {
         #expect(!session.running)
     }
 
-    @Test func sessionEndedReturnsToIdleWithoutRetrying() {
+    @Test func sessionEndedDoesNotRetryWhileTheTabStays() {
         var session = MirrorSession()
-        _ = session.tap(conditions())
+        _ = session.update(conditions())
         session.sessionEnded()
         #expect(session.update(conditions()) == nil)
         #expect(session.tileState(conditions()) == .idle)
+    }
+}
+
+@Suite("MirrorTabPolicy", .timeLimit(.minutes(1)))
+struct MirrorTabPolicyTests {
+    @Test func aPanelNeverReopensOnAyna() {
+        // "Open last tab" on: hovering the notch must not light the camera.
+        #expect(!MirrorTabPolicy.keepsPageAcrossClose(isMirror: true, openLastTab: true))
+        #expect(!MirrorTabPolicy.keepsPageAcrossClose(isMirror: true, openLastTab: false))
+    }
+
+    @Test func otherPagesFollowOpenLastTab() {
+        #expect(MirrorTabPolicy.keepsPageAcrossClose(isMirror: false, openLastTab: true))
+        #expect(!MirrorTabPolicy.keepsPageAcrossClose(isMirror: false, openLastTab: false))
     }
 }
 
@@ -168,10 +201,10 @@ struct MirrorTileCaptureTests {
 struct MirrorRunCapTests {
     @Test func theCapStopsTheRunningPreview() {
         var session = MirrorSession()
-        _ = session.tap(conditions())
+        _ = session.update(conditions())
         #expect(session.runTimeElapsed(generation: session.generation) == .stop)
         #expect(!session.running)
-        // Back to idle: still in front, but it does not restart by itself.
+        // Back to idle: still on the tab, but it does not restart by itself.
         #expect(session.update(conditions()) == nil)
         #expect(session.tileState(conditions()) == .idle)
     }
@@ -269,5 +302,16 @@ struct MirrorRunReasonTests {
             #expect(session.update(lost) == .stop)
             #expect(MirrorRunReason.stop(after: lost) != .tap)
         }
+    }
+
+    @Test func aStartFromShowingTheTabIsLoggedAsTabShown() {
+        var session = MirrorSession()
+        #expect(session.update(conditions()) == .start)
+        #expect(MirrorRunReason.start(afterAccessAnswer: false) == .tabShown)
+        #expect(MirrorRunReason.tabShown.rawValue == "tabShown")
+    }
+
+    @Test func aStartAfterThePromptIsLoggedAsAccessGranted() {
+        #expect(MirrorRunReason.start(afterAccessAnswer: true) == .accessGranted)
     }
 }

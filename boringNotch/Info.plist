@@ -7,7 +7,7 @@
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>umbar lists your paired Bluetooth devices so you can connect headphones from the notch.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>umbar shows your camera in the notch as a mirror, only after you tap the mirror tile. The picture is shown live and is never recorded, saved or sent anywhere.</string>
+	<string>umbar shows your camera in the notch as a mirror, only while the panel's Mirror tab is open. The picture is shown live and is never recorded, saved or sent anywhere.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>umbar shows your calendar events in the notch. Your events never leave your Mac.</string>
 	<key>NSFocusStatusUsageDescription</key>

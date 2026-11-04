@@ -169,7 +169,8 @@ class BoringViewModel: NSObject, ObservableObject {
             coordinator.currentView = .home
         } else if !ShelfStateViewModel.shared.isEmpty && Defaults[.openShelfByDefault] {
             coordinator.currentView = .shelf
-        } else if !coordinator.openLastTabByDefault {
+        } else if !MirrorTabPolicy.keepsPageAcrossClose(isMirror: coordinator.currentView == .mirror,
+                                                         openLastTab: coordinator.openLastTabByDefault) {
             coordinator.currentView = .home
         }
     }

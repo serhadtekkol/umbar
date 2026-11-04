@@ -522,7 +522,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         PanelKeyController.shared.open(target, from: source)
     }
 
-    /// ⌘1…⌘5 in a key panel (AC-1.19). A page whose feature is off does
+    /// ⌘1…⌘6 in a key panel (AC-1.19). A page whose feature is off does
     /// nothing; the window has already consumed the key, so it does not
     /// reach the app behind.
     @MainActor

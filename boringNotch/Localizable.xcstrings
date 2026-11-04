@@ -1009,6 +1009,86 @@
         }
       }
     },
+    "mirror.page.idle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the mirror to turn the camera on."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamerayı açmak için aynaya dokunun."
+          }
+        }
+      }
+    },
+    "mirror.page.idle.help" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn the camera on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamerayı aç"
+          }
+        }
+      }
+    },
+    "mirror.page.status.off" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera off"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera kapalı"
+          }
+        }
+      }
+    },
+    "mirror.page.status.on" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera açık"
+          }
+        }
+      }
+    },
+    "mirror.page.status.on.detail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turns off when you leave this tab, close the panel, or after 5 minutes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sekmeden çıkınca, panel kapanınca ya da 5 dakika sonra kapanır."
+          }
+        }
+      }
+    },
     "mirror.settings.denied" : {
       "localizations" : {
         "en" : {
@@ -1030,13 +1110,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mirror on the Now page"
+            "value" : "Mirror tab in the panel"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şimdi sayfasında ayna"
+            "value" : "Panelde Ayna sekmesi"
           }
         }
       }
@@ -1046,13 +1126,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A camera tile beside today's events. The camera turns on only when you tap the tile, and off when the panel closes or you switch pages. The picture is never recorded or sent anywhere."
+            "value" : "Adds a Mirror tab to the panel. The camera turns on while that tab is open, and off when you leave it, close the panel, or after 5 minutes. The picture is never recorded or sent anywhere."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bugünün etkinliklerinin yanında bir kamera kutucuğu. Kamera yalnızca kutucuğa dokunduğunuzda açılır; panel kapanınca ya da sayfa değiştirince kapanır. Görüntü hiçbir zaman kaydedilmez ve hiçbir yere gönderilmez."
+            "value" : "Panele bir Ayna sekmesi ekler. Kamera bu sekme açıkken açılır; sekmeden çıkınca, panel kapanınca ya da 5 dakika sonra kapanır. Görüntü hiçbir zaman kaydedilmez ve hiçbir yere gönderilmez."
           }
         }
       }
@@ -1133,54 +1213,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kamera gizlilik ayarlarını aç"
-          }
-        }
-      }
-    },
-    "mirror.tile.idle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mirror"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ayna"
-          }
-        }
-      }
-    },
-    "mirror.tile.idle.help" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show the camera. It turns off when the panel closes."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kamerayı göster. Panel kapanınca kapanır."
-          }
-        }
-      }
-    },
-    "mirror.tile.live" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mirror on"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ayna açık"
           }
         }
       }
@@ -1389,6 +1421,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sistem Ayarları'nı Aç"
+          }
+        }
+      }
+    },
+    "panel.tab.mirror" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mirror"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayna"
           }
         }
       }
@@ -2166,13 +2214,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A dot beside the closed notch, and on the Now page the apps using the microphone. macOS does not tell other apps which one uses the camera, so the camera is shown without a name. umbar never turns the microphone on; the camera only for the mirror, when you tap it. While the mirror is on, the camera dot is hidden."
+            "value" : "A dot beside the closed notch, and on the Now page the apps using the microphone. macOS does not tell other apps which one uses the camera, so the camera is shown without a name. umbar never turns the microphone on; the camera only for the mirror, while its tab is open. While the mirror is on, the camera dot is hidden."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kapalı notch'un yanında bir nokta, Şimdi sayfasında da mikrofonu kullanan uygulamalar. macOS kamerayı hangi uygulamanın kullandığını başka uygulamalara söylemez; bu yüzden kamera adsız gösterilir. umbar mikrofonu hiçbir zaman açmaz; kamerayı yalnızca ayna için, siz dokunduğunuzda açar. Ayna açıkken kamera noktası gösterilmez."
+            "value" : "Kapalı notch'un yanında bir nokta, Şimdi sayfasında da mikrofonu kullanan uygulamalar. macOS kamerayı hangi uygulamanın kullandığını başka uygulamalara söylemez; bu yüzden kamera adsız gösterilir. umbar mikrofonu hiçbir zaman açmaz; kamerayı yalnızca ayna için, Ayna sekmesi açıkken açar. Ayna açıkken kamera noktası gösterilmez."
           }
         }
       }

@@ -26,7 +26,7 @@ enum PanelOpenSource: Equatable {
     case menu
 }
 
-/// The pages behind ⌘1…⌘5, in tab order. A number stays with its page when
+/// The pages behind ⌘1…⌘6, in tab order. A number stays with its page when
 /// another page is turned off (AC-1.19); a page that is off is a key the
 /// panel swallows and does nothing with, so it never leaks to the app behind.
 enum PanelPage: Int, CaseIterable {
@@ -35,6 +35,7 @@ enum PanelPage: Int, CaseIterable {
     case calendar = 3
     case network = 4
     case tools = 5
+    case mirror = 6
 }
 
 /// What the panel shortcut does in a given state (AC-1.18).
@@ -84,17 +85,17 @@ enum PanelKeyPolicy {
 
     // MARK: Keys handled inside a key panel
 
-    /// Virtual key codes of the top-row 1…5 keys. Physical positions, not
+    /// Virtual key codes of the top-row 1…6 keys. Physical positions, not
     /// characters: on AZERTY the digits need Shift, and Safari, Finder and
     /// Xcode all bind ⌘1… by position on those layouts too.
     static let digitKeyCodes: [UInt16: PanelPage] = [
-        18: .now, 19: .shelf, 20: .calendar, 21: .network, 23: .tools,
+        18: .now, 19: .shelf, 20: .calendar, 21: .network, 23: .tools, 22: .mirror,
     ]
 
     /// kVK_Escape.
     static let escapeKeyCode: UInt16 = 53
 
-    /// The page for ⌘<digit>, or nil if the key is not ⌘1…⌘5. Only ⌘ alone
+    /// The page for ⌘<digit>, or nil if the key is not ⌘1…⌘6. Only ⌘ alone
     /// counts: ⌘⇧1 or ⌥⌘1 are someone else's shortcuts.
     static func page(forKeyCode keyCode: UInt16, commandOnly: Bool) -> PanelPage? {
         guard commandOnly else { return nil }
