@@ -62,9 +62,8 @@ struct SystemEventIndicatorModifier: View {
                 DraggableProgressBar(value: $value)
                 if Defaults[.showClosedNotchHUDPercentage] {
                     Text("\(Int(value * 100))%")
-                        .font(.system(size: 12, weight: .medium))
+                        .umbarFont(.numeric, size: 12, weight: 500)
                         .foregroundStyle(.white)
-                        .monospacedDigit()
                         .frame(width: 35, alignment: .trailing)
                 }
             } else {

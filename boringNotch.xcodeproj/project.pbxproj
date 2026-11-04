@@ -377,8 +377,10 @@
 				QuickToggles/QuickTogglesCore.swift,
 				Settings/DefaultsMigration.swift,
 				ScreenshotShelf/ScreenshotShelfPolicy.swift,
+				SongPeek/SongPeekTiming.swift,
 				SysMonitor/SysMonitorCore.swift,
 				Timer/TimerEngine.swift,
+				Typography/UmbarTypography.swift,
 			);
 			target = A1837B1361C7F96E52B64318 /* umbarTests */;
 		};

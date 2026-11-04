@@ -62,9 +62,8 @@ struct OpenNotchHUD: View {
             // Percentage Text
             if type != .mic && showPercentage {
                 Text("\(Int(value * 100))%")
-                    .font(.system(size: 12, weight: .medium))
+                    .umbarFont(.numeric, size: 12, weight: 500)
                     .foregroundStyle(.gray)
-                    .monospacedDigit()
                     .frame(width: 35, alignment: .trailing)
             }
         }

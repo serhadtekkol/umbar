@@ -358,6 +358,7 @@ struct ContentView: View {
         .animation(.smooth, value: gestureProgress)
         .background(dragDetector)
         .preferredColorScheme(.dark)
+        .umbarTypefaceFromDefaults()
         .environmentObject(vm)
         .onChange(of: vm.anyDropZoneTargeting) { _, isTargeted in
             anyDropDebounceTask?.cancel()
@@ -477,6 +478,7 @@ struct ContentView: View {
                                       Image(systemName: "music.note")
                                       GeometryReader { geo in
                                           MarqueeText(.constant(musicManager.songTitle + " - " + musicManager.artistName),  textColor: Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray, minDuration: 1, frameWidth: geo.size.width)
+                                              .umbarFont(.display, size: 13)
                                       }
                                   }
                                   .foregroundStyle(.gray)
@@ -582,6 +584,7 @@ struct ContentView: View {
                                 minDuration: 0.4,
                                 frameWidth: 100
                             )
+                            .umbarFont(.display, size: 13)
                             .opacity(
                                 (coordinator.expandingView.show
                                     && Defaults[.sneakPeekStyles] == .inline)
@@ -590,6 +593,7 @@ struct ContentView: View {
                             Spacer(minLength: vm.closedNotchSize.width)
                             // Song Artist
                             Text(musicManager.artistName)
+                                .umbarFont(.display, size: 13)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                                 .foregroundStyle(

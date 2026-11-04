@@ -238,6 +238,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         #if DEBUG
         if PanelPageRenderer.runIfRequested() { return }
         if MotionFrameRenderer.runIfRequested() { return }
+        if TypefaceRenderer.runIfRequested() { return }
         #endif
         EyeBreakManager.shared.start()
         HUDAccessCard.shared.start()

@@ -82,6 +82,8 @@ enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializa
 }
 
 // Sneak peek styles for selection in settings
+extension UmbarTypeface: Defaults.Serializable {}
+
 enum SneakPeekStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
     case standard = "Default"
     case inline = "Inline"
@@ -163,6 +165,11 @@ extension Defaults.Keys {
     static let coloredSpectrogram = Key<Bool>("coloredSpectrogram", default: true)
     static let enableSneakPeek = Key<Bool>("enableSneakPeek", default: false)
     static let sneakPeekStyles = Key<SneakPeekStyle>("sneakPeekStyles", default: .standard)
+    /// How long the song name stays under the closed island on a track change, in seconds
+    /// (SongPeekTiming: 1–10, 0.5 steps). The volume and brightness HUD do not read it.
+    static let songPeekDuration = Key<Double>("songPeekDuration", default: SongPeekTiming.defaultSeconds)
+    /// Settings › Appearance › Typeface: the face of the island's and panel's display text (UmbarTypography).
+    static let umbarTypeface = Key<UmbarTypeface>("umbarTypeface", default: .system)
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
     static let musicControlSlots = Key<[MusicControlButton]>(
