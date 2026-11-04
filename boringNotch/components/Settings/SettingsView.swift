@@ -277,6 +277,8 @@ struct GeneralSettings: View {
             LiveActivitiesSettingsSection()
 
             PrivacyIndicatorSettingsSection()
+
+            MirrorSettingsSection()
         }
         .toolbar {
             Button("Quit app") {

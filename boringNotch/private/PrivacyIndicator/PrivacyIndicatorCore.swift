@@ -65,17 +65,21 @@ struct PrivacyUsage: Equatable, Sendable {
     /// - Parameters:
     ///   - sample: the raw hardware read.
     ///   - enabled: the user's setting; off shows nothing whatever runs.
-    ///   - ownPID: umbar's pid. umbar never captures, but if a future
-    ///     feature did, the indicator must not report umbar to itself.
+    ///   - ownPID: umbar's pid. umbar never captures audio, and the
+    ///     indicator must not report umbar to itself if it ever did.
     ///   - runningApps: regular apps, used to name a process and to fold a
     ///     helper ("com.google.Chrome.helper") into its app ("Google Chrome").
+    ///   - ownCamera: the running camera is umbar's own mirror
+    ///     (`OwnCameraClaim.masksCamera`). CoreMediaIO cannot attribute a
+    ///     camera to a process, so this is how the mirror keeps the ear,
+    ///     the Şimdi row and the edge glow from reporting umbar to itself.
     ///
     /// The microphone rule: when the process list is readable it decides
     /// alone. A device that does input *and* output (a USB headset) reports
     /// "running somewhere" while it only plays music, so the device flag is
     /// trusted only when there is no process list to ask.
     static func reduce(_ sample: PrivacySample, enabled: Bool, ownPID: Int32,
-                       runningApps: [PrivacyRunningApp]) -> PrivacyUsage {
+                       runningApps: [PrivacyRunningApp], ownCamera: Bool = false) -> PrivacyUsage {
         guard enabled else { return .idle }
         let microphone: Bool
         var names: [String] = []
@@ -87,7 +91,7 @@ struct PrivacyUsage: Equatable, Sendable {
             microphone = sample.inputDeviceRunning
         }
         let unique = Array(Set(names)).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        return PrivacyUsage(camera: sample.cameraRunning, microphone: microphone, microphoneApps: unique)
+        return PrivacyUsage(camera: sample.cameraRunning && !ownCamera, microphone: microphone, microphoneApps: unique)
     }
 
     /// The name to show for a capturing process, or nil to leave it unnamed.
@@ -119,5 +123,63 @@ struct PrivacyUsage: Equatable, Sendable {
             .filter { bundleID.hasPrefix($0.bundleID + ".") }
             .max { $0.bundleID.count < $1.bundleID.count }?
             .name
+    }
+}
+
+/// Whether "a camera is running" is umbar's own mirror.
+///
+/// The mirror claims the camera just before it starts the capture and
+/// releases it once the capture has stopped. While the claim masks, the
+/// indicator reports no camera.
+///
+/// Two cases keep the mask honest:
+///  - A camera already running elsewhere when the mirror starts (a call in
+///    FaceTime) is not masked at all: it was not umbar's, and masking it
+///    would also make the edge glow flash "camera on" when the panel closes.
+///  - After the release the HAL can report "running somewhere" for a
+///    moment longer. The mask holds until a sample says the camera is off,
+///    or `releaseGrace` has passed, whichever is first. After the grace a
+///    camera that is still running is someone else's, and it is shown.
+///
+/// The cost, accepted: while the mirror itself runs, another app turning a
+/// camera on is not reported until the mirror stops. The user is looking
+/// at a live camera preview in that moment, and macOS's own green
+/// indicator is unaffected.
+struct OwnCameraClaim: Equatable, Sendable {
+    /// Longer than the HAL's lag after `stopRunning` (well under a second
+    /// in practice), short enough that a masked camera cannot hide for long.
+    static let releaseGrace: TimeInterval = 2
+
+    private(set) var masksCamera = false
+    private var holding = false
+    /// Set between the release and the first "camera off" sample.
+    private(set) var releaseDeadline: Date?
+
+    /// The mirror is about to start the capture.
+    /// - Parameter cameraRunningElsewhere: the last sample's camera flag.
+    mutating func begin(cameraRunningElsewhere: Bool) {
+        // Restarting during a release: the camera never went off, so
+        // whatever was masked is still the mirror's.
+        if !holding && releaseDeadline == nil {
+            masksCamera = !cameraRunningElsewhere
+        }
+        holding = true
+        releaseDeadline = nil
+    }
+
+    /// The mirror's capture has stopped.
+    mutating func end(now: Date) {
+        guard holding else { return }
+        holding = false
+        releaseDeadline = masksCamera ? now.addingTimeInterval(Self.releaseGrace) : nil
+    }
+
+    /// Call after every sample and when `releaseDeadline` passes.
+    mutating func observe(cameraRunning: Bool, now: Date) {
+        guard !holding, let deadline = releaseDeadline else { return }
+        if !cameraRunning || now >= deadline {
+            masksCamera = false
+            releaseDeadline = nil
+        }
     }
 }

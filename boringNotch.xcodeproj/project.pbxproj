@@ -366,6 +366,7 @@
 				HeadphoneConnect/HeadphoneConnectCore.swift,
 				NetMonitor/NetTrafficMath.swift,
 				MenuBarGeometry/MenuBarCollision.swift,
+				Mirror/MirrorPolicy.swift,
 				Motion/NotchApproachPolicy.swift,
 				NetMonitor/NetUsageLedger.swift,
 				Pages/CalendarMonth.swift,

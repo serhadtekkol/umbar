@@ -71,6 +71,16 @@ enum PanelPageRenderer {
                 render(nowPage(agenda: agenda, live: live, privacy: usage), selected: .home, notch: notch,
                        to: out.appendingPathComponent("page-home-privacy-\(state)-\(tag).png"))
             }
+            // Mirror tile: every state beside the fullest Today column, and
+            // the live state beside music only. The camera is never opened;
+            // `.live` draws a placeholder picture.
+            for state in mirrorStates {
+                render(nowPage(agenda: .items(fixtureEvents()), live: fixtureLive(), mirror: mirrorFixture(state)),
+                       selected: .home, notch: notch,
+                       to: out.appendingPathComponent("page-home-mirror-\(state)-\(tag).png"))
+            }
+            render(nowPage(agenda: .off, live: [], mirror: mirrorFixture(.live)), selected: .home, notch: notch,
+                   to: out.appendingPathComponent("page-home-mirror-musiconly-\(tag).png"))
             for (state, ghosts) in undoChipFixtures() {
                 render(ShelfPage(clipboard: ClipboardHistoryModel(fixture: []), undoChipFixture: ghosts, section: .files),
                        selected: .shelf, notch: notch,
@@ -122,8 +132,30 @@ enum PanelPageRenderer {
         ]
     }
 
-    private static func nowPage(agenda: TodayAgenda, live: [LiveActivity], privacy: PrivacyUsage = .idle) -> some View {
-        NowFixture(column: TodayColumnContent(agenda: agenda, live: live, privacy: privacy, showCalendarPage: {}))
+    private static func nowPage(agenda: TodayAgenda, live: [LiveActivity], privacy: PrivacyUsage = .idle,
+                                mirror: MirrorTile? = nil) -> some View {
+        NowFixture(column: TodayColumnContent(agenda: agenda, live: live, privacy: privacy, showCalendarPage: {}),
+                   mirror: mirror)
+    }
+
+    private static let mirrorStates: [MirrorTileState] = [.idle, .live, .needsAccess, .denied, .unavailable]
+
+    private static func mirrorFixture(_ state: MirrorTileState) -> MirrorTile {
+        MirrorTile(state: state, previewLayer: nil, onTap: {}, livePlaceholder: AnyView(MirrorLivePlaceholder()))
+    }
+
+    /// Stands in for a camera picture: a soft gradient and a silhouette.
+    private struct MirrorLivePlaceholder: View {
+        var body: some View {
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.36, green: 0.42, blue: 0.48), Color(red: 0.16, green: 0.18, blue: 0.22)],
+                               startPoint: .top, endPoint: .bottom)
+                Image(systemName: "person.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(Color(white: 0.75))
+                    .offset(y: 18)
+            }
+        }
     }
 
     /// F23 rows: the fullest column, the column with nothing else in it,
@@ -146,7 +178,8 @@ enum PanelPageRenderer {
     private struct NowFixture: View {
         @Namespace private var ns
         let column: TodayColumnContent
-        var body: some View { NotchHomeView(albumArtNamespace: ns, todayFixture: column) }
+        var mirror: MirrorTile? = nil
+        var body: some View { NotchHomeView(albumArtNamespace: ns, todayFixture: column, mirrorFixture: mirror) }
     }
 
     private static func render(_ page: some View, selected: NotchViews, notch: CGSize, to url: URL) {

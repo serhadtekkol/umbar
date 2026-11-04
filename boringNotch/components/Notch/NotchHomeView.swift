@@ -398,6 +398,10 @@ struct NotchHomeView: View {
     /// Fixture column for the offscreen page render (PanelPageRenderer);
     /// nil in the app, which reads the live calendar and activities.
     var todayFixture: TodayColumnContent? = nil
+    /// Fixture mirror tile for the render, drawn whatever the setting says;
+    /// nil in the app, where the tile follows `Defaults[.mirrorEnabled]`.
+    var mirrorFixture: MirrorTile? = nil
+    @Default(.mirrorEnabled) private var mirrorEnabled
 
     var body: some View {
         Group {
@@ -411,14 +415,20 @@ struct NotchHomeView: View {
         // needs none of its own.
     }
 
-    /// Şimdi (design-language §5.2): music on the left, today on the right.
-    /// Everything else lives on its own page, so nothing here competes
-    /// with the music for the panel's 180 pt.
+    /// Şimdi (design-language §5.2): music on the left, today on the right,
+    /// and the opt-in mirror tile at the trailing end, where the music
+    /// gives up its width. Everything else lives on its own page, so nothing
+    /// here competes with the music for the panel's 180 pt.
     private var mainContent: some View {
         HStack(alignment: .top, spacing: PageTokens.l) {
             MusicPlayerView(albumArtNamespace: albumArtNamespace)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let todayFixture { todayFixture } else { TodayColumn() }
+            if let mirrorFixture {
+                mirrorFixture
+            } else if mirrorEnabled {
+                MirrorTileLive()
+            }
         }
         // No transition of its own: Şimdi arrives with the panel or slides
         // in as a page (PanelPageView). A move(edge: .top) here fired on
