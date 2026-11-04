@@ -173,11 +173,18 @@ enum EdgeGlowPolicy {
 
     /// Whether the audio level capture should run. Only for a glow that
     /// could use it: on, reacting to sound, a style that glows for music,
-    /// music playing, motion allowed. Not tied to the panel or the island's
-    /// height: every screen's island asks with the same answer, and an
-    /// open panel would start and stop the capture on every hover.
+    /// music playing, motion allowed. Not tied to the panel, the island's
+    /// height or a screen: one owner (EdgeGlowAudioCoordinator) asks this
+    /// for the whole app, and an open panel would start and stop the
+    /// capture on every hover.
+    static func capturesAudio(enabled: Bool, style: EdgeGlowStyle, audioReactive: Bool,
+                              musicPlaying: Bool, reduceMotion: Bool) -> Bool {
+        enabled && audioReactive && style.showsAmbient && musicPlaying && !reduceMotion
+    }
+
     static func capturesAudio(_ c: EdgeGlowContext) -> Bool {
-        c.enabled && c.audioReactive && c.style.showsAmbient && c.musicPlaying && !c.reduceMotion
+        capturesAudio(enabled: c.enabled, style: c.style, audioReactive: c.audioReactive,
+                      musicPlaying: c.musicPlaying, reduceMotion: c.reduceMotion)
     }
 
     /// 0…1, `elapsed` seconds into a pulse: sin² bumps, the second softer.

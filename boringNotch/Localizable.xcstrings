@@ -9574,13 +9574,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "While music plays, the glow follows how loud it is and widens on the bass. To hear it, macOS asks you to allow audio recording for umbar. umbar does not record or send the sound anywhere; it only measures how loud it is, moment to moment. Off by default."
+            "value" : "While music plays, the glow follows how loud it is and widens on the bass. umbar measures only the loudness: of the app playing the music, or of all system sound if it cannot find that app. Nothing is recorded or sent anywhere. While the microphone is in use, as in a call, system sound is not measured. macOS asks you to allow audio recording for umbar. Off by default."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Müzik çalarken parıltı sesin yüksekliğini izler, bas vuruşlarında biraz genişler. Sesi duyabilmesi için macOS, umbar'a ses kaydı izni vermenizi ister. umbar sesi kaydetmez ve hiçbir yere göndermez; yalnızca o anki yüksekliğini ölçer. Varsayılan olarak kapalıdır."
+            "value" : "Müzik çalarken parıltı sesin yüksekliğini izler, baslarda biraz genişler. umbar yalnızca yüksekliği ölçer: müziği çalan uygulamanın, o bulunamazsa tüm sistem sesinin. Ses kaydedilmez, hiçbir yere gönderilmez. Mikrofon kullanımdayken (örneğin bir görüşmede) sistem sesi dinlenmez. macOS, umbar'a ses kaydı izni vermenizi ister. Varsayılan olarak kapalıdır."
           }
         }
       }
