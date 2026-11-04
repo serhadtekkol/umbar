@@ -1014,6 +1014,8 @@ struct Shelf: View {
 //}
 
 struct Appearance: View {
+    @Default(.notchOutlineEnabled) var notchOutlineEnabled
+    @Default(.notchOutlineStrength) var notchOutlineStrength
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.sliderColor) var sliderColor
     @Default(.useMusicVisualizer) var useMusicVisualizer
@@ -1032,6 +1034,20 @@ struct Appearance: View {
             Section {
                 Defaults.Toggle(key: .settingsIconInNotch) {
                     Text("Show settings icon in notch")
+                }
+                Defaults.Toggle(key: .notchOutlineEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(String(localized: "outline.settings.enabled", defaultValue: "Thin light around the notch"))
+                        Text(String(localized: "outline.settings.enabled.detail",
+                                    defaultValue: "Shows the notch's edge on dark backgrounds."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if notchOutlineEnabled {
+                    Slider(value: $notchOutlineStrength, in: 0.2...1) {
+                        Text(String(localized: "outline.settings.strength", defaultValue: "Outline strength"))
+                    }
                 }
                 Defaults.Toggle(key: .dripEffectEnabled) {
                     VStack(alignment: .leading, spacing: 2) {
