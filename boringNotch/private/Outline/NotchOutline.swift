@@ -21,13 +21,20 @@ extension Defaults.Keys {
 struct NotchOutline: ViewModifier {
     @Default(.notchOutlineEnabled) private var enabled
     @Default(.notchOutlineStrength) private var strength
+    @Default(.notchBackdropStyle) private var backdropStyle
     @Environment(\.colorSchemeContrast) private var contrast
 
     func body(content: Content) -> some View {
-        let s = enabled ? min(max(strength, 0), 1) * (contrast == .increased ? 1.5 : 1) : 0
-        content
-            .compositingGroup()
-            .shadow(color: .white.opacity(0.55 * s), radius: 0.5)
-            .shadow(color: .white.opacity(0.18 * s), radius: 1.5)
+        // Only apply the offscreen compositingGroup and white outline shadow on solid black;
+        // on glass/liquidGlass, compositingGroup flattens the live windowserver glass refraction.
+        if backdropStyle == .solid, enabled {
+            let s = min(max(strength, 0), 1) * (contrast == .increased ? 1.5 : 1)
+            content
+                .compositingGroup()
+                .shadow(color: .white.opacity(0.55 * s), radius: 0.5)
+                .shadow(color: .white.opacity(0.18 * s), radius: 1.5)
+        } else {
+            content
+        }
     }
 }

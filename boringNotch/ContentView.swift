@@ -419,7 +419,9 @@ struct ContentView: View {
         // the island, so the island's ears and hover stay on top.
         .background(alignment: .top) { EyeBreakBannerSlot(neckWidth: computedChinWidth) }
         .background(alignment: .top) { CritterLayer(islandWidth: computedChinWidth, pointerNear: isHovering || pointerApproach > 0) }
-        .compositingGroup()
+        .conditionalModifier(backdropStyle == .solid) { view in
+            view.compositingGroup()
+        }
         .scaleEffect(
             x: gestureScale,
             y: gestureScale,
@@ -516,6 +518,15 @@ struct ContentView: View {
                                .frame(height: PanelLayout.headerHeight(notchHeight: vm.effectiveClosedNotchHeight))
                                .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
                                .transition(.islandContent(delay: UmbarMotion.headerDelay, reduce: reduceMotion))
+                       } else if useNotchAreaForContent {
+                           // On displays without a physical camera notch, don't leave a large empty
+                           // 165pt box when idle; render a sleek, compact pill with a subtle indicator.
+                           HStack(spacing: 6) {
+                               Capsule()
+                                   .fill(.white.opacity(0.38))
+                                   .frame(width: 28, height: 4)
+                           }
+                           .frame(width: 84, height: vm.effectiveClosedNotchHeight)
                        } else {
                            Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
                        }
