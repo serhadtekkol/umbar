@@ -23,7 +23,7 @@ Türkçe: [README.tr.md](README.tr.md)
 
 - **Notch panel.** Hover over or click the notch to open it, or swipe down on it with two
   fingers; swipe up to close it. You can change the hover delay, the notch height, and turn haptic feedback off.
-- **Frosted glass & magnetic edge.** Choose between **Solid black**, **Frosted glass** (behind-window macOS blur with adjustable darkness), or **Album-tinted glass** in **Settings > Appearance > Backdrop**. Approaching the closed island magnetically bends its bottom edge and corners smoothly toward the pointer. On displays without a physical camera notch, enable **No notch here — utilize center space** to use the full bar for song titles and content.
+- **Frosted & Liquid Glass + magnetic edge.** Choose between **Solid black**, **Frosted glass**, **Album-tinted glass**, or **Liquid glass** (refractive lens sheen with dual-layer Fresnel rim and pointer-reactive caustic highlight) in **Settings > Appearance > Backdrop**. Approaching the closed island magnetically bends its bottom edge and corners smoothly toward the pointer. On displays without a physical camera notch, enable **No notch here — utilize center space** to use the full bar for song titles and content.
 - **Music.** Shows the track, artwork and playback controls for whatever macOS is playing,
   including YouTube Music and other music in a browser tab. If that stops working, umbar
   switches to Apple Music and Spotify on its own. You can choose which controls appear (shuffle,

@@ -14,6 +14,7 @@ enum NotchBackdropStyle: String, CaseIterable, Identifiable, Defaults.Serializab
     case solid
     case frosted
     case tintedGlass
+    case liquidGlass
 
     var id: String { rawValue }
 
@@ -25,6 +26,8 @@ enum NotchBackdropStyle: String, CaseIterable, Identifiable, Defaults.Serializab
             return String(localized: "backdrop.style.frosted", defaultValue: "Frosted glass")
         case .tintedGlass:
             return String(localized: "backdrop.style.tintedGlass", defaultValue: "Album-tinted glass")
+        case .liquidGlass:
+            return String(localized: "backdrop.style.liquidGlass", defaultValue: "Liquid glass")
         }
     }
 }
@@ -107,16 +110,19 @@ struct NotchBackdropView: View {
     var body: some View {
         ZStack {
             if usesGlass {
-                NotchVisualEffectBlur(material: .hudWindow)
+                let isLiquid = (style == .liquidGlass)
+                NotchVisualEffectBlur(material: isLiquid ? .fullScreenUI : .hudWindow)
                     .overlay {
-                        Color.black.opacity(min(max(glassOpacity, 0.15), 0.75))
+                        // Base darkness scrim; liquid glass keeps a lighter, more refractive core
+                        let baseAlpha = min(max(glassOpacity, 0.15), 0.75)
+                        Color.black.opacity(isLiquid ? baseAlpha * 0.72 : baseAlpha)
                     }
                     .overlay {
-                        if style == .tintedGlass && isPlaying {
+                        if (style == .tintedGlass || isLiquid) && isPlaying {
                             LinearGradient(
                                 colors: [
-                                    Color(nsColor: albumColor).opacity(0.22),
-                                    Color(nsColor: albumColor).opacity(0.08),
+                                    Color(nsColor: albumColor).opacity(isLiquid ? 0.28 : 0.22),
+                                    Color(nsColor: albumColor).opacity(isLiquid ? 0.10 : 0.08),
                                     .clear,
                                 ],
                                 startPoint: .topLeading,
@@ -124,22 +130,92 @@ struct NotchBackdropView: View {
                             )
                         }
                     }
+                    .overlay {
+                        if isLiquid {
+                            // Liquid Glass refractive sheen + pointer-reactive specular highlight
+                            GeometryReader { geo in
+                                let sheenX = min(max(magneticX, 0.15), 0.85) * geo.size.width
+                                ZStack {
+                                    // Top curved lens highlight
+                                    LinearGradient(
+                                        colors: [
+                                            .white.opacity(0.22),
+                                            .white.opacity(0.05),
+                                            .clear,
+                                            .white.opacity(0.10),
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                    // Pointer-reactive liquid caustic reflection
+                                    RadialGradient(
+                                        colors: [
+                                            .white.opacity(0.20 + 0.12 * Double(magneticPull)),
+                                            Color(nsColor: albumColor).opacity(isPlaying ? 0.14 : 0.04),
+                                            .clear,
+                                        ],
+                                        center: UnitPoint(
+                                            x: geo.size.width > 0 ? sheenX / geo.size.width : 0.5,
+                                            y: isOpen ? 0.18 : 0.85
+                                        ),
+                                        startRadius: 4,
+                                        endRadius: max(120, geo.size.width * 0.55)
+                                    )
+                                }
+                            }
+                        }
+                    }
                     .clipShape(shape)
                     .overlay {
-                        shape
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        .white.opacity(0.22),
-                                        .white.opacity(0.07),
-                                        .white.opacity(0.16),
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ),
-                                lineWidth: 1
-                            )
+                        if isLiquid {
+                            // Dual-layer Fresnel refractive glass rim (outer crisp specular + inner soft thickness)
+                            ZStack {
+                                shape
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [
+                                                .white.opacity(0.50),
+                                                .white.opacity(0.14),
+                                                Color(nsColor: albumColor).opacity(isPlaying ? 0.32 : 0.18),
+                                                .white.opacity(0.38),
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.5
+                                    )
+                                shape
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [
+                                                .white.opacity(0.18),
+                                                .clear,
+                                                .white.opacity(0.12),
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 1
+                                    )
+                                    .padding(1.2)
+                            }
                             .clipShape(shape)
+                        } else {
+                            shape
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [
+                                            .white.opacity(0.22),
+                                            .white.opacity(0.07),
+                                            .white.opacity(0.16),
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 1
+                                )
+                                .clipShape(shape)
+                        }
                     }
             } else {
                 shape.fill(.black)

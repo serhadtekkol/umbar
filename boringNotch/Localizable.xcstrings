@@ -10995,6 +10995,22 @@
           }
         }
       }
+    },
+    "backdrop.style.liquidGlass": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liquid glass"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liquid Glass (Sıvı cam)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
