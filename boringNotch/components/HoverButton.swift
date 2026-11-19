@@ -18,9 +18,9 @@ struct HoverButton: View {
     var action: () -> Void
     var contentTransition: ContentTransition = .symbolEffect;
 
-    static let iconSize: CGFloat = 28
-    static let prominentSize: CGFloat = 32
-    private static let glyphSize: CGFloat = 14
+    static let iconSize: CGFloat = 24
+    static let prominentSize: CGFloat = 28
+    private static let glyphSize: CGFloat = 12
     private static let buttonBg = Color(red: 0xF5 / 255, green: 0xF5 / 255, blue: 0xF7 / 255)
     private static let buttonFg = Color.black
 

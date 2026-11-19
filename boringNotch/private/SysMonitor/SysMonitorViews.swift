@@ -52,27 +52,27 @@ struct SysStatsSection: View {
 struct SysStatsRow: View {
     let snapshot: SysSnapshot?
 
-    static let height: CGFloat = 34
+    static let height: CGFloat = 28
     private let dash = "\u{2014}"
 
     var body: some View {
         HStack(spacing: 0) {
-            cpuCell.frame(width: 84, alignment: .leading)
+            cpuCell.frame(width: 66, alignment: .leading)
             divider
-            memoryCell.frame(width: 150, alignment: .leading)
+            memoryCell.frame(width: 122, alignment: .leading)
             divider
-            thermalCell.frame(width: 100, alignment: .leading)
+            thermalCell.frame(width: 82, alignment: .leading)
             divider
             topAppsCell.frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: Self.height)
         .overlay(alignment: .top) {
-            Rectangle().fill(SysTokens.hairline).frame(height: 1).offset(y: -6)
+            Rectangle().fill(SysTokens.hairline).frame(height: 1).offset(y: -4)
         }
     }
 
     private var divider: some View {
-        Rectangle().fill(SysTokens.hairline).frame(width: 1, height: 22).padding(.horizontal, 10)
+        Rectangle().fill(SysTokens.hairline).frame(width: 1, height: 18).padding(.horizontal, 6)
     }
 
     private var cpuCell: some View {
@@ -127,7 +127,7 @@ struct SysStatsRow: View {
                         appList(apps, truncating: false)
                         appList(Array(apps.prefix(1)), truncating: true)
                     }
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                 }
                 labelText(label)
             }
@@ -171,15 +171,15 @@ struct SysStatsRow: View {
 
     private func glyph(_ name: String, emphasized: Bool) -> some View {
         Image(systemName: name)
-            .font(.system(size: 13, weight: .medium))
+            .font(.system(size: 11, weight: .medium))
             .foregroundStyle(emphasized ? SysTokens.textPrimary : SysTokens.textSecondary)
-            .frame(width: 16)
+            .frame(width: 13)
             .accessibilityHidden(true)
     }
 
     private func valueText(_ text: String, emphasized: Bool) -> some View {
         Text(text)
-            .font(.system(size: 13, weight: emphasized ? .bold : .medium).monospacedDigit())
+            .font(.system(size: 11, weight: emphasized ? .bold : .medium).monospacedDigit())
             .foregroundStyle(SysTokens.textPrimary)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -187,7 +187,7 @@ struct SysStatsRow: View {
 
     private func labelText(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11))
+            .font(.system(size: 9.5))
             .foregroundStyle(SysTokens.textSecondary)
             .lineLimit(1)
             .truncationMode(.tail)

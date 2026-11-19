@@ -1066,6 +1066,8 @@ struct Appearance: View {
                 Text("General")
             }
 
+            NotchBackdropSettingsSection()
+
             TypefaceSettingsSection()
 
             EdgeGlowSettingsSection()

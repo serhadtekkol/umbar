@@ -25,6 +25,7 @@ arayüzdeki halleriyle verilmiştir. İki doküman çelişirse İngilizce olan g
 - **Notch paneli.** Açmak için imleci notch'un üzerine getirin, notch'a tıklayın ya da notch
   üzerinde iki parmakla aşağı kaydırın; kapatmak için yukarı kaydırın. Bekleme süresini, notch yüksekliğini ve dokunsal
   geri bildirimi ayarlardan değiştirebilirsiniz.
+- **Buzlu cam ve manyetik kenar.** **Settings > Appearance > Arka Plan** altından **Mürekkep siyahı**, **Buzlu cam** (ayarlanabilir cam koyuluğu ile arka plan bulanıklığı) veya **Albüm renkli cam** seçebilirsiniz. İmleç kapalı adaya yaklaştığında alt kenar ve köşeler tek parça Gauss eğrisiyle imlece doğru manyetik olarak esner. Fiziksel kamera çentiği olmayan ekranlarda **Burada çentik yok — orta alanı değerlendir** seçeneğiyle ortadaki boşluğu kaldırıp tüm çubuğu şarkı adı ve içerik için kullanabilirsiniz.
 - **Müzik.** macOS'ta ne çalıyorsa onun parça bilgisini, kapağını ve kontrollerini gösterir;
   tarayıcı sekmesindeki YouTube Music ve diğer müzikler dahil. Bu yol çalışmazsa umbar kendiliğinden
   Apple Music ve Spotify'a geçer. Hangi kontrollerin görüneceğini seçebilirsiniz (karıştır,

@@ -81,7 +81,7 @@ struct NetworkPageStack<Network: View, System: View>: View {
     @ViewBuilder let system: System
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
             network
                 .frame(maxHeight: .infinity, alignment: .top)
             system
@@ -105,15 +105,15 @@ struct NetworkPageContent: View {
     let onReset: () -> Void
     @State private var confirmReset = false
 
-    static let totalsWidth: CGFloat = 196
+    static let totalsWidth: CGFloat = 158
 
     var body: some View {
-        HStack(alignment: .top, spacing: 24) {
-            VStack(alignment: .leading, spacing: 10) {
+        HStack(alignment: .top, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
                 header
                 speeds
                 NetSparkline(history: snapshot.history)
-                    .frame(maxWidth: .infinity, minHeight: 40, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 22, maxHeight: .infinity)
                     .accessibilityHidden(true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -123,13 +123,13 @@ struct NetworkPageContent: View {
     }
 
     private var header: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 5) {
             Image(systemName: NetStrings.glyph(snapshot.network?.kind))
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 10.5, weight: .medium))
                 .foregroundStyle(NetTokens.textSecondary)
                 .accessibilityHidden(true)
             Text(NetStrings.networkName(snapshot.network))
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(NetTokens.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -138,7 +138,7 @@ struct NetworkPageContent: View {
     }
 
     private var speeds: some View {
-        HStack(alignment: .top, spacing: 28) {
+        HStack(alignment: .top, spacing: 16) {
             speed(symbol: "arrow.down", value: snapshot.rxRate, tint: NetTokens.live,
                   label: String(localized: "netmonitor.download.a11y", defaultValue: "Download"))
             speed(symbol: "arrow.up", value: snapshot.txRate, tint: NetTokens.textPrimary,
@@ -147,19 +147,19 @@ struct NetworkPageContent: View {
     }
 
     private func speed(symbol: String, value: Double, tint: Color, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Image(systemName: symbol)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: 10.5, weight: .bold))
                     .foregroundStyle(tint)
                 Text(NetByteFormat.rate(value))
-                    .font(.system(size: 20, weight: .medium).monospacedDigit())
+                    .font(.system(size: 15, weight: .medium).monospacedDigit())
                     .foregroundStyle(NetTokens.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
             Text(label)
-                .font(.system(size: 11))
+                .font(.system(size: 9.5))
                 .foregroundStyle(NetTokens.textSecondary)
         }
         .accessibilityElement(children: .ignore)
@@ -168,9 +168,9 @@ struct NetworkPageContent: View {
     }
 
     private var totals: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 3) {
             Text(String(localized: "netmonitor.totals.title", defaultValue: "Totals on this network"))
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(NetTokens.textPrimary)
                 .lineLimit(1)
                 .accessibilityAddTraits(.isHeader)
@@ -178,7 +178,7 @@ struct NetworkPageContent: View {
             totalRow(String(localized: "netmonitor.total.today", defaultValue: "Today"), snapshot.today)
             totalRow(String(localized: "netmonitor.total.month", defaultValue: "This month"), snapshot.month)
             resetButton
-                .padding(.top, 4)
+                .padding(.top, 2)
         }
     }
 
@@ -196,7 +196,7 @@ struct NetworkPageContent: View {
                 .monospacedDigit()
                 .foregroundStyle(NetTokens.textPrimary)
         }
-        .font(.system(size: 12))
+        .font(.system(size: 10.5))
         .lineLimit(1)
         .help(detail)
         .accessibilityElement(children: .ignore)
@@ -238,10 +238,10 @@ private struct NetCapsuleButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(size: 10, weight: .medium))
             .foregroundStyle(primary ? Color.black : NetTokens.textPrimary)
-            .padding(.horizontal, 10)
-            .frame(height: 24)
+            .padding(.horizontal, 8)
+            .frame(height: 20)
             .background(
                 Capsule().fill(primary ? NetTokens.textPrimary : Color(red: 0x2C / 255, green: 0x2C / 255, blue: 0x2E / 255)))
             .opacity(configuration.isPressed ? 0.7 : 1)

@@ -16,9 +16,9 @@ let shadowPadding: CGFloat = 20
 /// design-language §4: one fixed size for every page (no layout shift when
 /// the page changes). 640 × 190 fit neither five tabs beside the notch nor a
 /// page body that is not crammed.
-let openNotchSize: CGSize = .init(width: 800, height: 236)
+let openNotchSize: CGSize = .init(width: 600, height: 174)
 let windowSize: CGSize = .init(width: openNotchSize.width, height: openNotchSize.height + shadowPadding)
-let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 19, bottom: 24), closed: (top: 6, bottom: 14))
+let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 14, bottom: 20), closed: (top: 6, bottom: 14))
 
 /// The open panel's vertical rhythm inside `openNotchSize`: the header
 /// (tab bar) on top, then the page, then the bottom inset. The page gets
@@ -28,12 +28,12 @@ let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: 
 /// bar and cut off the top of the selected capsule).
 enum PanelLayout {
     /// Between the header and the page.
-    static let headerSpacing: CGFloat = 8
+    static let headerSpacing: CGFloat = 5
     /// Left and right, on top of the corner-radius inset.
     static let sideInset: CGFloat = 12
-    /// Under the page. More than the sides: the 24 pt bottom corners make
-    /// a 12 pt gap read as touching the edge (Ağ's graph baseline).
-    static let bottomInset: CGFloat = 16
+    /// Under the page. More than the sides: the bottom corners make
+    /// a tiny gap read as touching the edge.
+    static let bottomInset: CGFloat = 10
 
     /// As tall as the notch, so the tab bar sits beside it, but never
     /// shorter than the tab bar itself: on a screen without a notch (or a
@@ -45,8 +45,8 @@ enum PanelLayout {
 }
 
 enum MusicPlayerImageSizes {
-    static let cornerRadiusInset: (opened: CGFloat, closed: CGFloat) = (opened: 13.0, closed: 4.0)
-    static let size = (opened: CGSize(width: 90, height: 90), closed: CGSize(width: 20, height: 20))
+    static let cornerRadiusInset: (opened: CGFloat, closed: CGFloat) = (opened: 10.0, closed: 4.0)
+    static let size = (opened: CGSize(width: 64, height: 64), closed: CGSize(width: 20, height: 20))
 }
 
 @MainActor func getScreenFrame(_ screenUUID: String? = nil) -> CGRect? {

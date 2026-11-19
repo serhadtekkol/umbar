@@ -77,7 +77,8 @@ enum NotchDripPolicy {
         let left = island.minX + inset
         let right = island.maxX - inset
         let beyond = max(left - pointer.x, 0, pointer.x - right)
-        let horizontal = 1 - beyond / (2 * inset)
+        let horizontalReach = max(2 * inset, tuning.reach * 0.75)
+        let horizontal = 1 - beyond / horizontalReach
         let pull = min(max(vertical * horizontal, 0), 1)
         guard pull > 0 else { return nil }
         let x = (min(max(pointer.x, left), right) - island.minX) / island.width

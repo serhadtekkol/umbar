@@ -62,6 +62,9 @@ struct ContentView: View {
     @Default(.useMusicVisualizer) var useMusicVisualizer
 
     @Default(.showNotHumanFace) var showNotHumanFace
+    @Default(.notchBackdropStyle) private var backdropStyle
+    @Default(.notchGlassWhenClosed) private var glassWhenClosed
+    @Default(.useNotchAreaForContent) private var useNotchAreaForContent
 
     @Default(.dripEffectEnabled) private var dripEffectEnabled
 
@@ -104,7 +107,10 @@ struct ContentView: View {
     /// shadow fade is the hint then).
     private var hoverHintTarget: CGFloat {
         guard vm.notchState == .closed, !reduceMotion, !coordinator.helloAnimationRunning else { return 0 }
-        return max(isHovering ? 1 : 0, pointerApproach * UmbarMotion.hoverApproachShare)
+        let t = min(max(pointerApproach, 0), 1)
+        // Smooth cubic magnetic attraction curve: gentle from afar, accelerating as the pointer nears.
+        let magnetic = t * t * (3 - 2 * t)
+        return max(isHovering ? 1 : 0, pow(magnetic, 1.15) * UmbarMotion.hoverApproachShare)
     }
 
     /// The hint's growth is zero whenever the island is not closed, inside
@@ -178,8 +184,19 @@ struct ContentView: View {
             && vm.notchState == .closed && musicEarsActive
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
         {
-            chinWidth += ClosedMusicLayout.earsWidth(
-                notchHeight: vm.effectiveClosedNotchHeight, showsTitle: showsClosedTitle, presence: musicWidth)
+            let hasPhysicalNotch = (NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0) > 0
+            if !useNotchAreaForContent || hasPhysicalNotch {
+                if useNotchAreaForContent {
+                    let art = ClosedMusicLayout.artSide(notchHeight: vm.effectiveClosedNotchHeight)
+                    chinWidth += (2 * art + 24) * musicWidth
+                } else {
+                    chinWidth += ClosedMusicLayout.earsWidth(
+                        notchHeight: vm.effectiveClosedNotchHeight, showsTitle: showsClosedTitle, presence: musicWidth)
+                }
+            } else {
+                let art = ClosedMusicLayout.artSide(notchHeight: vm.effectiveClosedNotchHeight)
+                chinWidth += (2 * art + 24) * musicWidth
+            }
         } else if !coordinator.expandingView.show && vm.notchState == .closed
             && !musicEarsActive && Defaults[.showNotHumanFace]
             && !vm.hideOnClosed
@@ -215,19 +232,30 @@ struct ContentView: View {
                     // panel is revealed by the island rather than faded over it.
                     .clipShape(currentNotchShape)
                     .background(alignment: .top) {
-                        NotchShape(
+                        let hasPhysicalNotch = (NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0) > 0
+                        NotchBackdropView(
                             topCornerRadius: topCornerRadius,
-                            bottomCornerRadius: bottomCornerRadius + hintRadius
+                            bottomCornerRadius: bottomCornerRadius + hintRadius,
+                            isOpen: vm.notchState == .open,
+                            hasPhysicalNotch: hasPhysicalNotch,
+                            albumColor: musicManager.avgColor,
+                            isPlaying: musicManager.isPlaying,
+                            dripEnabled: dripEffectEnabled,
+                            dripPointer: dripPointer
                         )
-                        .fill(.black)
                         .padding(.horizontal, -hintSide)
-                        .padding(.bottom, -hintDown)
+                        .padding(.bottom, -hintDown - NotchBackdropView.magneticReserve)
                     }
                     .overlay(alignment: .top) {
-                        Rectangle()
-                            .fill(.black)
-                            .frame(height: 1)
-                            .padding(.horizontal, topCornerRadius)
+                        let hasPhysicalNotch = (NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0) > 0
+                        if backdropStyle == .solid
+                            || (vm.notchState == .closed && hasPhysicalNotch && !glassWhenClosed)
+                        {
+                            Rectangle()
+                                .fill(.black)
+                                .frame(height: 1)
+                                .padding(.horizontal, topCornerRadius)
+                        }
                     }
                     .shadow(
                         color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
@@ -265,18 +293,6 @@ struct ContentView: View {
                     // After the ears, so it lights their silhouette too; visual only.
                     .modifier(NotchOutline())
                     .modifier(EdgeGlow(isOpen: vm.notchState == .open, islandHeight: vm.effectiveClosedNotchHeight))
-                    // After the glow, so the glow stays the island's silhouette
-                    // and the drip's black sits in front of it. Pinned to the
-                    // closed edge (and the hint's depth): when the panel opens
-                    // it stays there and fades inside the growing shape.
-                    .overlay(alignment: .top) {
-                        if dripEffectEnabled && !reduceMotion && vm.effectiveClosedNotchHeight > 0 {
-                            DripLayer(width: closedHoverFrame.width,
-                                      isClosed: vm.notchState == .closed && !coordinator.helloAnimationRunning,
-                                      pointer: dripPointer)
-                                .offset(y: vm.effectiveClosedNotchHeight - DripArt.top + hintDown)
-                        }
-                    }
                 
                 mainLayout
                     .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
@@ -630,89 +646,104 @@ struct ContentView: View {
         HStack(spacing: 0) {
             Image(nsImage: musicManager.albumArt)
                 .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: art, height: art)
                 .clipped()
                 .clipShape(
                     RoundedRectangle(
                         cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed)
                 )
                 .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
-                .frame(width: art, height: art)
                 .scaleEffect(artScale, anchor: .center)
                 .opacity(musicContent)
                 .frame(width: art * musicWidth)
 
-            if titled {
-                // Folds from its trailing end, so it stays beside the art
-                // instead of sliding over it.
-                ClosedSongTitle(title: musicManager.songTitle, reduceMotion: reduceMotion)
-                    .frame(width: ClosedMusicLayout.titleWidth, alignment: .leading)
-                    .padding(.leading, ClosedMusicLayout.titleGap)
-                    .opacity(musicContent)
-                    .frame(width: ClosedMusicLayout.titleExtra(showsTitle: true) * musicWidth, alignment: .leading)
-                    .clipped()
-                    .transition(.opacity)
-            }
+            if useNotchAreaForContent {
+                // Utilize the center notch space for the song title with zero black camera box.
+                let centerTitleWidth = max(120, vm.closedNotchSize.width - 16)
+                if titled {
+                    ClosedSongTitle(title: musicManager.songTitle, reduceMotion: reduceMotion, width: centerTitleWidth)
+                        .padding(.horizontal, ClosedMusicLayout.titleGap)
+                        .opacity(musicContent)
+                        .frame(width: (centerTitleWidth + 2 * ClosedMusicLayout.titleGap) * musicWidth, alignment: .leading)
+                        .clipped()
+                } else {
+                    Color.clear.frame(width: (vm.closedNotchSize.width - 20) * musicWidth)
+                }
+            } else {
+                if titled {
+                    // Folds from its trailing end, so it stays beside the art
+                    // instead of sliding over it.
+                    ClosedSongTitle(title: musicManager.songTitle, reduceMotion: reduceMotion)
+                        .frame(width: ClosedMusicLayout.titleWidth, alignment: .leading)
+                        .padding(.leading, ClosedMusicLayout.titleGap)
+                        .opacity(musicContent)
+                        .frame(width: ClosedMusicLayout.titleExtra(showsTitle: true) * musicWidth, alignment: .leading)
+                        .clipped()
+                        .transition(.opacity)
+                }
 
-            Color.clear.frame(width: ClosedMusicLayout.earGap * musicWidth)
+                Color.clear.frame(width: ClosedMusicLayout.earGap * musicWidth)
 
-            Rectangle()
-                .fill(.black)
-                .overlay(
-                    HStack(alignment: .top) {
-                        if coordinator.expandingView.show
-                            && coordinator.expandingView.type == .music
-                        {
-                            MarqueeText(
-                                .constant(musicManager.songTitle),
-                                textColor: Defaults[.coloredSpectrogram]
-                                    ? Color(nsColor: musicManager.avgColor) : Color.gray,
-                                minDuration: 0.4,
-                                frameWidth: 100
-                            )
-                            .umbarFont(.display, size: 13)
-                            .opacity(
-                                (coordinator.expandingView.show
-                                    && Defaults[.sneakPeekStyles] == .inline)
-                                    ? 1 : 0
-                            )
-                            Spacer(minLength: vm.closedNotchSize.width)
-                            // Song Artist
-                            Text(musicManager.artistName)
-                                .umbarFont(.display, size: 13)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                                .foregroundStyle(
-                                    Defaults[.coloredSpectrogram]
-                                        ? Color(nsColor: musicManager.avgColor)
-                                        : Color.gray
+                Rectangle()
+                    .fill(.black)
+                    .overlay(
+                        HStack(alignment: .top) {
+                            if coordinator.expandingView.show
+                                && coordinator.expandingView.type == .music
+                            {
+                                MarqueeText(
+                                    .constant(musicManager.songTitle),
+                                    textColor: Defaults[.coloredSpectrogram]
+                                        ? Color(nsColor: musicManager.avgColor) : Color.gray,
+                                    minDuration: 0.4,
+                                    frameWidth: 100
                                 )
+                                .umbarFont(.display, size: 13)
                                 .opacity(
                                     (coordinator.expandingView.show
-                                        && coordinator.expandingView.type == .music
                                         && Defaults[.sneakPeekStyles] == .inline)
                                         ? 1 : 0
                                 )
+                                Spacer(minLength: vm.closedNotchSize.width)
+                                // Song Artist
+                                Text(musicManager.artistName)
+                                    .umbarFont(.display, size: 13)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                    .foregroundStyle(
+                                        Defaults[.coloredSpectrogram]
+                                            ? Color(nsColor: musicManager.avgColor)
+                                            : Color.gray
+                                    )
+                                    .opacity(
+                                        (coordinator.expandingView.show
+                                            && coordinator.expandingView.type == .music
+                                            && Defaults[.sneakPeekStyles] == .inline)
+                                            ? 1 : 0
+                                    )
+                            }
                         }
-                    }
-                )
-                .frame(
-                    // Folded, the black is as wide as the empty closed
-                    // island's, so taking the ears out of the layout after
-                    // they fold does not move the shape.
-                    width: inlineMusicPeekShowing
-                        ? 380
-                        : vm.closedNotchSize.width - 20
-                            + (20 - cornerRadiusInsets.closed.top) * musicWidth
-                )
+                    )
+                    .frame(
+                        // Folded, the black is as wide as the empty closed
+                        // island's, so taking the ears out of the layout after
+                        // they fold does not move the shape.
+                        width: inlineMusicPeekShowing
+                            ? 380
+                            : vm.closedNotchSize.width - 20
+                                + (20 - cornerRadiusInsets.closed.top) * musicWidth
+                    )
 
-            Color.clear.frame(width: ClosedMusicLayout.earGap * musicWidth)
+                Color.clear.frame(width: ClosedMusicLayout.earGap * musicWidth)
 
-            // The right ear mirrors the name's width, so the island stays
-            // centred on the camera; the spectrum keeps the outer edge.
-            if titled {
-                Color.clear
-                    .frame(width: ClosedMusicLayout.titleExtra(showsTitle: true) * musicWidth)
-                    .transition(.opacity)
+                // The right ear mirrors the name's width, so the island stays
+                // centred on the camera; the spectrum keeps the outer edge.
+                if titled {
+                    Color.clear
+                        .frame(width: ClosedMusicLayout.titleExtra(showsTitle: true) * musicWidth)
+                        .transition(.opacity)
+                }
             }
 
             HStack {

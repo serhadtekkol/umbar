@@ -22,6 +22,11 @@ class BatteryStatusViewModel: ObservableObject {
     @Published private(set) var timeToFullCharge: Int = 0
     @Published private(set) var statusText: String = ""
 
+    /// False on desktop Macs (Mac mini, iMac, Mac Studio) that have no internal battery.
+    var hasBattery: Bool {
+        maxCapacity > 0
+    }
+
     private let managerBattery = BatteryActivityManager.shared
     private var managerBatteryId: Int?
 

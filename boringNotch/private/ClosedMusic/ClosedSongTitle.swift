@@ -12,6 +12,7 @@ import SwiftUI
 struct ClosedSongTitle: View {
     let title: String
     let reduceMotion: Bool
+    var width: CGFloat = ClosedMusicLayout.titleWidth
 
     /// Neutral, not the album colour: the island is black in both
     /// appearances, and white at 0.85 holds ~15:1 on it whatever the art
@@ -25,13 +26,13 @@ struct ClosedSongTitle: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .foregroundStyle(color)
-                    .frame(width: ClosedMusicLayout.titleWidth, alignment: .leading)
+                    .frame(width: width, alignment: .leading)
             } else {
                 MarqueeText(.constant(title), textColor: color, minDuration: 1,
-                            frameWidth: ClosedMusicLayout.titleWidth)
+                            frameWidth: width)
             }
         }
-        .umbarFont(.display, size: 13)
+        .umbarFont(.display, size: 12)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
     }

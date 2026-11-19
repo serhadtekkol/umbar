@@ -15,26 +15,27 @@ import SwiftUI
 /// Spacing scale from docs/design/design-language.md §3.6
 /// (`xxs 2 · xs 4 · s 8 · m 12 · l 16`). Local until UmbarTokens lands.
 private enum MusicSpace {
-    static let xs: CGFloat = 4
-    static let s: CGFloat = 8
-    static let m: CGFloat = 12
-    static let l: CGFloat = 16
+    static let xs: CGFloat = 3
+    static let s: CGFloat = 6
+    static let m: CGFloat = 8
+    static let l: CGFloat = 12
 }
 
 struct MusicPlayerView: View {
     @EnvironmentObject var vm: BoringViewModel
     let albumArtNamespace: Namespace.ID
-    /// The art is as tall as the controls column, so its top meets the title
-    /// and its bottom meets the control row: one grid, no floating square.
+    /// Kept compact so the artwork never dominates the open island.
     @State private var artSide: CGFloat = MusicPlayerImageSizes.size.opened.height
 
     var body: some View {
-        HStack(alignment: .top, spacing: MusicSpace.l) {
-            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
+        HStack(alignment: .center, spacing: MusicSpace.l) {
+            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace, side: artSide)
                 .frame(width: artSide, height: artSide)
             MusicControlsView().drawingGroup().compositingGroup()
                 .fixedSize(horizontal: false, vertical: true)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { artSide = $0 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                    artSide = min(72, max(60, $0))
+                }
         }
     }
 }
@@ -43,6 +44,7 @@ struct AlbumArtView: View {
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var vm: BoringViewModel
     let albumArtNamespace: Namespace.ID
+    var side: CGFloat = MusicPlayerImageSizes.size.opened.height
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -56,6 +58,8 @@ struct AlbumArtView: View {
     private var albumArtBackground: some View {
         Image(nsImage: musicManager.albumArt)
             .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(width: side, height: side)
             .clipped()
             .clipShape(
                 RoundedRectangle(
@@ -63,7 +67,6 @@ struct AlbumArtView: View {
                         ? MusicPlayerImageSizes.cornerRadiusInset.opened
                         : MusicPlayerImageSizes.cornerRadiusInset.closed)
             )
-            .aspectRatio(1, contentMode: .fit)
             // A halo, not a wash: scaled up and blurred 40 pt it spilled over
             // the tab bar and the page edge.
             .rotationEffect(.degrees(92))
@@ -100,9 +103,10 @@ struct AlbumArtView: View {
     private var albumArtImage: some View {
         Image(nsImage: musicManager.albumArt)
             .resizable()
-            .aspectRatio(1, contentMode: .fit)
-            .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
+            .aspectRatio(contentMode: .fill)
+            .frame(width: side, height: side)
             .clipped()
+            .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: Defaults[.cornerRadiusScaling]
@@ -117,8 +121,8 @@ struct AlbumArtView: View {
             AppIcon(for: musicManager.bundleIdentifier ?? "com.apple.Music")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: 30, height: 30)
-                .offset(x: 10, y: 10)
+                .frame(width: 20, height: 20)
+                .offset(x: 6, y: 6)
                 .transition(.scale.combined(with: .opacity))
                 .zIndex(2)
         }
@@ -153,20 +157,20 @@ struct MusicControlsView: View {
     }
 
     private func songInfo(width: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 1) {
             MarqueeText(
-                $musicManager.songTitle, nsFont: .headline, textColor: .white,
+                $musicManager.songTitle, nsFont: .subheadline, textColor: .white,
                 frameWidth: width)
-            .umbarFont(.display, size: 13, weight: 700)
+            .umbarFont(.display, size: 12, weight: 600)
             MarqueeText(
                 $musicManager.artistName,
-                nsFont: .headline,
+                nsFont: .caption1,
                 textColor: Defaults[.playerColorTinting]
                     ? Color(nsColor: musicManager.avgColor)
                         .ensureMinimumBrightness(factor: 0.6) : .gray,
                 frameWidth: width
             )
-            .umbarFont(.display, size: 13, weight: 500)
+            .umbarFont(.display, size: 11, weight: 400)
         }
     }
 

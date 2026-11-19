@@ -23,32 +23,30 @@ struct TabButton: View {
 
     /// Every tab is this tall, selected or not, so the capsule never changes
     /// height and stays centred on the bar.
-    static let height: CGFloat = 28
-    /// Unselected: a 14 pt glyph in a 28 pt circle (the §3.6 minimum hit
-    /// target). Selected: glyph + label.
-    private static let iconOnlyPadding: CGFloat = 7
-    private static let labelledPadding: CGFloat = 13
+    static let height: CGFloat = 24
+    private static let iconOnlyPadding: CGFloat = 5
+    private static let labelledPadding: CGFloat = 9
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: onClick) {
-            HStack(spacing: 5) {
+            HStack(spacing: 4) {
                 icon
-                    .frame(width: 14, height: 14)
+                    .frame(width: 12, height: 12)
                 if selected && showsLabel {
                     Text(tab.label)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .lineLimit(1)
                         .fixedSize()
                         .transition(labelTransition)
                 }
             }
-            .padding(.horizontal, selected && showsLabel ? (compact ? 8 : Self.labelledPadding) : (compact ? 5 : Self.iconOnlyPadding))
+            .padding(.horizontal, selected && showsLabel ? (compact ? 7 : Self.labelledPadding) : (compact ? 4 : Self.iconOnlyPadding))
             // A fixed height (not minHeight): the capsule wraps exactly the
             // glyph + label + padding of whichever tab it sits on.
             .frame(height: Self.height)
-            .frame(minWidth: compact ? 24 : Self.height)
+            .frame(minWidth: compact ? 22 : Self.height)
             // The capsule is the tab's own background, not a shared one that
             // travels: it widens with the label on the same layout spring, so
             // label and capsule never come apart mid-switch.

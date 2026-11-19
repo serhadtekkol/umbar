@@ -24,6 +24,7 @@
 //
 
 import Combine
+import Defaults
 import SwiftUI
 
 /// The monitor's drip readings, handed to DripLayer without passing
@@ -45,11 +46,30 @@ struct DripLayer: View {
     /// Readings wait for a close to finish moving (UmbarMotion.closeSettle).
     @State private var readyAt: TimeInterval = 0
 
+    @Default(.notchBackdropStyle) private var backdropStyle
+    @Default(.notchGlassOpacity) private var glassOpacity
+    @Default(.notchGlassWhenClosed) private var glassWhenClosed
+    @Default(.useNotchAreaForContent) private var useNotchAreaForContent
+    @ObservedObject private var coordinator = BoringViewCoordinator.shared
+
+    private var usesGlass: Bool {
+        let hasPhysicalNotch = (NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0) > 0
+        return backdropStyle != .solid && (glassWhenClosed || (useNotchAreaForContent && !hasPhysicalNotch))
+    }
+
+    private var dripFillColor: Color {
+        guard usesGlass else { return .black }
+        let darkness = min(max(glassOpacity, 0.15), 0.75)
+        return Color(white: 0.18, opacity: min(0.88, darkness + 0.32))
+    }
+
     var body: some View {
         ZStack {
             if sim.isVisible {
+                let fillColor = dripFillColor
+                let glassRim = usesGlass
                 Canvas(opaque: false, rendersAsynchronously: false) { context, size in
-                    DripArt.draw(sim, in: &context, size: size)
+                    DripArt.draw(sim, in: &context, size: size, fillColor: fillColor, glassRim: glassRim)
                 }
             }
         }
@@ -97,7 +117,14 @@ struct DripLayer: View {
 
     private func receive(_ reading: NotchDripReading?) {
         guard isClosed else { return }
-        let next = ProcessInfo.processInfo.systemUptime >= readyAt ? reading : nil
+        let raw = ProcessInfo.processInfo.systemUptime >= readyAt ? reading : nil
+        // Non-linear magnetic tension curve: subtle meniscus at outer reach,
+        // accelerating smoothly as the pointer approaches the edge.
+        let next = raw.map { r -> NotchDripReading in
+            let t = min(max(r.pull, 0), 1)
+            let smooth = t * t * (3 - 2 * t)
+            return NotchDripReading(pull: pow(smooth, 1.15), x: r.x)
+        }
         target = next
         if !ticking, !sim.isAtRest(target: next) { ticking = true }
     }
@@ -113,7 +140,7 @@ enum DripArt {
         top + UmbarMotion.dripLook.maxLength * (UmbarMotion.drip.fall + 0.6)
     }
 
-    static func draw(_ sim: NotchDripSim, in context: inout GraphicsContext, size: CGSize) {
+    static func draw(_ sim: NotchDripSim, in context: inout GraphicsContext, size: CGSize, fillColor: Color = .black, glassRim: Bool = false) {
         let edge = top
         let look = UmbarMotion.dripLook
         let unit = look.maxLength
@@ -146,7 +173,7 @@ enum DripArt {
             // Applied last added first: blur, cut, then a hair of blur so
             // the cut edge is antialiased rather than stair-stepped.
             goo.addFilter(.blur(radius: 0.5))
-            goo.addFilter(.alphaThreshold(min: 0.5, color: .black))
+            goo.addFilter(.alphaThreshold(min: 0.5, color: fillColor))
             goo.addFilter(.blur(radius: UmbarMotion.dripGoo))
             goo.drawLayer { layer in
                 // A point short of the edge, so its own cut never shows
@@ -184,9 +211,19 @@ enum DripArt {
                     guard r > 0.3 else { continue }
                     let center = CGPoint(x: drop.x * size.width, y: edge + drop.y * unit - r)
                     layer.fill(Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: 2 * r, height: 2 * r)),
-                               with: .color(.black))
+                               with: .color(fillColor))
                 }
             }
+        }
+
+        // Specular surface-tension highlight on the meniscus tip and drops
+        if glassRim, let shape = NotchDripShape(sim, width: size.width, flat: flat, look: look) {
+            let r = shape.radius
+            let bulb = CGPoint(x: shape.bulb.x, y: edge + shape.bulb.y)
+            var rimArc = Path()
+            rimArc.addArc(center: bulb, radius: max(1, r - 0.5),
+                          startAngle: .degrees(20), endAngle: .degrees(160), clockwise: false)
+            context.stroke(rimArc, with: .color(.white.opacity(0.22 * min(1, sim.length * 1.6))), lineWidth: 1)
         }
     }
 }

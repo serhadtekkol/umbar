@@ -12,6 +12,8 @@ struct BoringHeader: View {
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @Default(.notchBackdropStyle) private var backdropStyle
+    @Default(.useNotchAreaForContent) private var useNotchAreaForContent
     var body: some View {
         HStack(spacing: 0) {
             HStack {
@@ -28,9 +30,11 @@ struct BoringHeader: View {
             .opacity(vm.notchState == .closed ? 0 : 1)
             .zIndex(2)
 
-            if vm.notchState == .open {
+            if vm.notchState == .open,
+               !useNotchAreaForContent && (NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0) > 0
+            {
                 Rectangle()
-                    .fill(NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0 > 0 ? .black : .clear)
+                    .fill(.black)
                     .frame(width: vm.closedNotchSize.width)
                     .mask {
                         NotchShape()
@@ -51,18 +55,17 @@ struct BoringHeader: View {
                                 
                             }) {
                                 Capsule()
-                                    .fill(.black)
-                                    .frame(width: 30, height: 30)
+                                    .fill(backdropStyle == .solid ? Color.black : Color.white.opacity(0.08))
+                                    .frame(width: 24, height: 24)
                                     .overlay {
                                         Image(systemName: "gear")
-                                            .foregroundColor(.white)
-                                            .padding()
-                                            .imageScale(.medium)
+                                            .font(.system(size: 11.5, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.85))
                                     }
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
-                        if Defaults[.showBatteryIndicator] {
+                        if Defaults[.showBatteryIndicator] && batteryModel.hasBattery {
                             BoringBatteryView(
                                 batteryWidth: 30,
                                 isCharging: batteryModel.isCharging,

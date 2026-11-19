@@ -53,57 +53,50 @@ enum UmbarMotion {
         reduce ? .easeOut(duration: 0.12) : .spring(response: 0.24, dampingFraction: 0.8)
     }
 
-    /// The island widening toward the pointer: quick and lightly bouncy.
-    /// At 0.55 damping the overshoot is ~13 % of `hoverHintSide`, under
-    /// half a point, so it reads as elastic without spilling.
-    static let hoverHintWiden: Animation = .spring(response: 0.22, dampingFraction: 0.55)
+    /// The island widening toward the pointer: crisp magnetic response.
+    static let hoverHintWiden: Animation = .spring(response: 0.20, dampingFraction: 0.68)
 
-    /// The island deepening, a beat slower than it widens: for a moment it
-    /// is wider than it is deep (the stretch), then it settles round.
-    /// Overshoot ~10 % of `hoverHintDown`.
-    static let hoverHintDeepen: Animation = .spring(response: 0.3, dampingFraction: 0.6)
+    /// The island deepening, a beat after it widens: smooth magnetic swell.
+    static let hoverHintDeepen: Animation = .spring(response: 0.24, dampingFraction: 0.72)
 
     /// The pointer gone: back to the notch without a bounce.
-    static let hoverHintRelease: Animation = .spring(response: 0.32, dampingFraction: 0.92)
+    static let hoverHintRelease: Animation = .spring(response: 0.28, dampingFraction: 0.94)
 
     /// The full hint, pointer on the island: points added below, on each
     /// side, and to the bottom corner radius.
-    static let hoverHintDown: CGFloat = 5
-    static let hoverHintSide: CGFloat = 3
-    static let hoverHintRadius: CGFloat = 3
+    static let hoverHintDown: CGFloat = 6.5
+    static let hoverHintSide: CGFloat = 4.5
+    static let hoverHintRadius: CGFloat = 4
 
     /// The pointer within `hoverApproachReach` points of the island leans
     /// it up to `hoverApproachShare` of the full hint, in
     /// `hoverApproachSteps` levels (NotchApproachPolicy).
-    static let hoverApproachReach: CGFloat = 24
-    static let hoverApproachShare: CGFloat = 0.35
-    static let hoverApproachSteps = 6
+    static let hoverApproachReach: CGFloat = 58
+    static let hoverApproachShare: CGFloat = 0.62
+    static let hoverApproachSteps = 24
 
     // MARK: Drip
 
     /// The liquid drip under the closed island (NotchDripPolicy, DripLayer).
-    /// Reach is wider than the hint's so the drip starts before the hint
-    /// leans; the inset keeps the drip's whole root (dripLook.rootHalfWidth) on
-    /// the flat edge past the 14 pt bottom radius plus the hint's 3.
+    /// Tuned for a responsive, high-surface-tension magnetic meniscus that
+    /// tracks the pointer closely and snaps back cleanly.
     static let drip = NotchDripTuning(
-        reach: 48, near: 14, inset: 42,
-        stretchResponse: 0.42, stretchDamping: 0.55,
-        retractResponse: 0.3, retractDamping: 0.9,
-        followResponse: 0.28, followDamping: 0.82,
-        detachLength: 0.55, detachGap: 0.4,
-        recoil: 6, refractory: 0.3,
-        dropSpeed: 1.5, gravity: 34, fall: 2.6,
-        rippleLife: 0.6, maxDrops: 3
+        reach: 62, near: 8, inset: 6,
+        stretchResponse: 0.26, stretchDamping: 0.72,
+        retractResponse: 0.22, retractDamping: 0.92,
+        followResponse: 0.16, followDamping: 0.86,
+        detachLength: 0.62, detachGap: 0.44,
+        recoil: 7, refractory: 0.28,
+        dropSpeed: 1.6, gravity: 36, fall: 2.4,
+        rippleLife: 0.5, maxDrops: 3
     )
-    /// The drip's size, for a 2x screen: at a 20 pt length, a 3...5.5 bulb
-    /// and a root barely wider than it, it read as a hairline on a real
-    /// notch. Now a 40...54 pt sag off the edge into a neck that keeps 0.88
-    /// of the bulb's 8...12 radius, thinning only as it pinches off.
+    /// Sleek magnetic meniscus: wide, smooth root fillet tapering into a
+    /// compact 18 pt liquid pull rather than an oversized hanging blob.
     static let dripLook = NotchDripLook(
-        maxLength: 32, bulbRadius: 8...12, rootHalfWidth: 20...27, neck: 0.88, lean: 6
+        maxLength: 18, bulbRadius: 4.5...7.5, rootHalfWidth: 22...32, neck: 0.56, lean: 4
     )
     /// Gooey merge: the blur the alpha threshold cuts at half coverage.
-    static let dripGoo: CGFloat = 3.4
+    static let dripGoo: CGFloat = 4.2
     /// The drip leaving when the panel opens over it.
     static let dripOut: Animation = .easeIn(duration: 0.1)
 
