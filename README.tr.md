@@ -10,6 +10,16 @@ ve onlar tarafından desteklenmez. Bkz. [Lisans ve teşekkür](#lisans-ve-teşek
 English: [README.md](README.md). Bu dokümanda arayüzdeki adlar (menüler, ayarlar) İngilizce
 arayüzdeki halleriyle verilmiştir. İki doküman çelişirse İngilizce olan geçerlidir.
 
+## Ekran Görüntüleri
+
+| Şimdi (Müzik) | Raf & Pano |
+|---|---|
+| ![umbar Şimdi](docs/images/umbar-now.png) | ![umbar Raf](docs/images/umbar-shelf.png) |
+
+| Ağ & Sistem İstatistikleri | Araçlar (Uyanık Tut & Odak) |
+|---|---|
+| ![umbar Ağ ve Sistem](docs/images/umbar-network.png) | ![umbar Araçlar](docs/images/umbar-tools.png) |
+
 ## Özellikler
 
 - **Notch paneli.** Açmak için imleci notch'un üzerine getirin, notch'a tıklayın ya da notch

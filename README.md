@@ -9,6 +9,16 @@ TheBoredTeam. See [License and credits](#license-and-credits).
 
 Türkçe: [README.tr.md](README.tr.md)
 
+## Screenshots
+
+| Now Playing | File Shelf & Clipboard |
+|---|---|
+| ![umbar Now Playing](docs/images/umbar-now.png) | ![umbar File Shelf](docs/images/umbar-shelf.png) |
+
+| Network & System Stats | Tools (Caffeinate & Focus) |
+|---|---|
+| ![umbar Network & System Stats](docs/images/umbar-network.png) | ![umbar Tools](docs/images/umbar-tools.png) |
+
 ## Features
 
 - **Notch panel.** Hover over or click the notch to open it, or swipe down on it with two
